@@ -1,10 +1,9 @@
 # Conexão Pais — App
 
-> **ajudando a unir famílias e gerações**
+> **Ajudando a unir famílias e gerações.**
 
-Versão mobile da plataforma **Conexão Pais**: um aplicativo educativo que ajuda pais, mães, responsáveis e
-educadores a entender gírias, memes, abreviações, tendências e comportamentos digitais usados por crianças e
-adolescentes, e transforma cada expressão em um ponto de partida para conversar.
+Versão mobile do portal **Conexão Pais** ([conexaopais.com.br](https://conexaopais.com.br)): artigos, colunas, revista
+digital, profissionais parceiros e comunidade para quem cuida, educa e acompanha crianças e adolescentes.
 
 Projeto avaliativo da disciplina de Aplicações Mobile (React Native + API REST + MySQL + JWT), desenvolvido em
 4 entregas incrementais.
@@ -22,159 +21,274 @@ Projeto avaliativo da disciplina de Aplicações Mobile (React Native + API REST
 
 ### 1.1 Problema atual identificado
 
-A linguagem das novas gerações muda muito rápido. Gírias, memes, abreviações e tendências surgem nas redes
-sociais, nos jogos e nos vídeos curtos e são substituídas em poucos meses. Muitos pais e responsáveis não
-conseguem acompanhar esse ritmo e **não entendem o que crianças e adolescentes estão dizendo**. Isso gera
-ruído nas conversas em família e dificulta a mediação do uso da tecnologia.
+Quem cuida de crianças e adolescentes tem dúvidas todos os dias: desenvolvimento, sono, escola, telas, limites,
+convivência com os avós. Informação existe de sobra, mas está **espalhada, nem sempre é confiável** e muitas vezes
+vem cheia de jargão ou de julgamento. Na prática, quem cuida costuma **se sentir sozinho ao decidir**.
 
-O problema não é falta de interesse dos adultos. Falta a eles **acesso rápido, confiável e contextualizado**
-a esse conhecimento: a informação existe, mas está espalhada pela internet, sem explicação do contexto e sem
-orientação sobre como transformar a dúvida em diálogo.
+> *"Cuidar dá trabalho. Encontrar boa informação não deveria dar."*
 
-> **Pergunta orientadora:** como uma aplicação mobile pode reduzir a barreira de comunicação causada pela
-> transformação constante da linguagem e da cultura digital entre pais e filhos?
+> **Pergunta orientadora:** como uma aplicação mobile pode reunir informação confiável, acolhimento e contato com
+> profissionais em um só lugar para quem cuida?
 
 ### 1.2 Contexto e público afetado
 
-- **Público principal:** pais, mães, avós, responsáveis e outros adultos que convivem com crianças e
-  adolescentes.
-- **Público secundário:** educadores e comunidade escolar, que também precisam se comunicar com os jovens e
-  orientá-los.
-- **Afetados indiretamente:** crianças e adolescentes, que ganham adultos mais preparados para ouvir,
-  conversar e orientar sem julgamento.
+- **Público principal:** pais, mães, avós e outros responsáveis, em todas as configurações de família.
+- **Profissionais parceiros:** psicólogos, pediatras, pedagogos, terapeutas familiares e outras pessoas que
+  atendem famílias e querem publicar conteúdo de qualidade.
+- **Afetados indiretamente:** crianças e adolescentes, que ganham adultos mais bem informados e mais tranquilos
+  para conversar.
 
-O contexto é o de famílias em que o celular e as redes sociais fazem parte da rotina dos jovens, enquanto os
-adultos têm pouco tempo e pouca familiaridade com esse universo.
+O projeto já existe como portal web (site Conexão Pais). O app leva esse ecossistema para o celular, que é onde a
+dúvida aparece: no carro, na fila da escola, na hora de dormir.
 
 ### 1.3 Justificativa
 
-- **A velocidade da mudança:** uma expressão popular hoje pode desaparecer em poucos meses. Por isso, o
-  conteúdo precisa ser atualizado continuamente e de forma colaborativa.
-- **Mediação parental:** para orientar os jovens no ambiente digital, os adultos precisam conhecer
-  minimamente os espaços, as linguagens e as referências que fazem parte da realidade deles.
-- **Letramento digital e educação não formal:** a aprendizagem não precisa acontecer só na escola. O app
-  funciona como um recurso de consulta e aprendizagem ao longo da vida, alinhado ao **ODS 4 (Educação de
-  Qualidade)** da Agenda 2030 da ONU.
-- **Por que um app (e não só o site):** a dúvida aparece no meio da conversa, e o celular é o dispositivo que
-  o adulto tem à mão nesse momento. O app permite consulta rápida, favoritos e, futuramente, avisos sobre
-  novas expressões.
-- **Aprendizagem mútua:** a proposta não coloca o adulto como quem "fiscaliza". Ela incentiva a curiosidade e
-  a troca entre gerações, em que o jovem também ensina.
+- **Credibilidade:** o conteúdo é escrito e revisado por profissionais, com autoria visível.
+- **Acolhimento:** linguagem clara, sem jargão e sem julgamento, pensada para diferentes arranjos familiares.
+- **Rede de apoio:** a comunidade (curtir, salvar, comentar, perguntar à equipe) e o diretório de profissionais
+  verificados mostram que ninguém precisa cuidar sozinho.
+- **Segurança:** só profissionais com registro conferido pela administração podem publicar.
+- **Por que um app:** consulta rápida no momento da dúvida, conteúdos salvos sempre à mão e, futuramente, avisos
+  de novas colunas e edições da revista.
+- **ODS 4 (Educação de Qualidade):** educação não formal e aprendizagem ao longo da vida para famílias.
 
 ### 1.4 Proposta de solução
 
-O **Conexão Pais** é um aplicativo com:
+O **app Conexão Pais** reúne, no celular, as seções do portal:
 
-1. **Glossário de expressões** organizado por categoria (gíria, meme, abreviação, tendência e comportamento
-   digital), com significado, exemplo de uso, origem e uma **dica de como conversar** sobre o assunto.
-2. **Dicas de conversa**: conteúdos curtos sobre diálogo, escuta ativa, mediação digital e bem-estar.
-3. **Colaboração moderada**: o responsável pode **sugerir** uma expressão que ouviu e não encontrou. Um
-   **administrador** revisa, completa e publica, o que garante a qualidade do conteúdo.
-4. **Área administrativa** para manter o glossário atualizado (CRUD das expressões) e moderar as sugestões.
+1. **Conteúdos:** artigos, colunas assinadas e a revista digital (leitura página a página).
+2. **Profissionais:** diretório com especialidade, cidade, forma de atendimento e contato por WhatsApp.
+3. **Comunidade:** curtidas, conteúdos salvos, comentários nos artigos, perguntas à equipe e regras de convivência.
+4. **Área de publicação:** profissionais aprovados e a administração publicam, editam e excluem artigos.
+5. **Administração:** verificação de novos profissionais (aprovar, pedir ajustes ou recusar) e moderação.
 
-A **entidade principal** do sistema é a **Expressão** (termo do glossário). É ela que terá CRUD completo
-integrado à API e ao banco de dados nas próximas entregas.
+A **entidade principal** é a **Publicação (artigo)**. É ela que terá CRUD completo integrado à API e ao MySQL nas
+próximas entregas, assim como a tabela `publicacoes` do site.
 
 ### 1.5 Nome da aplicação
 
-**Conexão Pais**, com o slogan *"ajudando a unir famílias e gerações"*, o mesmo nome do projeto de pesquisa
-e da versão web.
+**Conexão Pais**, o mesmo nome do portal, com o slogan *"Ajudando a unir famílias e gerações."*
 
 ### 1.6 Tipos de usuário
 
-| Tipo | Quem é | Objetivo no app |
-| --- | --- | --- |
-| **Visitante** | Pessoa ainda não autenticada | Conhecer o app, criar conta e fazer login |
-| **Responsável** (`responsavel`) | Pai, mãe, avó/avô, responsável ou educador cadastrado | Consultar o glossário, ler dicas, favoritar e sugerir expressões |
-| **Administrador** (`admin`) | Equipe do projeto (curadoria do conteúdo) | Manter o glossário, moderar sugestões e gerenciar usuários |
+Os níveis são os mesmos do site (`app_role`):
 
-Os dois **níveis de usuário** autenticados são `responsavel` e `admin`. O visitante representa o estado
-"não logado".
+| Tipo | Nível | Quem é |
+| --- | --- | --- |
+| **Visitante** | — | Pessoa ainda não autenticada |
+| **Família** | `usuario` | Pai, mãe, avó/avô ou outro responsável |
+| **Profissional** | `profissional` | Profissional parceiro. Começa **em verificação** e só publica depois de **aprovado** pela administração |
+| **Administração** | `admin` | Equipe do Conexão Pais (curadoria, moderação e verificação) |
+
+Situações do cadastro profissional: `pendente` → `aprovado`, `ajustes_solicitados` ou `recusado`.
 
 ### 1.7 Permissões iniciais
 
-| Ação | Visitante | Responsável | Administrador |
-| --- | :---: | :---: | :---: |
-| Ver tela de boas-vindas, login e cadastro | ✅ | — | — |
-| Criar conta | ✅ | — | — |
-| Consultar o glossário e o detalhe das expressões | ❌ | ✅ | ✅ |
-| Buscar e filtrar expressões por categoria | ❌ | ✅ | ✅ |
-| Ler dicas de conversa | ❌ | ✅ | ✅ |
-| Favoritar expressões | ❌ | ✅ | ✅ |
-| Sugerir nova expressão e acompanhar o status | ❌ | ✅ | ✅ |
-| Ver e editar o próprio perfil / sair | ❌ | ✅ | ✅ |
-| **Cadastrar, editar e excluir expressões (CRUD)** | ❌ | ❌ | ✅ |
-| **Aprovar ou recusar sugestões** | ❌ | ❌ | ✅ |
-| **Gerenciar usuários (alterar nível)** | ❌ | ❌ | ✅ |
+| Ação | Visitante | Família | Profissional em verificação | Profissional aprovado | Admin |
+| --- | :---: | :---: | :---: | :---: | :---: |
+| Ver boas-vindas, entrar e criar conta | ✅ | — | — | — | — |
+| Ler artigos, colunas e revista | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Ver profissionais e chamar no WhatsApp | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Curtir, salvar e comentar | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Excluir o próprio comentário | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Publicar artigo | ❌ | ❌ | ❌ | ✅ | ✅ |
+| Editar e excluir artigo | ❌ | ❌ | ❌ | só os próprios | todos |
+| Excluir comentário de outra pessoa | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Aprovar, pedir ajustes ou recusar profissionais | ❌ | ❌ | ❌ | ❌ | ✅ |
 
-Na Entrega 3 essas permissões serão garantidas **no back-end** por middleware de autenticação (JWT enviado
-como Bearer Token) e de autorização por nível.
+São as mesmas regras do banco do site (políticas da tabela `publicacoes`: *"Admin e profissional aprovado
+criam"*, *"Autor ou admin edita"*, *"Autor ou admin remove"*). Na Entrega 3 elas serão garantidas **no back-end**
+por middleware de autenticação (JWT enviado como Bearer Token) e de autorização por nível.
 
 ### 1.8 Principais funcionalidades
 
-1. Cadastro e login de usuários (senha com hash e JWT, na Entrega 3).
-2. Glossário com **busca** por termo e **filtro por categoria**.
-3. Detalhe da expressão: significado, exemplo, origem e dica de conversa.
-4. **Expressão em destaque** na tela inicial.
-5. Dicas de conversa entre gerações.
-6. Favoritos do usuário.
-7. Sugestão de novas expressões pelos responsáveis.
-8. Painel do administrador: CRUD de expressões e moderação de sugestões.
-9. Perfil com dados do usuário, favoritos, sugestões enviadas e logout.
+1. Cadastro com tipo de conta (família ou profissional, com profissão e número de registro) e login.
+2. Início com destaques: artigo em destaque, revista atual, profissionais, colunas e "Como funciona".
+3. Artigos com busca e filtro por categoria; leitura com curtir, salvar e comentários.
+4. Colunas assinadas e revista digital com leitor página a página.
+5. Diretório de profissionais com busca, filtro por especialidade e contato por WhatsApp.
+6. Comunidade: conversas em andamento, destaques (mais curtidos e mais salvos), pergunta à equipe e regras.
+7. Minha conta: dados e nível do usuário, situação do cadastro profissional, conteúdos salvos e logout.
+8. Área de publicação: criar, editar e excluir artigos, conforme o nível.
+9. Administração: verificação de novos profissionais.
+10. Sobre (valores, história e equipe) e Contato.
 
 ### 1.9 Telas previstas
 
+Todas as telas abaixo já existem nesta primeira versão navegável (com dados de exemplo).
+
 | # | Tela | Acesso | Descrição |
 | --- | --- | --- | --- |
-| 1 | Boas-vindas | Visitante | Apresentação do app e acesso ao login/cadastro |
-| 2 | Login | Visitante | E-mail e senha |
-| 3 | Cadastro | Visitante | Nome, e-mail, perfil (pai/mãe, avó/avô…) e senha |
-| 4 | Início | Responsável e admin | Saudação, expressão em destaque, categorias e dica do dia |
-| 5 | Glossário | Responsável e admin | Lista com busca e filtro por categoria |
-| 6 | Detalhe da expressão | Responsável e admin | Significado, exemplo, origem, dica e favoritar |
-| 7 | Dicas de conversa | Responsável e admin | Conteúdos educativos sobre diálogo |
-| 8 | Sugerir expressão | Responsável e admin | Formulário de sugestão |
-| 9 | Perfil | Responsável e admin | Dados, favoritos, sugestões e logout |
-| 10 | Painel administrativo | Somente admin | Lista de expressões (editar/excluir) e moderação de sugestões |
-| 11 | Formulário de expressão | Somente admin | Criar ou editar uma expressão |
+| 1 | Boas-vindas | Visitante | Apresentação, foto da família e acesso a Entrar / Criar conta |
+| 2 | Entrar | Visitante | E-mail e senha (+ perfis de demonstração) |
+| 3 | Criar conta | Visitante | Nome, e-mail, tipo de conta, profissão/registro (profissional) e senha |
+| 4 | Início | Logado | Saudação, destaques e atalhos |
+| 5 | Conteúdos | Logado | Artigos (busca e categorias), Colunas e Revista |
+| 6 | Artigo | Logado | Leitura, curtir, salvar, comentários e conteúdos relacionados |
+| 7 | Coluna | Logado | Apresentação da coluna e publicações |
+| 8 | Revista | Logado | Capa, destaques e leitor página a página |
+| 9 | Profissionais | Logado | Diretório com busca e filtro por especialidade |
+| 10 | Perfil profissional | Logado | Dados, contato por WhatsApp, conteúdos e colunas |
+| 11 | Comunidade | Logado | Recursos, conversas, destaques, pergunta à equipe e regras |
+| 12 | Minha conta | Logado | Perfil, nível, salvos, publicações e administração |
+| 13 | Sobre | Logado | Valores, como surgiu e equipe |
+| 14 | Contato | Logado | Formulário de mensagem para a equipe |
+| 15 | Nova postagem / Editar artigo | Profissional aprovado e admin | Formulário do artigo |
+| 16 | Novos profissionais | Somente admin | Aprovar, pedir ajustes ou recusar cadastros |
 
 ### 1.10 Fluxo inicial de navegação
 
 ```mermaid
 flowchart TD
-    W[Boas-vindas] --> L[Login]
-    W --> C[Cadastro]
-    C -->|conta criada| L
-    L -->|responsável| T{{Abas do app}}
-    L -->|administrador| T
+    W[Boas-vindas] --> L[Entrar]
+    W --> C[Criar conta]
+    C -->|família ou profissional| L
+    L --> T{{Abas do app}}
 
     T --> H[Início]
-    T --> G[Glossário]
-    T --> D[Dicas]
-    T --> P[Perfil]
-    T -.->|somente admin| A[Painel admin]
+    T --> CT[Conteúdos]
+    T --> P[Profissionais]
+    T --> CM[Comunidade]
+    T --> MC[Minha conta]
 
-    H --> E[Detalhe da expressão]
-    H --> S[Sugerir expressão]
-    G --> E
-    G --> S
-    P --> E
-    P -->|sair| W
+    H --> A[Artigo]
+    CT --> A
+    CT --> CO[Coluna]
+    CT --> R[Revista]
+    P --> PP[Perfil profissional]
+    CM --> A
+    MC --> S[Sobre]
+    MC --> CTT[Contato]
+    MC -->|sair| W
 
-    A --> F[Formulário de expressão]
-    A --> E
+    MC -.->|profissional aprovado e admin| NP[Nova postagem / Editar]
+    A -.->|autor ou admin| NP
+    MC -.->|somente admin| NV[Novos profissionais]
 ```
 
-**Organização da navegação (React Navigation):**
+**Como a navegação está organizada (React Navigation):**
 
-- **Stack raiz** (`native-stack`): mostra as telas públicas (Boas-vindas, Login, Cadastro) quando não há
-  usuário logado e as telas autenticadas quando há.
-- **Abas inferiores** (`bottom-tabs`): Início, Glossário, Dicas e Perfil, mais a aba **Admin** que só aparece
-  para administradores.
-- **Telas empilhadas sobre as abas:** Detalhe da expressão, Sugerir expressão e Formulário de expressão
-  (somente admin).
+- **Stack raiz** (`native-stack`): mostra só as telas públicas quando não há usuário logado. Depois do login,
+  registra as telas de leitura e, **conforme o nível**, a área de publicação (`canPublish`) e a verificação de
+  profissionais (`isAdmin`). Uma tela que não foi registrada não pode ser aberta.
+- **Abas inferiores** (`bottom-tabs`): Início, Conteúdos, Profissionais, Comunidade e Minha conta.
+- **Telas empilhadas sobre as abas:** Artigo, Coluna, Revista, Perfil profissional, Sobre, Contato, Nova postagem e
+  Novos profissionais.
 
 ---
+
+## 2. Primeira versão do app
+
+| Boas-vindas | Início | Conteúdos | Artigo |
+| --- | --- | --- | --- |
+| ![Boas-vindas](docs/telas/boas-vindas.png) | ![Início](docs/telas/inicio.png) | ![Conteúdos](docs/telas/conteudos.png) | ![Artigo](docs/telas/artigo.png) |
+
+| Revista | Perfil profissional | Comunidade | Minha conta |
+| --- | --- | --- | --- |
+| ![Revista](docs/telas/revista.png) | ![Perfil profissional](docs/telas/perfil-profissional.png) | ![Comunidade](docs/telas/comunidade.png) | ![Minha conta](docs/telas/minha-conta.png) |
+
+| Criar conta (profissional) | Novos profissionais (admin) | Nova postagem | Artigo publicado |
+| --- | --- | --- | --- |
+| ![Criar conta](docs/telas/criar-conta.png) | ![Novos profissionais](docs/telas/novos-profissionais.png) | ![Nova postagem](docs/telas/nova-postagem.png) | ![Artigo publicado](docs/telas/artigo-publicado.png) |
+
+**O que já funciona nesta entrega:**
+
+- projeto Expo (SDK 58) com React Navigation 7: stack raiz + abas inferiores + telas empilhadas;
+- 16 telas navegáveis com a identidade visual do site: logo da árvore, verde musgo e ocre, fontes Fraunces e
+  DM Sans;
+- telas e ações diferentes para cada nível (família, profissional em verificação, profissional aprovado e admin);
+- validação dos formulários (cadastro, login, comentário, publicação, contato);
+- conteúdo de exemplo trazido do site (artigos, colunas, revistas, profissionais e equipe).
+
+**Ainda simulado (próximas entregas):** o login aceita qualquer senha com 6 ou mais caracteres e os dados ficam em
+memória, voltando ao início quando o app é reiniciado. API, MySQL, hash de senha e JWT entram nas Entregas 2 e 3.
+
+### Contas de demonstração
+
+Na tela **Entrar**, os botões do *Modo demonstração* preenchem estas contas (as mesmas contas de teste do site):
+
+| Perfil | E-mail | Senha |
+| --- | --- | --- |
+| Família | `familia@conexaopais.test` | `123456` |
+| Profissional aprovado (Dra. Helena Prado) | `profissional@conexaopais.test` | `123456` |
+| Administração | `admin@conexaopais.test` | `123456` |
+
+Para ver o fluxo completo de níveis: crie uma conta **Profissional**, entre com ela (fica em verificação), entre
+como **Administração** e aprove o cadastro em *Minha conta → Novos profissionais*, depois entre de novo com a conta
+profissional e publique um artigo.
+
+---
+
+## 3. Tecnologias
+
+| Camada | Tecnologia |
+| --- | --- |
+| App | React Native 0.88 + Expo SDK 58 (JavaScript) |
+| Navegação | React Navigation 7 (`native-stack` e `bottom-tabs`) |
+| Visual | `@expo/vector-icons` (Ionicons), `expo-font` com Fraunces e DM Sans (`@expo-google-fonts`) |
+| Estado | React Context (autenticação, conteúdos, comunidade, confirmação) |
+| API (Entrega 2) | Node.js + Express |
+| Banco (Entrega 2) | MySQL |
+| Autenticação (Entrega 3) | bcrypt (hash) + JWT (Bearer Token) |
+
+## 4. Estrutura do repositório
+
+```
+conexaopais.app/
+├── README.md
+├── docs/telas/               # imagens das telas usadas neste README
+└── mobile/                   # aplicativo React Native (Expo)
+    ├── App.js                # fontes, provedores de contexto e NavigationContainer
+    ├── app.json              # nome, ícone, splash e pacote Android (app.conexaopais)
+    ├── assets/               # logo da árvore, ícones, splash e fotos do site
+    └── src/
+        ├── components/       # Button, TextField, ArticleCard, ProfessionalCard, MagazineCover...
+        ├── contexts/         # AuthContext (níveis e permissões), ContentContext (CRUD de artigos),
+        │                     # CommunityContext (curtidas, salvos, comentários), ConfirmContext
+        ├── data/             # conteúdo de exemplo trazido do site
+        ├── navigation/       # RootNavigator (stack por nível), AppTabs (abas) e tema
+        ├── screens/
+        │   ├── auth/         # Boas-vindas, Entrar, Criar conta
+        │   ├── app/          # Início, Conteúdos, Artigo, Coluna, Revista, Profissionais...
+        │   ├── publish/      # Nova postagem / Editar artigo
+        │   └── admin/        # Novos profissionais
+        ├── theme/            # cores, fontes, espaçamentos e estilos de texto do site
+        └── utils/            # validações e funções de texto
+```
+
+A API (`api/`) e o script do banco (`database/`) entram na Entrega 2.
+
+## 5. Como executar
+
+Pré-requisitos: [Node.js](https://nodejs.org) 20 ou superior e o app **Expo Go** no celular (Android ou iOS).
+
+```bash
+cd mobile
+```
+
+```bash
+npm install
+```
+
+```bash
+npx expo start
+```
+
+Leia o QR Code com o Expo Go (Android) ou com a câmera (iOS). Para abrir no navegador:
+
+```bash
+npx expo start --web
+```
+
+---
+
+## 6. Próximas entregas
+
+- **Entrega 2:** modelagem do banco (usuários, publicações, interações, comentários e solicitações de
+  profissionais, como no site), API Express com rotas de artigos e integração do app com `fetch()`.
+- **Entrega 3:** cadastro e login reais com senha em hash, JWT armazenado no aparelho e enviado como Bearer Token,
+  middleware de autenticação e de nível, CRUD completo de artigos e verificação de profissionais pela API.
+- **Entrega 4:** testes, correções, README final, APK e apresentação.
 
 ## Autoria
 
