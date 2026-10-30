@@ -32,6 +32,7 @@ export default function AppTabs() {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarLabelStyle: { fontWeight: '600' },
+        tabBarLabelPosition: 'below-icon',
         tabBarIcon: ({ focused, color, size }) => (
           <Ionicons name={focused ? icons[route.name] : `${icons[route.name]}-outline`} size={size} color={color} />
         ),

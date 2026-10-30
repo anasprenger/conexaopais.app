@@ -7,15 +7,16 @@ import EmptyState from '../../components/EmptyState';
 import ExpressionCard from '../../components/ExpressionCard';
 import Screen from '../../components/Screen';
 import StatusBadge from '../../components/StatusBadge';
+import { useConfirm } from '../../contexts/ConfirmContext';
 import { useExpressions } from '../../contexts/ExpressionsContext';
 import { useSuggestions } from '../../contexts/SuggestionsContext';
 import { colors, fontSize, radius, shadow, spacing } from '../../theme';
-import { confirm } from '../../utils/confirm';
 
 // Painel exclusivo do administrador: CRUD de expressões e moderação de sugestões
 export default function AdminPanelScreen({ navigation }) {
   const { expressions, deleteExpression } = useExpressions();
   const { suggestions, updateSuggestionStatus } = useSuggestions();
+  const confirm = useConfirm();
   const [tab, setTab] = useState('expressions');
 
   const pending = suggestions.filter((suggestion) => suggestion.status === 'pendente');
