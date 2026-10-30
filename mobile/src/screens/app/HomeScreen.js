@@ -1,247 +1,247 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import ArticleCard from '../../components/ArticleCard';
 import Button from '../../components/Button';
+import MagazineCover from '../../components/MagazineCover';
+import Notice from '../../components/Notice';
+import ProfessionalCard from '../../components/ProfessionalCard';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
-import { useAuth } from '../../contexts/AuthContext';
-import { useExpressions } from '../../contexts/ExpressionsContext';
-import { categories } from '../../data/categories';
-import { getFeaturedExpression } from '../../data/expressions';
-import { getTipOfTheDay } from '../../data/tips';
-import { categoryStyles, colors, fontSize, radius, shadow, spacing } from '../../theme';
+import { ROLES, useAuth } from '../../contexts/AuthContext';
+import { useContent } from '../../contexts/ContentContext';
+import { colunas } from '../../data/colunas';
+import { comoFunciona } from '../../data/institucional';
+import { profissionais } from '../../data/profissionais';
+import { revistas } from '../../data/revistas';
+import { blob, colors, fonts, radius, shadow, spacing, type } from '../../theme';
 
 export default function HomeScreen({ navigation }) {
-  const { user } = useAuth();
-  const { expressions } = useExpressions();
-  const featured = getFeaturedExpression(expressions);
-  const tip = getTipOfTheDay();
-  const firstName = user.name.split(' ')[0];
+  const { user, canPublish } = useAuth();
+  const { artigos } = useContent();
+
+  const destaque = artigos.find((artigo) => artigo.destaque) ?? artigos[0];
+  const demais = artigos.filter((artigo) => artigo.id !== destaque?.id).slice(0, 3);
+  const edicaoAtual = revistas[0];
+  const firstName = user.name.replace(/^Dra?\.\s+/, '').split(' ')[0];
+  const emVerificacao = user.role === ROLES.PROFISSIONAL && user.verificacao !== 'aprovado';
+
+  const abrirArtigo = (id) => navigation.navigate('Article', { id });
+  const abrirConteudos = (segment) => navigation.navigate('Contents', { segment });
 
   return (
     <Screen>
-      <Text style={styles.greeting}>Olá, {firstName}!</Text>
-      <Text style={styles.subtitle}>O que você quer entender hoje?</Text>
+      <Text style={type.h1}>Olá, {firstName}!</Text>
+      <Text style={[type.muted, styles.greeting]}>
+        Informação, acolhimento e conexão para quem cuida, educa e acompanha.
+      </Text>
 
-      <Pressable
-        style={styles.search}
-        onPress={() => navigation.navigate('Glossary', { category: null })}
-        accessibilityRole="search"
-      >
-        <Ionicons name="search" size={20} color={colors.textMuted} />
-        <Text style={styles.searchText}>Buscar gíria, meme ou sigla…</Text>
-      </Pressable>
-
-      {featured && (
-        <View style={styles.featured}>
-          <Text style={styles.featuredLabel}>EXPRESSÃO DO DIA</Text>
-          <Text style={styles.featuredTerm}>{featured.term}</Text>
-          <Text style={styles.featuredMeaning} numberOfLines={3}>
-            {featured.meaning}
-          </Text>
-          <Button
-            title="Ver explicação"
-            variant="accent"
-            small
-            icon="arrow-forward"
-            onPress={() => navigation.navigate('ExpressionDetail', { id: featured.id })}
-            style={styles.featuredButton}
-          />
-        </View>
+      {emVerificacao && (
+        <Notice tone="warning" title="Conta profissional em verificação" style={styles.notice}>
+          Assim que a administração confirmar seu registro, você poderá publicar.
+        </Notice>
       )}
 
-      <SectionHeader
-        title="Explore por categoria"
-        actionLabel="Ver todas"
-        onAction={() => navigation.navigate('Glossary', { category: null })}
-      />
-      <View style={styles.categories}>
-        {categories.map((category, index) => {
-          const style = categoryStyles[category.id];
-          return (
-            <Pressable
-              key={category.id}
-              style={[styles.category, index % 3 === 2 && styles.categoryLast]}
-              onPress={() => navigation.navigate('Glossary', { category: category.id })}
-              accessibilityRole="button"
-            >
-              <View style={[styles.categoryIcon, { backgroundColor: style.soft }]}>
-                <Ionicons name={style.icon} size={22} color={style.color} />
-              </View>
-              <Text style={styles.categoryLabel} numberOfLines={2}>
-                {category.label}
-              </Text>
-            </Pressable>
-          );
-        })}
+      {canPublish && (
+        <Pressable style={styles.publish} onPress={() => navigation.navigate('PostForm')} accessibilityRole="button">
+          <Ionicons name="add-circle" size={26} color={colors.textOnAccent} />
+          <View style={styles.publishText}>
+            <Text style={styles.publishTitle}>Nova postagem</Text>
+            <Text style={styles.publishSubtitle}>Publique um artigo para as famílias</Text>
+          </View>
+          <Ionicons name="arrow-forward" size={20} color={colors.textOnAccent} />
+        </Pressable>
+      )}
+
+      <View style={styles.manifesto}>
+        <View style={[styles.manifestoBlob, blob(140)]} />
+        <Text style={type.h2}>Cuidar dá trabalho. Encontrar boa informação não deveria dar.</Text>
+        <Text style={[type.muted, styles.manifestoText]}>
+          Reunimos conteúdo editorial, colunas assinadas e profissionais de confiança em um ambiente humano, claro e
+          livre de julgamento.
+        </Text>
       </View>
 
-      <SectionHeader title="Dica do dia" actionLabel="Mais dicas" onAction={() => navigation.navigate('Tips')} />
-      <Pressable style={styles.tip} onPress={() => navigation.navigate('Tips')}>
-        <View style={styles.tipIcon}>
-          <Ionicons name={tip.icon} size={22} color={colors.primary} />
-        </View>
-        <View style={styles.flex}>
-          <Text style={styles.tipTitle}>{tip.title}</Text>
-          <Text style={styles.tipSummary}>{tip.summary}</Text>
-        </View>
-      </Pressable>
+      <SectionHeader title="Conteúdos para você" actionLabel="Ver todos" onAction={() => abrirConteudos('artigos')} />
+      {destaque && <ArticleCard artigo={destaque} featured onPress={() => abrirArtigo(destaque.id)} />}
+      {demais.map((artigo) => (
+        <ArticleCard key={artigo.id} artigo={artigo} onPress={() => abrirArtigo(artigo.id)} />
+      ))}
 
-      <View style={styles.suggest}>
-        <Ionicons name="ear-outline" size={28} color={colors.accentDark} />
-        <Text style={styles.suggestTitle}>Ouviu algo que não entendeu?</Text>
-        <Text style={styles.suggestText}>Sugira a expressão e nossa equipe pesquisa e explica para você.</Text>
-        <Button
-          title="Sugerir expressão"
-          variant="outline"
-          small
-          icon="add-circle-outline"
-          onPress={() => navigation.navigate('SuggestExpression')}
-          style={styles.suggestButton}
+      <SectionHeader title="Nossa revista" actionLabel="Todas as edições" onAction={() => abrirConteudos('revista')} />
+      <View style={styles.magazine}>
+        <MagazineCover
+          revista={edicaoAtual}
+          width={128}
+          onPress={() => navigation.navigate('Magazine', { slug: edicaoAtual.slug })}
         />
+        <View style={styles.magazineText}>
+          <Text style={type.h3}>{edicaoAtual.subtitulo}</Text>
+          <Text style={[type.small, styles.magazineDescription]} numberOfLines={4}>
+            {edicaoAtual.descricao}
+          </Text>
+          <Button
+            title="Conheça esta edição"
+            variant="accent"
+            small
+            onPress={() => navigation.navigate('Magazine', { slug: edicaoAtual.slug })}
+            style={styles.magazineButton}
+          />
+        </View>
       </View>
+
+      <SectionHeader title="Conheça quem pode ajudar" actionLabel="Ver todos" onAction={() => navigation.navigate('Professionals')} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carousel} contentContainerStyle={styles.carouselContent}>
+        {profissionais.map((profissional) => (
+          <ProfessionalCard
+            key={profissional.slug}
+            profissional={profissional}
+            compact
+            onPress={() => navigation.navigate('Professional', { slug: profissional.slug })}
+          />
+        ))}
+      </ScrollView>
+
+      <SectionHeader title="Colunas" actionLabel="Ver todas" onAction={() => abrirConteudos('colunas')} />
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carousel} contentContainerStyle={styles.carouselContent}>
+        {colunas.map((coluna) => (
+          <Pressable
+            key={coluna.slug}
+            style={styles.column}
+            onPress={() => navigation.navigate('Column', { slug: coluna.slug })}
+            accessibilityRole="button"
+          >
+            <Text style={[type.eyebrow, styles.columnEyebrow]}>{coluna.periodicidade}</Text>
+            <Text style={[type.h3, styles.columnTitle]}>{coluna.nome}</Text>
+            <Text style={[type.small, styles.columnCall]} numberOfLines={3}>
+              {coluna.chamada}
+            </Text>
+            <Text style={styles.columnAuthor}>por {coluna.colunista}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      <SectionHeader title="Como funciona" />
+      {comoFunciona.map((passo, index) => (
+        <View key={passo.titulo} style={styles.step}>
+          <Ionicons name={passo.icon} size={24} color={colors.accent} />
+          <View style={styles.stepText}>
+            <Text style={styles.stepLabel}>PASSO {index + 1}</Text>
+            <Text style={type.h3}>{passo.titulo}</Text>
+            <Text style={type.muted}>{passo.texto}</Text>
+          </View>
+        </View>
+      ))}
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  flex: {
-    flex: 1,
-  },
   greeting: {
-    fontSize: fontSize.title,
-    fontWeight: '800',
-    color: colors.text,
+    marginTop: spacing.xs,
+    marginBottom: spacing.lg,
   },
-  subtitle: {
-    marginTop: 2,
-    fontSize: fontSize.body,
-    color: colors.textMuted,
+  notice: {
+    marginBottom: spacing.lg,
   },
-  search: {
+  publish: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: spacing.md,
-    paddingHorizontal: spacing.md,
-    height: 50,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  searchText: {
-    marginLeft: spacing.sm,
-    fontSize: fontSize.body,
-    color: colors.textMuted,
-  },
-  featured: {
-    marginTop: spacing.lg,
-    padding: spacing.lg,
+    gap: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.lg,
     borderRadius: radius.lg,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
   },
-  featuredLabel: {
-    fontSize: fontSize.caption,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: colors.accentSoft,
+  publishText: {
+    flex: 1,
   },
-  featuredTerm: {
-    marginTop: spacing.xs,
-    fontSize: fontSize.hero,
-    fontWeight: '800',
-    color: colors.textOnPrimary,
+  publishTitle: {
+    fontFamily: fonts.display,
+    fontSize: 18,
+    color: colors.textOnAccent,
   },
-  featuredMeaning: {
+  publishSubtitle: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.textOnAccent,
+    opacity: 0.9,
+  },
+  manifesto: {
+    overflow: 'hidden',
+    padding: spacing.lg,
+    borderRadius: radius.xl,
+    backgroundColor: colors.mintSoft,
+  },
+  manifestoBlob: {
+    position: 'absolute',
+    right: -50,
+    bottom: -60,
+    backgroundColor: colors.mint,
+  },
+  manifestoText: {
     marginTop: spacing.sm,
-    fontSize: fontSize.body,
-    lineHeight: 22,
-    color: colors.primarySoft,
   },
-  featuredButton: {
+  magazine: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  magazineText: {
+    flex: 1,
+  },
+  magazineDescription: {
+    marginTop: spacing.xs,
+  },
+  magazineButton: {
     alignSelf: 'flex-start',
     marginTop: spacing.md,
   },
-  categories: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    rowGap: spacing.sm,
+  carousel: {
+    marginHorizontal: -spacing.md,
   },
-  category: {
-    width: '31%',
-    marginRight: '3.5%',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xs,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    ...shadow,
+  carouselContent: {
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.sm,
   },
-  categoryLast: {
-    marginRight: 0,
-  },
-  categoryIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.sm,
-  },
-  categoryLabel: {
-    fontSize: fontSize.caption,
-    fontWeight: '700',
-    color: colors.text,
-    textAlign: 'center',
-  },
-  tip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    ...shadow,
-  },
-  tipIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
+  column: {
+    width: 230,
     marginRight: spacing.md,
-  },
-  tipTitle: {
-    fontSize: fontSize.body,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  tipSummary: {
-    marginTop: 2,
-    fontSize: fontSize.small,
-    color: colors.textMuted,
-  },
-  suggest: {
-    alignItems: 'center',
-    marginTop: spacing.lg,
     padding: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.accentSoft,
+    borderRadius: radius.xl,
+    backgroundColor: colors.mintSoft,
   },
-  suggestTitle: {
+  columnEyebrow: {
+    color: colors.mintText,
+    opacity: 0.75,
+  },
+  columnTitle: {
     marginTop: spacing.sm,
-    fontSize: fontSize.subtitle,
-    fontWeight: '800',
-    color: colors.text,
   },
-  suggestText: {
-    marginTop: spacing.xs,
-    fontSize: fontSize.small,
-    lineHeight: 20,
-    color: colors.textMuted,
-    textAlign: 'center',
+  columnCall: {
+    marginTop: spacing.sm,
+    color: colors.mintText,
   },
-  suggestButton: {
+  columnAuthor: {
     marginTop: spacing.md,
-    backgroundColor: colors.surface,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.primary,
+  },
+  step: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderRadius: radius.xl,
+    backgroundColor: colors.card,
+    ...shadow,
+  },
+  stepText: {
+    flex: 1,
+  },
+  stepLabel: {
+    fontFamily: fonts.bold,
+    fontSize: 11,
+    letterSpacing: 1.4,
+    color: colors.textMuted,
   },
 });

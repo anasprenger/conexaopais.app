@@ -1,12 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Logo from '../components/Logo';
-import { useAuth } from '../contexts/AuthContext';
-import AdminPanelScreen from '../screens/admin/AdminPanelScreen';
-import GlossaryScreen from '../screens/app/GlossaryScreen';
+import AccountScreen from '../screens/app/AccountScreen';
+import CommunityScreen from '../screens/app/CommunityScreen';
+import ContentsScreen from '../screens/app/ContentsScreen';
 import HomeScreen from '../screens/app/HomeScreen';
-import ProfileScreen from '../screens/app/ProfileScreen';
-import TipsScreen from '../screens/app/TipsScreen';
+import ProfessionalsScreen from '../screens/app/ProfessionalsScreen';
 import { colors, fonts } from '../theme';
 import { headerOptions } from './theme';
 
@@ -14,25 +13,23 @@ const Tab = createBottomTabNavigator();
 
 const icons = {
   Home: 'home',
-  Glossary: 'book',
-  Tips: 'bulb',
-  Profile: 'person',
-  Admin: 'shield-checkmark',
+  Contents: 'book',
+  Professionals: 'people',
+  Community: 'chatbubbles',
+  Account: 'person-circle',
 };
 
-// Abas inferiores exibidas depois do login.
-// A aba Admin só é registrada para usuários com nível "admin".
+// Abas inferiores exibidas depois do login (as seções principais do site)
 export default function AppTabs() {
-  const { isAdmin } = useAuth();
-
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         ...headerOptions,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontFamily: fonts.medium },
+        tabBarLabelStyle: { fontFamily: fonts.medium, fontSize: 11 },
         tabBarLabelPosition: 'below-icon',
+        tabBarStyle: { backgroundColor: colors.card, borderTopColor: colors.border },
         tabBarIcon: ({ focused, color, size }) => (
           <Ionicons name={focused ? icons[route.name] : `${icons[route.name]}-outline`} size={size} color={color} />
         ),
@@ -43,10 +40,10 @@ export default function AppTabs() {
         component={HomeScreen}
         options={{ title: 'Início', headerTitle: () => <Logo size={30} direction="row" /> }}
       />
-      <Tab.Screen name="Glossary" component={GlossaryScreen} options={{ title: 'Glossário' }} />
-      <Tab.Screen name="Tips" component={TipsScreen} options={{ title: 'Dicas' }} />
-      {isAdmin && <Tab.Screen name="Admin" component={AdminPanelScreen} options={{ title: 'Admin' }} />}
-      <Tab.Screen name="Profile" component={ProfileScreen} options={{ title: 'Perfil' }} />
+      <Tab.Screen name="Contents" component={ContentsScreen} options={{ title: 'Conteúdos' }} />
+      <Tab.Screen name="Professionals" component={ProfessionalsScreen} options={{ title: 'Profissionais' }} />
+      <Tab.Screen name="Community" component={CommunityScreen} options={{ title: 'Comunidade' }} />
+      <Tab.Screen name="Account" component={AccountScreen} options={{ title: 'Minha conta', tabBarLabel: 'Conta' }} />
     </Tab.Navigator>
   );
 }

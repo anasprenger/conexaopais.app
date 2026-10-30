@@ -10,10 +10,9 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/contexts/AuthContext';
+import { CommunityProvider } from './src/contexts/CommunityContext';
 import { ConfirmProvider } from './src/contexts/ConfirmContext';
-import { ExpressionsProvider } from './src/contexts/ExpressionsContext';
-import { FavoritesProvider } from './src/contexts/FavoritesContext';
-import { SuggestionsProvider } from './src/contexts/SuggestionsContext';
+import { ContentProvider } from './src/contexts/ContentContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationTheme } from './src/navigation/theme';
 
@@ -38,18 +37,16 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <ExpressionsProvider>
-          <FavoritesProvider>
-            <SuggestionsProvider>
-              <ConfirmProvider>
-                <NavigationContainer theme={navigationTheme}>
-                  <RootNavigator />
-                  <StatusBar style="dark" />
-                </NavigationContainer>
-              </ConfirmProvider>
-            </SuggestionsProvider>
-          </FavoritesProvider>
-        </ExpressionsProvider>
+        <ContentProvider>
+          <CommunityProvider>
+            <ConfirmProvider>
+              <NavigationContainer theme={navigationTheme}>
+                <RootNavigator />
+                <StatusBar style="dark" />
+              </NavigationContainer>
+            </ConfirmProvider>
+          </CommunityProvider>
+        </ContentProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

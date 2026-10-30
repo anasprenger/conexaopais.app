@@ -42,15 +42,6 @@ export const fonts = {
   bold: 'DMSans_700Bold',
 };
 
-// Categorias antigas do glossário (removidas na reorganização do app)
-export const categoryStyles = {
-  giria: { color: colors.accentDark, soft: colors.accentSoft, icon: 'chatbubble-ellipses' },
-  meme: { color: colors.primary, soft: colors.primarySoft, icon: 'happy' },
-  abreviacao: { color: colors.mintText, soft: colors.mint, icon: 'text' },
-  tendencia: { color: colors.success, soft: colors.successSoft, icon: 'trending-up' },
-  comportamento: { color: colors.warning, soft: colors.warningSoft, icon: 'phone-portrait' },
-};
-
 export const spacing = {
   xs: 4,
   sm: 8,
@@ -74,6 +65,18 @@ export const fontSize = {
   subtitle: 19,
   title: 24,
   hero: 32,
+};
+
+// Estilos de texto reutilizados nas telas (equivalentes aos h1/h2/h3 e textos do site)
+export const type = {
+  hero: { fontFamily: fonts.display, fontSize: 32, lineHeight: 38, color: colors.primary, letterSpacing: -0.5 },
+  h1: { fontFamily: fonts.display, fontSize: 28, lineHeight: 34, color: colors.primary, letterSpacing: -0.4 },
+  h2: { fontFamily: fonts.display, fontSize: 22, lineHeight: 28, color: colors.primary },
+  h3: { fontFamily: fonts.display, fontSize: 19, lineHeight: 25, color: colors.primary },
+  body: { fontFamily: fonts.body, fontSize: 16, lineHeight: 24, color: colors.text },
+  muted: { fontFamily: fonts.body, fontSize: 15, lineHeight: 22, color: colors.textMuted },
+  small: { fontFamily: fonts.body, fontSize: 13, lineHeight: 19, color: colors.textMuted },
+  eyebrow: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1.4, textTransform: 'uppercase', color: colors.accentDark },
 };
 
 export const shadow = {

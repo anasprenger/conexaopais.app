@@ -2,15 +2,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Button from '../../components/Button';
+import Notice from '../../components/Notice';
 import Screen from '../../components/Screen';
 import TextField from '../../components/TextField';
 import { DEMO_ACCOUNTS, useAuth } from '../../contexts/AuthContext';
-import { colors, fontSize, radius, spacing } from '../../theme';
+import { colors, fonts, radius, spacing, type } from '../../theme';
 import { isValidEmail } from '../../utils/validation';
+
+const demoProfiles = [
+  { id: 'usuario', label: 'Família', icon: 'home-outline' },
+  { id: 'profissional', label: 'Profissional', icon: 'medkit-outline' },
+  { id: 'admin', label: 'Administração', icon: 'shield-checkmark-outline' },
+];
 
 export default function LoginScreen({ navigation, route }) {
   const { signIn } = useAuth();
-  const justRegistered = route.params?.registered;
+  const registered = route.params?.registered;
 
   const [email, setEmail] = useState(route.params?.email ?? '');
   const [password, setPassword] = useState('');
@@ -32,28 +39,30 @@ export default function LoginScreen({ navigation, route }) {
     }
   }
 
-  function fillDemo(account) {
-    setEmail(account.email);
-    setPassword(account.password);
+  function fillDemo(profile) {
+    setEmail(DEMO_ACCOUNTS[profile].email);
+    setPassword(DEMO_ACCOUNTS[profile].password);
     setErrors({});
   }
 
   return (
     <Screen>
-      <Text style={styles.title}>Que bom te ver!</Text>
-      <Text style={styles.subtitle}>Entre para acessar o glossário e as dicas de conversa.</Text>
+      <Text style={type.h1}>Entrar na sua conta</Text>
+      <Text style={[type.muted, styles.subtitle]}>
+        Acesse sua conta para salvar conteúdos, comentar e conversar com profissionais.
+      </Text>
 
-      {justRegistered && (
-        <View style={styles.success}>
-          <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-          <Text style={styles.successText}>Conta criada! Agora é só entrar.</Text>
-        </View>
+      {registered === 'usuario' && <Notice tone="success" title="Conta criada! Agora é só entrar." />}
+      {registered === 'profissional' && (
+        <Notice tone="success" title="Conta criada!">
+          Nossa equipe vai conferir seu registro profissional antes de liberar as publicações.
+        </Notice>
       )}
 
       <TextField
         label="E-mail"
         icon="mail-outline"
-        placeholder="seuemail@exemplo.com"
+        placeholder="voce@email.com"
         keyboardType="email-address"
         autoCapitalize="none"
         autoComplete="email"
@@ -71,40 +80,33 @@ export default function LoginScreen({ navigation, route }) {
         error={errors.password}
       />
 
-      <Button title="Entrar" icon="log-in-outline" onPress={handleLogin} />
+      <Button title="Entrar" onPress={handleLogin} />
 
       <Pressable style={styles.link} onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.linkText}>
-          Ainda não tem conta? <Text style={styles.linkStrong}>Criar conta</Text>
-        </Text>
+        <Text style={styles.linkText}>Ainda não tenho conta</Text>
       </Pressable>
 
       <View style={styles.demo}>
         <View style={styles.demoHeader}>
-          <Ionicons name="flask-outline" size={18} color={colors.warning} />
+          <Ionicons name="flask-outline" size={18} color={colors.accentDark} />
           <Text style={styles.demoTitle}>Modo demonstração</Text>
         </View>
-        <Text style={styles.demoText}>
-          Nesta versão o login é simulado. A autenticação com API, senha criptografada e JWT chega na
-          Entrega 3. Escolha um perfil para testar:
+        <Text style={type.small}>
+          Nesta versão o login é simulado. A autenticação com API, senha criptografada e JWT chega na Entrega 3.
+          Escolha um perfil para testar:
         </Text>
         <View style={styles.demoButtons}>
-          <Button
-            title="Responsável"
-            icon="person-outline"
-            variant="outline"
-            small
-            onPress={() => fillDemo(DEMO_ACCOUNTS.responsavel)}
-            style={styles.demoButton}
-          />
-          <Button
-            title="Administrador"
-            icon="shield-checkmark-outline"
-            variant="outline"
-            small
-            onPress={() => fillDemo(DEMO_ACCOUNTS.admin)}
-            style={styles.demoButton}
-          />
+          {demoProfiles.map((profile) => (
+            <Button
+              key={profile.id}
+              title={profile.label}
+              icon={profile.icon}
+              variant="outline"
+              small
+              onPress={() => fillDemo(profile.id)}
+              style={styles.demoButton}
+            />
+          ))}
         </View>
       </View>
     </Screen>
@@ -112,48 +114,24 @@ export default function LoginScreen({ navigation, route }) {
 }
 
 const styles = StyleSheet.create({
-  title: {
-    fontSize: fontSize.title,
-    fontWeight: '800',
-    color: colors.text,
-  },
   subtitle: {
     marginTop: spacing.xs,
     marginBottom: spacing.lg,
-    fontSize: fontSize.body,
-    color: colors.textMuted,
-  },
-  success: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.md,
-    marginBottom: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.successSoft,
-  },
-  successText: {
-    marginLeft: spacing.sm,
-    fontSize: fontSize.small,
-    fontWeight: '600',
-    color: colors.success,
   },
   link: {
     alignItems: 'center',
     paddingVertical: spacing.md,
   },
   linkText: {
-    fontSize: fontSize.small,
-    color: colors.textMuted,
-  },
-  linkStrong: {
-    fontWeight: '700',
+    fontFamily: fonts.medium,
+    fontSize: 15,
     color: colors.primary,
   },
   demo: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     padding: spacing.md,
-    borderRadius: radius.md,
-    backgroundColor: colors.warningSoft,
+    borderRadius: radius.lg,
+    backgroundColor: colors.accentSoft,
   },
   demoHeader: {
     flexDirection: 'row',
@@ -162,22 +140,17 @@ const styles = StyleSheet.create({
   },
   demoTitle: {
     marginLeft: 6,
-    fontSize: fontSize.small,
-    fontWeight: '800',
-    color: colors.warning,
-  },
-  demoText: {
-    fontSize: fontSize.small,
-    lineHeight: 20,
-    color: colors.text,
+    fontFamily: fonts.bold,
+    fontSize: 14,
+    color: colors.accentDark,
   },
   demoButtons: {
     flexDirection: 'row',
-    marginTop: spacing.md,
+    flexWrap: 'wrap',
     gap: spacing.sm,
+    marginTop: spacing.md,
   },
   demoButton: {
-    flex: 1,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.card,
   },
 });
