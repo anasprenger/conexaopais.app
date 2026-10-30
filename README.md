@@ -65,6 +65,18 @@ O **app Conexão Pais** reúne, no celular, as seções do portal:
 A **entidade principal** é a **Publicação (artigo)**. É ela que terá CRUD completo integrado à API e ao MySQL nas
 próximas entregas, assim como a tabela `publicacoes` do site.
 
+**Arquitetura da solução** (construída ao longo das 4 entregas):
+
+```mermaid
+flowchart LR
+    APP["App React Native (Expo)<br/>telas por nível de usuário"] -->|"fetch() + Bearer Token (JWT)"| API["API REST<br/>Node.js + Express"]
+    API -->|"middleware: valida o JWT<br/>e o nível do usuário"| API
+    API --> DB[("MySQL<br/>usuários, publicações,<br/>interações, comentários")]
+```
+
+Nesta Entrega 1 o app já tem as telas, a navegação e as regras de acesso por nível, com dados de exemplo em
+memória. A API e o banco entram na Entrega 2, e o login com senha em hash e JWT, na Entrega 3.
+
 ### 1.5 Nome da aplicação
 
 **Conexão Pais**, o mesmo nome do portal, com o slogan *"Ajudando a unir famílias e gerações."*

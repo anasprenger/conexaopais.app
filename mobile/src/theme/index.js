@@ -11,7 +11,6 @@ export const colors = {
   textMuted: '#586767',
 
   primary: '#435733',
-  primaryDark: '#33442A',
   primarySoft: '#E4EBDC',
   textOnPrimary: '#FAF7EC',
 
@@ -24,7 +23,6 @@ export const colors = {
   mintSoft: '#E5F7EC',
   mintText: '#223D27',
 
-  logo: '#627144',
 
   success: '#2F7D4F',
   successSoft: '#DFF1E5',
@@ -62,7 +60,6 @@ export const fontSize = {
   small: 14,
   body: 16,
   subtitle: 19,
-  title: 24,
   hero: 32,
 };
 
