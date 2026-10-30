@@ -1,5 +1,5 @@
 import { DefaultTheme } from '@react-navigation/native';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 
 // Tema do React Navigation com as cores do app
 export const navigationTheme = {
@@ -20,5 +20,5 @@ export const headerOptions = {
   headerStyle: { backgroundColor: colors.background },
   headerShadowVisible: false,
   headerTintColor: colors.primary,
-  headerTitleStyle: { fontWeight: '800', color: colors.text },
+  headerTitleStyle: { fontFamily: fonts.display, fontSize: 20, color: colors.primary },
 };

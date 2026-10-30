@@ -1,11 +1,14 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { colors, fontSize, fonts, spacing } from '../theme';
 
+// Variantes equivalentes às do site: primary (verde), accent (ocre, "cta"),
+// outline ("quiet"), soft (menta), ghost e danger
 const variants = {
   primary: { background: colors.primary, text: colors.textOnPrimary, border: colors.primary },
-  accent: { background: colors.accent, text: colors.textOnPrimary, border: colors.accent },
-  outline: { background: 'transparent', text: colors.primary, border: colors.primary },
+  accent: { background: colors.accent, text: colors.textOnAccent, border: colors.accent },
+  outline: { background: 'transparent', text: colors.primary, border: 'rgba(67, 87, 51, 0.3)' },
+  soft: { background: colors.mint, text: colors.mintText, border: colors.mint },
   ghost: { background: 'transparent', text: colors.primary, border: 'transparent' },
   danger: { background: colors.dangerSoft, text: colors.danger, border: colors.dangerSoft },
 };
@@ -27,7 +30,7 @@ export default function Button({ title, onPress, variant = 'primary', icon, smal
         style,
       ]}
     >
-      {icon && <Ionicons name={icon} size={small ? 16 : 20} color={theme.text} style={styles.icon} />}
+      {icon && <Ionicons name={icon} size={small ? 16 : 19} color={theme.text} style={styles.icon} />}
       <Text style={[styles.text, small && styles.smallText, { color: theme.text }]}>{title}</Text>
     </Pressable>
   );
@@ -38,18 +41,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 52,
+    minHeight: 50,
     paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    borderRadius: 999,
     borderWidth: 1.5,
   },
   small: {
-    minHeight: 36,
+    minHeight: 38,
     paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
   },
   pressed: {
-    opacity: 0.8,
+    opacity: 0.85,
   },
   disabled: {
     opacity: 0.5,
@@ -58,8 +60,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   text: {
+    fontFamily: fonts.medium,
     fontSize: fontSize.body,
-    fontWeight: '700',
   },
   smallText: {
     fontSize: fontSize.small,

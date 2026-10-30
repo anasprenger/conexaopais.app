@@ -1,24 +1,21 @@
 import { Image, StyleSheet, Text, View } from 'react-native';
-import { colors, fontSize } from '../theme';
+import { colors, fontSize, fonts } from '../theme';
 
-// Marca do app: balão do adulto (azul) + balão do jovem (coral)
-export default function Logo({ size = 96, showName = true, showSlogan = false, direction = 'column' }) {
+// Marca do Conexão Pais: a árvore do site + nome em Fraunces.
+// light = versão clara, para usar sobre o verde.
+export default function Logo({ size = 96, showName = true, showSlogan = false, direction = 'column', light = false }) {
   const isRow = direction === 'row';
+  const source = light ? require('../../assets/logo-light.png') : require('../../assets/logo.png');
 
   return (
     <View style={[styles.container, isRow && styles.row]}>
-      <Image
-        source={require('../../assets/logo.png')}
-        style={{ width: size, height: size }}
-        resizeMode="contain"
-        accessibilityLabel="Logo do Conexão Pais"
-      />
+      <Image source={source} style={{ width: size, height: size }} resizeMode="contain" accessibilityLabel="Logo do Conexão Pais" />
       {showName && (
         <View style={isRow ? styles.textRow : styles.textColumn}>
-          <Text style={[styles.name, isRow && styles.nameRow]}>
-            Conexão <Text style={styles.nameAccent}>Pais</Text>
-          </Text>
-          {showSlogan && <Text style={styles.slogan}>ajudando a unir famílias e gerações</Text>}
+          <Text style={[styles.name, isRow && styles.nameRow, light && styles.light]}>Conexão Pais</Text>
+          {showSlogan && (
+            <Text style={[styles.slogan, light && styles.sloganLight]}>Ajudando a unir famílias e gerações.</Text>
+          )}
         </View>
       )}
     </View>
@@ -34,26 +31,31 @@ const styles = StyleSheet.create({
   },
   textColumn: {
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: 10,
   },
   textRow: {
-    marginLeft: 10,
+    marginLeft: 8,
   },
   name: {
+    fontFamily: fonts.display,
     fontSize: fontSize.hero,
-    fontWeight: '800',
     color: colors.primary,
     letterSpacing: -0.5,
   },
   nameRow: {
     fontSize: fontSize.subtitle,
   },
-  nameAccent: {
-    color: colors.accent,
+  light: {
+    color: colors.textOnPrimary,
   },
   slogan: {
     marginTop: 4,
+    fontFamily: fonts.body,
     fontSize: fontSize.small,
     color: colors.textMuted,
+  },
+  sloganLight: {
+    color: colors.textOnPrimary,
+    opacity: 0.8,
   },
 });

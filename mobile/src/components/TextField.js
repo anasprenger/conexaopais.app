@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { colors, fontSize, fonts, radius, spacing } from '../theme';
 
 // Campo de texto com rótulo, ícone, mensagem de erro e opção de mostrar/ocultar senha
 export default function TextField({ label, icon, error, secure = false, multiline = false, style, ...inputProps }) {
@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   label: {
+    fontFamily: fonts.medium,
     fontSize: fontSize.small,
-    fontWeight: '600',
     color: colors.text,
     marginBottom: 6,
   },
@@ -79,6 +79,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    fontFamily: fonts.body,
     fontSize: fontSize.body,
     color: colors.text,
     paddingVertical: spacing.sm,
@@ -91,6 +92,7 @@ const styles = StyleSheet.create({
   },
   error: {
     marginTop: 4,
+    fontFamily: fonts.body,
     fontSize: fontSize.caption,
     color: colors.danger,
   },

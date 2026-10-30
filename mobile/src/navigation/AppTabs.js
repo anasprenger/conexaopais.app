@@ -7,7 +7,7 @@ import GlossaryScreen from '../screens/app/GlossaryScreen';
 import HomeScreen from '../screens/app/HomeScreen';
 import ProfileScreen from '../screens/app/ProfileScreen';
 import TipsScreen from '../screens/app/TipsScreen';
-import { colors } from '../theme';
+import { colors, fonts } from '../theme';
 import { headerOptions } from './theme';
 
 const Tab = createBottomTabNavigator();
@@ -31,7 +31,7 @@ export default function AppTabs() {
         ...headerOptions,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarLabelStyle: { fontWeight: '600' },
+        tabBarLabelStyle: { fontFamily: fonts.medium },
         tabBarLabelPosition: 'below-icon',
         tabBarIcon: ({ focused, color, size }) => (
           <Ionicons name={focused ? icons[route.name] : `${icons[route.name]}-outline`} size={size} color={color} />

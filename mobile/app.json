@@ -13,7 +13,7 @@
     "android": {
       "package": "app.conexaopais",
       "adaptiveIcon": {
-        "backgroundColor": "#2F4B9A",
+        "backgroundColor": "#FAF7EC",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -28,11 +28,12 @@
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
-          "imageWidth": 180,
+          "imageWidth": 160,
           "resizeMode": "contain",
-          "backgroundColor": "#FAF7F2"
+          "backgroundColor": "#F5F8FA"
         }
-      ]
+      ],
+      "expo-font"
     ]
   }
 }

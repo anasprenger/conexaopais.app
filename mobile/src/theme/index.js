@@ -1,37 +1,54 @@
-// Identidade visual do Conexão Pais
-// Azul = o adulto (confiança, acolhimento) | Coral = o jovem (energia, afeto)
+// Identidade visual do Conexão Pais (a mesma do site conexaopais.com.br):
+// verde musgo (primária), ocre (destaque), menta (apoio), Fraunces nos títulos e DM Sans nos textos.
 
 export const colors = {
-  primary: '#2F4B9A',
-  primaryDark: '#22386F',
-  primarySoft: '#E7ECF8',
-  accent: '#FF7A5C',
-  accentDark: '#E0573A',
-  accentSoft: '#FFE8E1',
+  background: '#F5F8FA',
+  surface: '#EEF2F4',
+  card: '#FCFEFF',
+  border: '#D8DEE2',
 
-  background: '#FAF7F2',
-  surface: '#FFFFFF',
-  border: '#E6E1D8',
+  text: '#1B281E',
+  textMuted: '#586767',
 
-  text: '#1E2433',
-  textMuted: '#5E6678',
-  textOnPrimary: '#FFFFFF',
+  primary: '#435733',
+  primaryDark: '#33442A',
+  primarySoft: '#E4EBDC',
+  textOnPrimary: '#FAF7EC',
 
-  success: '#2E9E6A',
-  successSoft: '#DFF3EA',
-  warning: '#C77C12',
-  warningSoft: '#FDF0DC',
-  danger: '#D64545',
-  dangerSoft: '#FBE3E3',
+  accent: '#E1791B',
+  accentDark: '#B85E0F',
+  accentSoft: '#FBEBDD',
+  textOnAccent: '#FEFCF4',
+
+  mint: '#CFF2DE',
+  mintSoft: '#E5F7EC',
+  mintText: '#223D27',
+
+  logo: '#627144',
+
+  success: '#2F7D4F',
+  successSoft: '#DFF1E5',
+  warning: '#A65A00',
+  warningSoft: '#FCEFD9',
+  danger: '#C8102E',
+  dangerSoft: '#FCE4E6',
 };
 
-// Cada categoria do glossário tem uma cor e um ícone (Ionicons)
+export const fonts = {
+  display: 'Fraunces_600SemiBold',
+  displayRegular: 'Fraunces_400Regular',
+  body: 'DMSans_400Regular',
+  medium: 'DMSans_500Medium',
+  bold: 'DMSans_700Bold',
+};
+
+// Categorias antigas do glossário (removidas na reorganização do app)
 export const categoryStyles = {
-  giria: { color: '#E0573A', soft: '#FFE8E1', icon: 'chatbubble-ellipses' },
-  meme: { color: '#7C5CE0', soft: '#EEE9FC', icon: 'happy' },
-  abreviacao: { color: '#2F4B9A', soft: '#E7ECF8', icon: 'text' },
-  tendencia: { color: '#16917F', soft: '#E0F4F1', icon: 'trending-up' },
-  comportamento: { color: '#C77C12', soft: '#FDF0DC', icon: 'phone-portrait' },
+  giria: { color: colors.accentDark, soft: colors.accentSoft, icon: 'chatbubble-ellipses' },
+  meme: { color: colors.primary, soft: colors.primarySoft, icon: 'happy' },
+  abreviacao: { color: colors.mintText, soft: colors.mint, icon: 'text' },
+  tendencia: { color: colors.success, soft: colors.successSoft, icon: 'trending-up' },
+  comportamento: { color: colors.warning, soft: colors.warningSoft, icon: 'phone-portrait' },
 };
 
 export const spacing = {
@@ -43,9 +60,10 @@ export const spacing = {
 };
 
 export const radius = {
-  sm: 8,
-  md: 14,
+  sm: 10,
+  md: 16,
   lg: 20,
+  xl: 28,
   pill: 999,
 };
 
@@ -53,15 +71,27 @@ export const fontSize = {
   caption: 12,
   small: 14,
   body: 16,
-  subtitle: 18,
-  title: 22,
-  hero: 30,
+  subtitle: 19,
+  title: 24,
+  hero: 32,
 };
 
 export const shadow = {
-  shadowColor: '#1E2433',
-  shadowOpacity: 0.08,
-  shadowRadius: 10,
+  shadowColor: '#1B281E',
+  shadowOpacity: 0.06,
+  shadowRadius: 12,
   shadowOffset: { width: 0, height: 4 },
-  elevation: 3,
+  elevation: 2,
 };
+
+// Forma orgânica ("blob") usada no site em avatares e detalhes decorativos
+export function blob(size) {
+  return {
+    width: size,
+    height: size,
+    borderTopLeftRadius: size * 0.62,
+    borderTopRightRadius: size * 0.38,
+    borderBottomRightRadius: size * 0.46,
+    borderBottomLeftRadius: size * 0.54,
+  };
+}

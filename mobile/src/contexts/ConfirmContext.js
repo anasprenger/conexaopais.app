@@ -1,7 +1,7 @@
 import { createContext, useContext, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Button from '../components/Button';
-import { colors, fontSize, radius, spacing } from '../theme';
+import { colors, fontSize, fonts, radius, spacing } from '../theme';
 
 const ConfirmContext = createContext(null);
 
@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.lg,
-    backgroundColor: 'rgba(30, 36, 51, 0.45)',
+    backgroundColor: 'rgba(27, 40, 30, 0.5)',
   },
   dialog: {
     width: '100%',
@@ -59,12 +59,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   title: {
+    fontFamily: fonts.display,
     fontSize: fontSize.subtitle,
-    fontWeight: '800',
     color: colors.text,
   },
   message: {
     marginTop: spacing.sm,
+    fontFamily: fonts.body,
     fontSize: fontSize.body,
     lineHeight: 22,
     color: colors.textMuted,

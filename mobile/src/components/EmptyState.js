@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fontSize, spacing } from '../theme';
+import { colors, fontSize, fonts, spacing } from '../theme';
 
 // Mensagem exibida quando uma lista não tem itens
 export default function EmptyState({ icon = 'search', title, message, children }) {
@@ -28,18 +28,19 @@ const styles = StyleSheet.create({
     borderRadius: 36,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.mint,
     marginBottom: spacing.md,
   },
   title: {
+    fontFamily: fonts.display,
     fontSize: fontSize.subtitle,
-    fontWeight: '800',
     color: colors.text,
     textAlign: 'center',
   },
   message: {
     marginTop: spacing.sm,
     marginBottom: spacing.md,
+    fontFamily: fonts.body,
     fontSize: fontSize.small,
     lineHeight: 20,
     color: colors.textMuted,

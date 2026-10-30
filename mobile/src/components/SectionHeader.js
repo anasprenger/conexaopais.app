@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fontSize, spacing } from '../theme';
+import { colors, fontSize, fonts, spacing } from '../theme';
 
-// Título de seção com link de ação opcional (ex.: "Ver todas")
+// Título de seção (Fraunces, verde) com link de ação opcional (ex.: "Ver todos")
 export default function SectionHeader({ title, actionLabel, onAction }) {
   return (
     <View style={styles.container}>
@@ -18,19 +18,21 @@ export default function SectionHeader({ title, actionLabel, onAction }) {
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
     marginBottom: spacing.md,
   },
   title: {
-    fontSize: fontSize.subtitle,
-    fontWeight: '800',
-    color: colors.text,
+    flex: 1,
+    fontFamily: fonts.display,
+    fontSize: 22,
+    color: colors.primary,
   },
   action: {
+    marginLeft: spacing.md,
+    fontFamily: fonts.medium,
     fontSize: fontSize.small,
-    fontWeight: '700',
     color: colors.primary,
   },
 });
