@@ -18,12 +18,14 @@ export default function AboutScreen() {
         organizado e confiável.
       </Text>
 
-      <Image
-        source={require('../../../assets/formas-conexao.jpg')}
-        style={styles.image}
-        resizeMode="cover"
-        accessibilityLabel="Formas orgânicas representando conexão entre pessoas"
-      />
+      <View style={styles.imageFrame}>
+        <Image
+          source={require('../../../assets/formas-conexao.jpg')}
+          style={styles.image}
+          resizeMode="cover"
+          accessibilityLabel="Formas orgânicas representando conexão entre pessoas"
+        />
+      </View>
 
       <View style={styles.values}>
         {valores.map((valor) => (
@@ -82,11 +84,16 @@ const styles = StyleSheet.create({
   text: {
     marginTop: spacing.sm,
   },
-  image: {
+  imageFrame: {
+    overflow: 'hidden',
     width: '100%',
     aspectRatio: 900 / 514,
     marginTop: spacing.lg,
     borderRadius: radius.xl,
+  },
+  image: {
+    width: '100%',
+    height: '100%',
   },
   values: {
     flexDirection: 'row',

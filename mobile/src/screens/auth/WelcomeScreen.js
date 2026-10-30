@@ -23,7 +23,7 @@ export default function WelcomeScreen({ navigation }) {
 
       <View>
         <Text style={type.eyebrow}>Conexão Pais</Text>
-        <Text style={[type.hero, styles.title]}>Ajudando a unir famílias e gerações.</Text>
+        <Text style={[type.h1, styles.title]}>Ajudando a unir famílias e gerações.</Text>
         <Text style={[type.muted, styles.description]}>
           Informação, acolhimento e conexão para quem cuida, educa e acompanha — em um só lugar.
         </Text>
@@ -41,9 +41,9 @@ const styles = StyleSheet.create({
   content: {
     overflow: 'hidden',
     justifyContent: 'space-between',
-    gap: spacing.lg,
+    gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
+    paddingTop: spacing.md,
     backgroundColor: colors.surface,
   },
   blobMint: {
@@ -66,18 +66,20 @@ const styles = StyleSheet.create({
   },
   photoFrame: {
     overflow: 'hidden',
+    width: '100%',
+    aspectRatio: 1.6,
     borderRadius: 40,
     backgroundColor: colors.mint,
   },
   photo: {
     width: '100%',
-    aspectRatio: 720 / 553,
+    height: '100%',
   },
   title: {
     marginTop: spacing.sm,
   },
   description: {
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
   actions: {
     gap: spacing.sm,
