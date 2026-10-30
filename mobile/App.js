@@ -1,22 +1,19 @@
+import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
-import Logo from './src/components/Logo';
-import { colors } from './src/theme';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from './src/contexts/AuthContext';
+import RootNavigator from './src/navigation/RootNavigator';
+import { navigationTheme } from './src/navigation/theme';
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <Logo size={120} showSlogan />
-      <StatusBar style="dark" />
-    </View>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <NavigationContainer theme={navigationTheme}>
+          <RootNavigator />
+          <StatusBar style="dark" />
+        </NavigationContainer>
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
