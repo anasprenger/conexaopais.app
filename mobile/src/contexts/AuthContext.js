@@ -20,7 +20,7 @@ export const DEMO_ACCOUNTS = {
 };
 
 const initialUsers = [
-  { id: 1, name: 'Equipe Conexão Pais', email: DEMO_ACCOUNTS.admin.email, relation: 'Curadoria', role: ROLES.ADMIN },
+  { id: 1, name: 'Admin Conexão Pais', email: DEMO_ACCOUNTS.admin.email, relation: 'Curadoria', role: ROLES.ADMIN },
   { id: 2, name: 'Marina Souza', email: DEMO_ACCOUNTS.responsavel.email, relation: 'Mãe', role: ROLES.RESPONSAVEL },
 ];
 

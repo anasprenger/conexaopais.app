@@ -6,15 +6,16 @@ import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
 import StatusBadge from '../../components/StatusBadge';
 import { ROLES, roleLabels, useAuth } from '../../contexts/AuthContext';
+import { useExpressions } from '../../contexts/ExpressionsContext';
 import { useFavorites } from '../../contexts/FavoritesContext';
 import { useSuggestions } from '../../contexts/SuggestionsContext';
-import { getExpression } from '../../data/expressions';
 import { colors, fontSize, radius, shadow, spacing } from '../../theme';
 import { getInitials } from '../../utils/text';
 
 export default function ProfileScreen({ navigation }) {
   const { user, signOut } = useAuth();
   const { favoriteIds } = useFavorites();
+  const { getExpression } = useExpressions();
   const { suggestions } = useSuggestions();
 
   const favorites = favoriteIds.map(getExpression).filter(Boolean);

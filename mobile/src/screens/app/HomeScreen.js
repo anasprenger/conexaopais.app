@@ -4,6 +4,7 @@ import Button from '../../components/Button';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
 import { useAuth } from '../../contexts/AuthContext';
+import { useExpressions } from '../../contexts/ExpressionsContext';
 import { categories } from '../../data/categories';
 import { getFeaturedExpression } from '../../data/expressions';
 import { getTipOfTheDay } from '../../data/tips';
@@ -11,7 +12,8 @@ import { categoryStyles, colors, fontSize, radius, shadow, spacing } from '../..
 
 export default function HomeScreen({ navigation }) {
   const { user } = useAuth();
-  const featured = getFeaturedExpression();
+  const { expressions } = useExpressions();
+  const featured = getFeaturedExpression(expressions);
   const tip = getTipOfTheDay();
   const firstName = user.name.split(' ')[0];
 
@@ -29,21 +31,23 @@ export default function HomeScreen({ navigation }) {
         <Text style={styles.searchText}>Buscar gíria, meme ou sigla…</Text>
       </Pressable>
 
-      <View style={styles.featured}>
-        <Text style={styles.featuredLabel}>EXPRESSÃO DO DIA</Text>
-        <Text style={styles.featuredTerm}>{featured.term}</Text>
-        <Text style={styles.featuredMeaning} numberOfLines={3}>
-          {featured.meaning}
-        </Text>
-        <Button
-          title="Ver explicação"
-          variant="accent"
-          small
-          icon="arrow-forward"
-          onPress={() => navigation.navigate('ExpressionDetail', { id: featured.id })}
-          style={styles.featuredButton}
-        />
-      </View>
+      {featured && (
+        <View style={styles.featured}>
+          <Text style={styles.featuredLabel}>EXPRESSÃO DO DIA</Text>
+          <Text style={styles.featuredTerm}>{featured.term}</Text>
+          <Text style={styles.featuredMeaning} numberOfLines={3}>
+            {featured.meaning}
+          </Text>
+          <Button
+            title="Ver explicação"
+            variant="accent"
+            small
+            icon="arrow-forward"
+            onPress={() => navigation.navigate('ExpressionDetail', { id: featured.id })}
+            style={styles.featuredButton}
+          />
+        </View>
+      )}
 
       <SectionHeader
         title="Explore por categoria"

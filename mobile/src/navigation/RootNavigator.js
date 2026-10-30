@@ -1,5 +1,6 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
+import ExpressionFormScreen from '../screens/admin/ExpressionFormScreen';
 import ExpressionDetailScreen from '../screens/app/ExpressionDetailScreen';
 import SuggestExpressionScreen from '../screens/app/SuggestExpressionScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -10,10 +11,10 @@ import { headerOptions } from './theme';
 
 const Stack = createNativeStackNavigator();
 
-// Stack raiz: as telas disponíveis dependem de existir (ou não) um usuário logado.
-// Ao fazer login/logout o React Navigation troca automaticamente o conjunto de telas.
+// Stack raiz: as telas disponíveis dependem de existir (ou não) um usuário logado
+// e do nível dele. Ao fazer login/logout o React Navigation troca automaticamente o conjunto de telas.
 export default function RootNavigator() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   return (
     <Stack.Navigator screenOptions={{ ...headerOptions, headerBackButtonDisplayMode: 'minimal' }}>
@@ -26,6 +27,9 @@ export default function RootNavigator() {
             component={SuggestExpressionScreen}
             options={{ title: 'Sugerir expressão' }}
           />
+          {isAdmin && (
+            <Stack.Screen name="ExpressionForm" component={ExpressionFormScreen} options={{ title: 'Expressão' }} />
+          )}
         </Stack.Group>
       ) : (
         <Stack.Group>

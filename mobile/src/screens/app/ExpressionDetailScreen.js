@@ -1,14 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLayoutEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Button from '../../components/Button';
 import CategoryBadge from '../../components/CategoryBadge';
 import EmptyState from '../../components/EmptyState';
 import Screen from '../../components/Screen';
+import { useAuth } from '../../contexts/AuthContext';
+import { useExpressions } from '../../contexts/ExpressionsContext';
 import { useFavorites } from '../../contexts/FavoritesContext';
-import { getExpression } from '../../data/expressions';
 import { colors, fontSize, radius, shadow, spacing } from '../../theme';
 
 export default function ExpressionDetailScreen({ navigation, route }) {
+  const { isAdmin } = useAuth();
+  const { getExpression } = useExpressions();
   const expression = getExpression(route.params?.id);
   const { isFavorite, toggleFavorite } = useFavorites();
 
@@ -67,6 +71,16 @@ export default function ExpressionDetailScreen({ navigation, route }) {
         </View>
         <Text style={styles.cardText}>{expression.tip}</Text>
       </View>
+
+      {isAdmin && (
+        <Button
+          title="Editar expressão"
+          icon="create-outline"
+          variant="outline"
+          onPress={() => navigation.navigate('ExpressionForm', { id: expression.id })}
+          style={styles.editButton}
+        />
+      )}
     </Screen>
   );
 }
@@ -145,5 +159,8 @@ const styles = StyleSheet.create({
   },
   tipTitle: {
     color: colors.accentDark,
+  },
+  editButton: {
+    marginTop: spacing.lg,
   },
 });

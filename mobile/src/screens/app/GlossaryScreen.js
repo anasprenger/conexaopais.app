@@ -5,12 +5,13 @@ import Chip from '../../components/Chip';
 import EmptyState from '../../components/EmptyState';
 import ExpressionCard from '../../components/ExpressionCard';
 import TextField from '../../components/TextField';
+import { useExpressions } from '../../contexts/ExpressionsContext';
 import { categories } from '../../data/categories';
-import { expressions } from '../../data/expressions';
 import { categoryStyles, colors, fontSize, spacing } from '../../theme';
 import { normalize } from '../../utils/text';
 
 export default function GlossaryScreen({ navigation, route }) {
+  const { expressions } = useExpressions();
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState(route.params?.category ?? null);
 

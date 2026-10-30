@@ -1,7 +1,7 @@
 // Dados de exemplo da entidade principal (Expressão).
 // Na Entrega 2 esta lista será substituída por dados vindos da API (fetch -> Express -> MySQL).
 
-export const expressions = [
+export const initialExpressions = [
   {
     id: 1,
     term: 'Cringe',
@@ -139,13 +139,10 @@ export const expressions = [
   },
 ];
 
-export function getExpression(id) {
-  return expressions.find((expression) => expression.id === id);
-}
-
 // Expressão em destaque muda a cada dia
-export function getFeaturedExpression(date = new Date()) {
+export function getFeaturedExpression(list, date = new Date()) {
+  if (list.length === 0) return null;
   const startOfYear = new Date(date.getFullYear(), 0, 0);
   const dayOfYear = Math.floor((date - startOfYear) / 86400000);
-  return expressions[dayOfYear % expressions.length];
+  return list[dayOfYear % list.length];
 }

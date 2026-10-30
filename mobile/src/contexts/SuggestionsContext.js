@@ -20,8 +20,13 @@ export function SuggestionsProvider({ children }) {
     setSuggestions((current) => [suggestion, ...current]);
   }
 
+  // Moderação feita pelo administrador: 'aprovada' ou 'recusada'
+  function updateSuggestionStatus(id, status) {
+    setSuggestions((current) => current.map((item) => (item.id === id ? { ...item, status } : item)));
+  }
+
   return (
-    <SuggestionsContext.Provider value={{ suggestions, addSuggestion }}>
+    <SuggestionsContext.Provider value={{ suggestions, addSuggestion, updateSuggestionStatus }}>
       {children}
     </SuggestionsContext.Provider>
   );
