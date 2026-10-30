@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { colors, fontSize, radius, spacing } from '../theme';
 
 // Campo de texto com rótulo, ícone, mensagem de erro e opção de mostrar/ocultar senha
@@ -82,6 +82,8 @@ const styles = StyleSheet.create({
     fontSize: fontSize.body,
     color: colors.text,
     paddingVertical: spacing.sm,
+    // remove o contorno padrão do navegador (a borda do campo já indica o foco)
+    ...Platform.select({ web: { outlineStyle: 'none' } }),
   },
   inputMultiline: {
     minHeight: 96,

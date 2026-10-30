@@ -1,5 +1,7 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
+import ExpressionDetailScreen from '../screens/app/ExpressionDetailScreen';
+import SuggestExpressionScreen from '../screens/app/SuggestExpressionScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import WelcomeScreen from '../screens/auth/WelcomeScreen';
@@ -16,7 +18,15 @@ export default function RootNavigator() {
   return (
     <Stack.Navigator screenOptions={{ ...headerOptions, headerBackButtonDisplayMode: 'minimal' }}>
       {user ? (
-        <Stack.Screen name="Tabs" component={AppTabs} options={{ headerShown: false }} />
+        <Stack.Group>
+          <Stack.Screen name="Tabs" component={AppTabs} options={{ headerShown: false, title: 'Voltar' }} />
+          <Stack.Screen name="ExpressionDetail" component={ExpressionDetailScreen} options={{ title: 'Expressão' }} />
+          <Stack.Screen
+            name="SuggestExpression"
+            component={SuggestExpressionScreen}
+            options={{ title: 'Sugerir expressão' }}
+          />
+        </Stack.Group>
       ) : (
         <Stack.Group>
           <Stack.Screen name="Welcome" component={WelcomeScreen} options={{ headerShown: false }} />
