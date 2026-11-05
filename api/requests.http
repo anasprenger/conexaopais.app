@@ -1,0 +1,130 @@
+# Exemplos de requisições para testar a API.
+# No VS Code, instale a extensão "REST Client" e clique em "Send Request" acima de cada bloco.
+# Antes: npm run db:setup e npm run dev
+
+@api = http://localhost:3333/api
+
+### Situação da API e do banco
+GET {{api}}/status
+
+### Login (contas do seed: senha 123456)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "profissional@conexaopais.test", "senha": "123456" }
+
+### Login com senha errada (401)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "profissional@conexaopais.test", "senha": "errada" }
+
+### Criar conta profissional (fica "pendente")
+POST {{api}}/usuarios
+Content-Type: application/json
+
+{
+  "nome": "Júlia Castro",
+  "email": "julia@exemplo.com",
+  "senha": "123456",
+  "tipo": "profissional",
+  "profissao": "Pedagoga",
+  "registro": "MEC 12345"
+}
+
+### Profissionais aguardando verificação
+GET {{api}}/usuarios?nivel=profissional&verificacao=pendente
+
+### Aprovar um cadastro profissional (troque o id)
+PATCH {{api}}/usuarios/4/verificacao
+Content-Type: application/json
+
+{ "verificacao": "aprovado" }
+
+### Listar artigos (com busca e categoria opcionais)
+GET {{api}}/artigos?busca=rotina&categoria=Educação
+
+### Artigo completo
+GET {{api}}/artigos/1
+
+### Publicar artigo (autorId 2 = Dra. Helena Prado, profissional aprovada)
+POST {{api}}/artigos
+Content-Type: application/json
+
+{
+  "autorId": 2,
+  "titulo": "A volta às aulas sem drama",
+  "categoria": "Educação",
+  "resumo": "Pequenos combinados que ajudam na primeira semana de aula.",
+  "conteudo": "Comece a rotina de sono uma semana antes.\n\nVisite a escola junto com a criança e mostre os espaços que ela vai usar.",
+  "tags": ["Escola", "Rotina"]
+}
+
+### Tentar publicar com conta de família (403)
+POST {{api}}/artigos
+Content-Type: application/json
+
+{
+  "autorId": 3,
+  "titulo": "Um artigo qualquer",
+  "categoria": "Educação",
+  "resumo": "Este resumo tem mais de vinte caracteres.",
+  "conteudo": "Este texto também precisa ter pelo menos cinquenta caracteres para passar."
+}
+
+### Editar artigo (troque o id)
+PUT {{api}}/artigos/5
+Content-Type: application/json
+
+{
+  "titulo": "A volta às aulas sem drama (revisado)",
+  "categoria": "Educação",
+  "resumo": "Pequenos combinados que ajudam na primeira semana de aula.",
+  "conteudo": "Comece a rotina de sono uma semana antes.\n\nVisite a escola junto com a criança.",
+  "tags": "Escola, Rotina, Adaptação"
+}
+
+### Excluir artigo (troque o id)
+DELETE {{api}}/artigos/5
+
+### Comentários de um artigo
+GET {{api}}/artigos/1/comentarios
+
+### Comentar
+POST {{api}}/artigos/1/comentarios
+Content-Type: application/json
+
+{ "usuarioId": 3, "texto": "Obrigada pelas dicas!" }
+
+### Curtir / descurtir (liga e desliga)
+POST {{api}}/artigos/1/interacoes
+Content-Type: application/json
+
+{ "usuarioId": 3, "tipo": "curtida" }
+
+### Curtidas e salvos de um usuário
+GET {{api}}/usuarios/3/interacoes
+
+### Diretório de profissionais e perfil
+GET {{api}}/profissionais?busca=pediatria
+
+###
+GET {{api}}/profissionais/helena-prado
+
+### Colunas e revista
+GET {{api}}/colunas/entre-geracoes
+
+###
+GET {{api}}/revistas/edicao-03
+
+### Mensagem de contato
+POST {{api}}/mensagens
+Content-Type: application/json
+
+{
+  "tipo": "contato",
+  "nome": "Marina Souza",
+  "email": "familia@conexaopais.test",
+  "assunto": "Sugestão de pauta",
+  "mensagem": "Gostaria de ler mais sobre adolescência."
+}

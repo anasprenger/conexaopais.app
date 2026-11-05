@@ -11,8 +11,8 @@ Projeto avaliativo da disciplina de Aplicações Mobile (React Native + API REST
 | Entrega | Conteúdo | Situação |
 | --- | --- | --- |
 | **1** | Problema, proposta, projeto Expo, telas, navegação e repositório | ✅ Entregue |
-| 2 | Modelagem, MySQL, API Express, integração com `fetch()` | ⏳ Próxima etapa |
-| 3 | Cadastro, login, hash de senha, JWT, níveis de usuário e CRUD completo | ⏳ |
+| **2** | Modelagem, MySQL, API Express, integração com `fetch()` | ✅ Entregue |
+| 3 | JWT, Bearer Token, middleware, níveis no back-end, rotas protegidas e logout | ⏳ Próxima etapa |
 | 4 | Testes, correções, README final, APK e apresentação | ⏳ |
 
 ---
@@ -74,8 +74,8 @@ flowchart LR
     API --> DB[("MySQL<br/>usuários, publicações,<br/>interações, comentários")]
 ```
 
-Nesta Entrega 1 o app já tem as telas, a navegação e as regras de acesso por nível, com dados de exemplo em
-memória. A API e o banco entram na Entrega 2, e o login com senha em hash e JWT, na Entrega 3.
+Situação atual: telas, navegação e regras de acesso por nível (Entrega 1); API Express + MySQL integrados ao app
+com `fetch()` (Entrega 2). O token JWT e a proteção das rotas por nível entram na Entrega 3.
 
 ### 1.5 Nome da aplicação
 
@@ -127,7 +127,7 @@ por middleware de autenticação (JWT enviado como Bearer Token) e de autorizaç
 
 ### 1.9 Telas previstas
 
-Todas as telas abaixo já existem nesta primeira versão navegável (com dados de exemplo).
+Todas as telas abaixo existem no app. A seção 2.2 mostra quais rotas da API cada uma usa.
 
 | # | Tela | Acesso | Descrição |
 | --- | --- | --- | --- |
@@ -189,7 +189,273 @@ flowchart TD
 
 ---
 
-## 2. Primeira versão do app
+## 2. Planejamento técnico e integração (Entrega 2)
+
+### 2.1 Requisitos funcionais atualizados
+
+| # | Requisito | Situação |
+| --- | --- | --- |
+| RF01 | Criar conta de família ou profissional (profissão e registro), com senha salva em hash | ✅ API + banco |
+| RF02 | Entrar com e-mail e senha conferidos pela API | ✅ API + banco · JWT na Entrega 3 |
+| RF03 | Sair da conta | ✅ · descartar o token na Entrega 3 |
+| RF04 | Listar artigos e buscar por termo e categoria | ✅ API + banco |
+| RF05 | Ler o artigo completo | ✅ API + banco |
+| RF06 | Publicar artigo (só profissional aprovado ou admin) | ✅ API confere o nível do autor |
+| RF07 | Editar e excluir artigo (autor ou admin) | ✅ no app · conferência no back-end na Entrega 3 |
+| RF08 | Curtir e salvar artigos; ver os salvos em Minha conta | ✅ API + banco |
+| RF09 | Comentar e excluir o próprio comentário | ✅ API + banco |
+| RF10 | Ver colunas e suas publicações | ✅ API + banco |
+| RF11 | Ler a revista digital página a página | ✅ API + banco |
+| RF12 | Buscar profissionais e ver o perfil com artigos e colunas | ✅ API + banco |
+| RF13 | Enviar mensagem de contato e pergunta à equipe | ✅ API + banco |
+| RF14 | Aprovar, pedir ajustes ou recusar cadastros profissionais (admin) | ✅ API + banco · restrito ao admin na Entrega 3 |
+| RF15 | Proteger as rotas com token JWT e nível de usuário | ⏳ Entrega 3 |
+
+**Requisitos não funcionais já atendidos:** senha nunca é salva em texto (bcrypt); validação dos dados no app **e**
+na API; consultas SQL com parâmetros (`?`), que evitam SQL injection; respostas de erro padronizadas
+(`{ erro, campos }`) exibidas nas telas; credenciais do banco fora do repositório (`.env`).
+
+### 2.2 Telas e fluxos atualizados
+
+As telas e a navegação continuam as da seção 1.10. O que mudou é a origem dos dados: agora tudo vem da API.
+
+| Tela | Rotas da API usadas |
+| --- | --- |
+| Entrar | `POST /api/auth/login` |
+| Criar conta | `POST /api/usuarios` |
+| Início | `GET /api/artigos`, `GET /api/revistas`, `GET /api/profissionais`, `GET /api/colunas` |
+| Conteúdos | `GET /api/artigos?busca=&categoria=`, `GET /api/categorias`, `GET /api/colunas`, `GET /api/revistas` |
+| Artigo | `GET /api/artigos/:id`, `GET` e `POST /api/artigos/:id/comentarios`, `DELETE /api/comentarios/:id`, `POST /api/artigos/:id/interacoes`, `DELETE /api/artigos/:id` |
+| Coluna | `GET /api/colunas/:slug` |
+| Revista | `GET /api/revistas/:slug` |
+| Profissionais / Perfil profissional | `GET /api/profissionais`, `GET /api/profissionais/:slug` |
+| Comunidade | `GET /api/artigos`, `POST /api/artigos/:id/interacoes`, `POST /api/mensagens` |
+| Minha conta | `GET /api/usuarios/:id`, `GET /api/usuarios/:id/interacoes`, `DELETE /api/artigos/:id`; admin: `GET /api/usuarios?nivel=profissional&verificacao=pendente` |
+| Nova postagem / Editar artigo | `POST /api/artigos`, `GET` e `PUT /api/artigos/:id`, `GET /api/categorias` |
+| Novos profissionais | `GET /api/usuarios?nivel=profissional`, `PATCH /api/usuarios/:id/verificacao` |
+| Contato | `POST /api/mensagens` |
+
+**Caminho de uma requisição** (exemplo: publicar um artigo):
+
+```mermaid
+sequenceDiagram
+    participant T as Tela Nova postagem
+    participant S as services/artigosService.js
+    participant R as Rota POST /api/artigos
+    participant C as artigosController
+    participant M as artigoModel
+    participant DB as MySQL
+    T->>S: criarArtigo(dados, autorId)
+    S->>R: fetch() com JSON
+    R->>C: criar(req, res)
+    C->>C: valida os campos e o nível do autor
+    C->>M: criar(...)
+    M->>DB: INSERT INTO publicacoes
+    DB-->>M: id do novo artigo
+    M-->>C: artigo com autor e totais
+    C-->>S: 201 Created + JSON
+    S-->>T: artigo formatado (a tela abre o artigo publicado)
+```
+
+Se algo der errado, a API responde com o status adequado (400, 403, 404, 409, 503) e uma mensagem. A tela mostra
+essa mensagem e, nos formulários, o erro aparece embaixo do campo correspondente.
+
+### 2.3 Estrutura do banco de dados
+
+Banco **`conexao_pais`** no MySQL, com 10 tabelas. Scripts: [`database/schema.sql`](database/schema.sql) (estrutura)
+e [`database/seed.sql`](database/seed.sql) (conteúdo do site, contas de demonstração e interações iniciais).
+
+```mermaid
+erDiagram
+    usuarios ||--o{ publicacoes : "escreve"
+    usuarios ||--o{ comentarios : "comenta"
+    usuarios ||--o{ interacoes : "curte e salva"
+    publicacoes ||--o{ comentarios : "recebe"
+    publicacoes ||--o{ interacoes : "recebe"
+    usuarios |o--o| profissionais : "tem perfil público"
+    usuarios ||--o{ colunas : "assina"
+    colunas ||--o{ coluna_posts : "publica"
+    revistas ||--o{ revista_paginas : "contém"
+    usuarios |o--o{ mensagens : "envia"
+
+    usuarios {
+        int id PK
+        varchar nome
+        varchar email UK
+        varchar senha_hash
+        enum nivel
+        varchar profissao
+        varchar registro_profissional
+        enum verificacao
+        varchar observacao_admin
+    }
+    publicacoes {
+        int id PK
+        int autor_id FK
+        enum tipo
+        varchar slug UK
+        varchar titulo
+        varchar resumo
+        text conteudo
+        varchar categoria
+        varchar tags
+        tinyint destaque
+        enum status
+    }
+    comentarios {
+        int id PK
+        int publicacao_id FK
+        int usuario_id FK
+        varchar texto
+    }
+    interacoes {
+        int id PK
+        int usuario_id FK
+        int publicacao_id FK
+        enum tipo
+    }
+    profissionais {
+        int id PK
+        int usuario_id FK
+        varchar slug UK
+        varchar nome
+        varchar especialidade
+        varchar descricao
+        varchar cidade
+        varchar atendimento
+        varchar whatsapp
+    }
+    colunas {
+        int id PK
+        int colunista_id FK
+        varchar slug UK
+        varchar nome
+        varchar chamada
+        varchar periodicidade
+        text sobre
+    }
+    coluna_posts {
+        int id PK
+        int coluna_id FK
+        varchar slug
+        varchar titulo
+        varchar resumo
+        text texto
+        date publicado_em
+    }
+    revistas {
+        int id PK
+        varchar slug UK
+        smallint edicao UK
+        varchar titulo
+        varchar subtitulo
+        varchar descricao
+        varchar categoria
+        text destaques
+        varchar pdf_url
+        date publicada_em
+    }
+    revista_paginas {
+        int id PK
+        int revista_id FK
+        smallint numero
+        varchar secao
+        varchar titulo
+        text texto
+    }
+    mensagens {
+        int id PK
+        int usuario_id FK
+        enum tipo
+        varchar nome
+        varchar email
+        varchar assunto
+        text mensagem
+        enum status
+    }
+```
+
+Decisões de modelagem:
+
+- **`publicacoes` é a entidade principal**, com o mesmo nome e os mesmos campos da tabela do site. O campo `tipo`
+  deixa espaço para os posts curtos da comunidade.
+- **Um único `usuarios` para os três níveis** (`nivel`). A situação do cadastro profissional fica em `verificacao`,
+  e só `profissional` aprovado ou `admin` pode publicar (regra conferida pela API).
+- **`profissionais` é separado de `usuarios`**: o diretório mostra o perfil público, e a conta guarda o login.
+  O vínculo (`usuario_id`) liga o perfil aos artigos e colunas da pessoa.
+- **`interacoes` tem chave única (usuário + artigo + tipo)**: ninguém curte ou salva o mesmo artigo duas vezes.
+- **Exclusões em cascata**: ao excluir um artigo, os comentários e as interações dele também saem.
+
+### 2.4 Entidades e campos
+
+| Entidade (tabela) | Campos principais | Relacionamentos |
+| --- | --- | --- |
+| Usuário (`usuarios`) | nome, e-mail (único), senha_hash, nível, profissão, registro, verificação | escreve publicações, comenta, curte/salva, assina colunas |
+| **Publicação (`publicacoes`)** | autor, título, slug (único), resumo, conteúdo, categoria, tags, destaque, status | pertence a um usuário; tem comentários e interações |
+| Comentário (`comentarios`) | publicação, usuário, texto, data | pertence a uma publicação e a um usuário |
+| Interação (`interacoes`) | usuário, publicação, tipo (curtida/salvo) | une usuário e publicação |
+| Profissional (`profissionais`) | slug, nome, especialidade, descrição, cidade, atendimento, WhatsApp | ligado (opcionalmente) a um usuário |
+| Coluna (`colunas`) | colunista, slug, nome, chamada, periodicidade, sobre | tem várias publicações da coluna |
+| Publicação da coluna (`coluna_posts`) | coluna, slug, título, resumo, texto, data | pertence a uma coluna |
+| Revista (`revistas`) | edição (única), título, subtítulo, descrição, categoria, destaques, PDF, data | tem várias páginas |
+| Página da revista (`revista_paginas`) | revista, número, seção, título, texto | pertence a uma edição |
+| Mensagem (`mensagens`) | tipo (contato/pergunta), nome, e-mail, assunto, mensagem, status | enviada (opcionalmente) por um usuário |
+
+O tipo, o tamanho, as chaves e a regra de exclusão de **cada campo** estão no dicionário de dados:
+[`docs/banco-de-dados.md`](docs/banco-de-dados.md).
+
+### 2.5 Principais rotas da API
+
+Base: `http://localhost:3333/api`. Corpo e respostas em JSON. Exemplos prontos para testar estão em
+[`api/requests.http`](api/requests.http).
+
+| Método | Rota | O que faz |
+| --- | --- | --- |
+| GET | `/status` | Confere se a API e o banco estão respondendo |
+| POST | `/auth/login` | Confere e-mail e senha e devolve o usuário |
+| POST | `/usuarios` | Cria conta (família ou profissional) |
+| GET | `/usuarios?nivel=&verificacao=` | Lista contas (ex.: profissionais pendentes) |
+| GET | `/usuarios/:id` | Dados de uma conta |
+| GET | `/usuarios/:id/interacoes` | Curtidas e salvos da conta |
+| PATCH | `/usuarios/:id/verificacao` | Aprova, pede ajustes ou recusa um cadastro profissional |
+| GET | `/artigos?busca=&categoria=&autorId=` | **Lista artigos** (com autor e totais) |
+| GET | `/artigos/:id` | **Artigo completo** |
+| POST | `/artigos` | **Publica artigo** (201) |
+| PUT | `/artigos/:id` | **Edita artigo** |
+| DELETE | `/artigos/:id` | **Exclui artigo** (204) |
+| GET | `/categorias` | Categorias com artigos publicados |
+| GET / POST | `/artigos/:id/comentarios` | Lista / cria comentários |
+| DELETE | `/comentarios/:id` | Exclui comentário |
+| POST | `/artigos/:id/interacoes` | Liga/desliga curtida ou salvo e devolve o total |
+| GET | `/profissionais`, `/profissionais/:slug` | Diretório e perfil (com artigos e colunas) |
+| GET | `/colunas`, `/colunas/:slug` | Colunas e publicações |
+| GET | `/revistas`, `/revistas/:slug` | Edições e páginas |
+| POST | `/mensagens` | Contato ou pergunta à equipe |
+
+Organização do código da API (`api/src`): **routes** (endereços) → **controllers** (validação, regras e resposta HTTP)
+→ **models** (SQL) → **config/database.js** (pool de conexões com o MySQL). Erros passam por um middleware central.
+
+### 2.6 Níveis de usuário e permissões previstas na API
+
+| Rotas | Quem poderá usar (Entrega 3, com JWT) |
+| --- | --- |
+| `GET /status`, `POST /auth/login`, `POST /usuarios` | Qualquer pessoa |
+| `GET` de artigos, categorias, comentários, profissionais, colunas e revistas | Usuário logado |
+| `POST /artigos/:id/comentarios`, `POST /artigos/:id/interacoes`, `POST /mensagens` | Usuário logado (o id sai do token) |
+| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes` | O próprio usuário ou admin |
+| `POST /artigos` | Profissional aprovado ou admin |
+| `PUT /artigos/:id`, `DELETE /artigos/:id` | Autor do artigo ou admin |
+| `DELETE /comentarios/:id` | Autor do comentário ou admin |
+| `GET /usuarios`, `PATCH /usuarios/:id/verificacao` | Somente admin |
+
+**Já nesta entrega**, a API confere a senha (bcrypt), impede e-mail repetido, valida todos os campos e só deixa
+publicar quem é profissional aprovado ou admin. O que fica para a Entrega 3: hoje o app informa quem é o usuário
+no corpo da requisição (`autorId`, `usuarioId`). Com o JWT, essa identidade passa a vir do token enviado como
+Bearer Token, e um middleware vai bloquear as rotas conforme a tabela acima.
+
+---
+
+## 3. Versão atual do app
 
 | Boas-vindas | Início | Conteúdos | Artigo |
 | --- | --- | --- | --- |
@@ -203,21 +469,21 @@ flowchart TD
 | --- | --- | --- | --- |
 | ![Criar conta](docs/telas/criar-conta.png) | ![Novos profissionais](docs/telas/novos-profissionais.png) | ![Nova postagem](docs/telas/nova-postagem.png) | ![Artigo publicado](docs/telas/artigo-publicado.png) |
 
-**O que já funciona nesta entrega:**
+**O que já funciona:**
 
-- projeto Expo (SDK 58) com React Navigation 7: stack raiz + abas inferiores + telas empilhadas;
-- 16 telas navegáveis com a identidade visual do site: logo da árvore, verde musgo e ocre, fontes Fraunces e
-  DM Sans;
+- 16 telas com React Navigation 7 (stack raiz + abas inferiores) e a identidade visual do site;
 - telas e ações diferentes para cada nível (família, profissional em verificação, profissional aprovado e admin);
-- validação dos formulários (cadastro, login, comentário, publicação, contato);
-- conteúdo de exemplo trazido do site (artigos, colunas, revistas, profissionais e equipe).
+- **todos os dados vêm do MySQL pela API**, com `fetch()`: cadastro, login, artigos (CRUD completo), comentários,
+  curtidas, salvos, colunas, revista, profissionais, mensagens e verificação de profissionais;
+- estados de carregamento e de erro em todas as telas, com opção de tentar de novo;
+- validação nos formulários e na API, com os erros da API mostrados no campo certo.
 
-**Ainda simulado (próximas entregas):** o login aceita qualquer senha com 6 ou mais caracteres e os dados ficam em
-memória, voltando ao início quando o app é reiniciado. API, MySQL, hash de senha e JWT entram nas Entregas 2 e 3.
+**Próxima etapa (Entrega 3):** a sessão ainda fica só na memória do app. Com o JWT, o token será guardado no
+aparelho, enviado como Bearer Token e conferido pela API em cada rota protegida.
 
 ### Contas de demonstração
 
-Na tela **Entrar**, os botões do *Modo demonstração* preenchem estas contas (as mesmas contas de teste do site):
+Criadas pelo `database/seed.sql`. Na tela **Entrar**, os botões do *Modo demonstração* preenchem estas contas:
 
 | Perfil | E-mail | Senha |
 | --- | --- | --- |
@@ -225,81 +491,125 @@ Na tela **Entrar**, os botões do *Modo demonstração* preenchem estas contas (
 | Profissional aprovado (Dra. Helena Prado) | `profissional@conexaopais.test` | `123456` |
 | Administração | `admin@conexaopais.test` | `123456` |
 
+Os autores dos outros artigos e colunas também têm conta (`marcos@`, `bianca@` e `rafael@conexaopais.test`, mesma
+senha), e há dois cadastros profissionais de exemplo aguardando a análise da administração.
+
 Para ver o fluxo completo de níveis: crie uma conta **Profissional**, entre com ela (fica em verificação), entre
 como **Administração** e aprove o cadastro em *Minha conta → Novos profissionais*, depois entre de novo com a conta
 profissional e publique um artigo.
 
 ---
 
-## 3. Tecnologias
+## 4. Tecnologias
 
 | Camada | Tecnologia |
 | --- | --- |
 | App | React Native 0.88 + Expo SDK 58 (JavaScript) |
 | Navegação | React Navigation 7 (`native-stack` e `bottom-tabs`) |
+| Comunicação | `fetch()` com JSON (camada `src/services`) e `expo-constants` para achar o IP da API |
 | Visual | `@expo/vector-icons` (Ionicons), `expo-font` com Fraunces e DM Sans (`@expo-google-fonts`) |
-| Estado | React Context (autenticação, conteúdos, comunidade, confirmação) |
-| API (Entrega 2) | Node.js + Express |
-| Banco (Entrega 2) | MySQL |
-| Autenticação (Entrega 3) | bcrypt (hash) + JWT (Bearer Token) |
+| Estado | React Context (autenticação, artigos, comunidade, confirmação) e hook `useApi` |
+| API | Node.js 20+ e Express 5 (`cors`, `dotenv`) |
+| Banco | MySQL 8 (ou MariaDB 10.6+) com `mysql2` (pool de conexões e consultas parametrizadas) |
+| Senhas | `bcryptjs` (hash) |
+| Autenticação (Entrega 3) | JWT enviado como Bearer Token |
 
-## 4. Estrutura do repositório
+## 5. Estrutura do repositório
 
 ```
 conexaopais.app/
 ├── README.md
-├── docs/telas/               # imagens das telas usadas neste README
+├── database/
+│   ├── schema.sql            # cria o banco conexao_pais e as 10 tabelas
+│   └── seed.sql              # conteúdo do site, contas de demonstração e interações
+├── api/                      # API REST (Node.js + Express)
+│   ├── .env.example          # modelo de configuração (o .env real não vai para o Git)
+│   ├── requests.http         # exemplos de requisições para testar as rotas
+│   ├── scripts/setup-db.js   # npm run db:setup: executa schema.sql + seed.sql
+│   └── src/
+│       ├── server.js         # sobe o servidor na porta 3333
+│       ├── app.js            # Express, CORS, JSON, rotas e tratamento de erros
+│       ├── config/           # conexão com o MySQL (pool)
+│       ├── routes/           # endereços da API (um arquivo por recurso)
+│       ├── controllers/      # validação, regras e respostas HTTP
+│       ├── models/           # consultas SQL
+│       ├── middlewares/      # rota não encontrada e erros
+│       └── utils/            # validação e funções de texto
+├── docs/
+│   ├── banco-de-dados.md     # dicionário de dados (todos os campos)
+│   └── telas/                # imagens das telas usadas neste README
 └── mobile/                   # aplicativo React Native (Expo)
     ├── App.js                # fontes, provedores de contexto e NavigationContainer
     ├── app.json              # nome, ícone, splash e pacote Android (app.conexaopais)
+    ├── .env.example          # EXPO_PUBLIC_API_URL (opcional)
     ├── assets/               # logo da árvore, ícones, splash e fotos do site
     └── src/
-        ├── components/       # Button, TextField, ArticleCard, ProfessionalCard, MagazineCover...
-        ├── contexts/         # AuthContext (níveis e permissões), ContentContext (CRUD de artigos),
-        │                     # CommunityContext (curtidas, salvos, comentários), ConfirmContext
-        ├── data/             # conteúdo de exemplo trazido do site
+        ├── services/         # api.js (fetch) e serviços por recurso + formatadores
+        ├── hooks/            # useApi (carregando / erro / recarregar)
+        ├── components/       # Button, TextField, ArticleCard, AsyncState...
+        ├── contexts/         # AuthContext, ContentContext (CRUD de artigos), CommunityContext...
+        ├── data/             # textos institucionais fixos (Sobre e Comunidade)
         ├── navigation/       # RootNavigator (stack por nível), AppTabs (abas) e tema
-        ├── screens/
-        │   ├── auth/         # Boas-vindas, Entrar, Criar conta
-        │   ├── app/          # Início, Conteúdos, Artigo, Coluna, Revista, Profissionais...
-        │   ├── publish/      # Nova postagem / Editar artigo
-        │   └── admin/        # Novos profissionais
+        ├── screens/          # auth/, app/, publish/ e admin/
         ├── theme/            # cores, fontes, espaçamentos e estilos de texto do site
         └── utils/            # validações e funções de texto
 ```
 
-A API (`api/`) e o script do banco (`database/`) entram na Entrega 2.
+## 6. Como executar
 
-## 5. Como executar
+Pré-requisitos: [Node.js](https://nodejs.org) 20 ou superior, **MySQL 8** (ou MariaDB 10.6+, como no XAMPP) e o app
+**Expo Go** no celular. O celular e o computador precisam estar **na mesma rede Wi-Fi**.
 
-Pré-requisitos: [Node.js](https://nodejs.org) 20 ou superior e o app **Expo Go** no celular (Android ou iOS).
-
-```bash
-cd mobile
-```
+### 6.1 Banco de dados e API
 
 ```bash
+cd api
 npm install
 ```
 
+Copie `api/.env.example` para `api/.env` e coloque o usuário e a senha do seu MySQL. Depois crie o banco com os
+dados iniciais (isso executa `database/schema.sql` e `database/seed.sql`):
+
 ```bash
+npm run db:setup
+```
+
+> Também dá para rodar os dois arquivos `.sql` no MySQL Workbench, nessa ordem.
+
+Suba a API (ela reinicia sozinha quando o código muda):
+
+```bash
+npm run dev
+```
+
+Teste no navegador: <http://localhost:3333/api/status> deve mostrar `{"api":"ok","banco":"ok"}`.
+
+### 6.2 App
+
+Em outro terminal:
+
+```bash
+cd mobile
+npm install
 npx expo start
 ```
 
-Leia o QR Code com o Expo Go (Android) ou com a câmera (iOS). Para abrir no navegador:
+Leia o QR Code com o Expo Go. O app encontra a API sozinho, usando o IP do computador que está rodando o Expo, na
+porta 3333. Se o app mostrar *"Não foi possível conectar à API"*:
 
-```bash
-npx expo start --web
-```
+- confira se a API está rodando e se o celular está no mesmo Wi-Fi;
+- libere a porta **3333** no firewall do computador (no Windows, permita o Node.js em redes privadas);
+- ou informe o endereço manualmente: crie `mobile/.env` com `EXPO_PUBLIC_API_URL=http://IP_DO_COMPUTADOR:3333/api`
+  e reinicie com `npx expo start -c`.
+
+No navegador do computador: `npx expo start --web`.
 
 ---
 
-## 6. Próximas entregas
+## 7. Próximas entregas
 
-- **Entrega 2:** modelagem do banco (usuários, publicações, interações, comentários e solicitações de
-  profissionais, como no site), API Express com rotas de artigos e integração do app com `fetch()`.
-- **Entrega 3:** cadastro e login reais com senha em hash, JWT armazenado no aparelho e enviado como Bearer Token,
-  middleware de autenticação e de nível, CRUD completo de artigos e verificação de profissionais pela API.
+- **Entrega 3:** login devolvendo JWT, token guardado no aparelho e enviado como Bearer Token, middleware de
+  autenticação e de nível, rotas protegidas conforme a seção 2.6 e logout.
 - **Entrega 4:** testes, correções, README final, APK e apresentação.
 
 ## Autoria
