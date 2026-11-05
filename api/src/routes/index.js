@@ -9,5 +9,6 @@ router.get('/status', statusController.status);
 router.get('/categorias', artigosController.listarCategorias);
 
 router.use('/artigos', require('./artigos.routes'));
+router.use('/comentarios', require('./comentarios.routes'));
 
 module.exports = router;
