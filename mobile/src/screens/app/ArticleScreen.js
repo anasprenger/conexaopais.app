@@ -2,10 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import ArticleCard from '../../components/ArticleCard';
+import AsyncState from '../../components/AsyncState';
 import Avatar from '../../components/Avatar';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
+import Notice from '../../components/Notice';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
 import TextField from '../../components/TextField';
@@ -13,28 +15,34 @@ import { ROLES, canEditArticle, useAuth } from '../../contexts/AuthContext';
 import { useCommunity } from '../../contexts/CommunityContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useContent } from '../../contexts/ContentContext';
-import { getProfissionalPorNome } from '../../data/profissionais';
+import { useApi } from '../../hooks/useApi';
+import { buscarArtigo } from '../../services/artigosService';
 import { colors, fonts, radius, spacing, type } from '../../theme';
 
 export default function ArticleScreen({ navigation, route }) {
   const { user } = useAuth();
-  const { artigos, getArtigo, deleteArtigo } = useContent();
+  const { artigos, deleteArtigo } = useContent();
   const community = useCommunity();
   const confirm = useConfirm();
   const [comentario, setComentario] = useState('');
   const [erro, setErro] = useState('');
+  const [erroExclusao, setErroExclusao] = useState('');
 
-  const artigo = getArtigo(route.params?.id);
+  // GET /api/artigos/:id — busca de novo ao voltar da edição
+  const { data: artigo, loading, error, reload } = useApi(() => buscarArtigo(route.params?.id), [route.params?.id], {
+    recarregarAoFocar: true,
+  });
 
   if (!artigo) {
     return (
       <Screen>
-        <EmptyState icon="document-outline" title="Artigo não encontrado" message="Este conteúdo pode ter sido movido ou despublicado." />
+        <AsyncState loading={loading} error={error?.status === 404 ? null : error} onRetry={reload}>
+          <EmptyState icon="document-outline" title="Artigo não encontrado" message="Este conteúdo pode ter sido movido ou despublicado." />
+        </AsyncState>
       </Screen>
     );
   }
 
-  const autor = getProfissionalPorNome(artigo.autor);
   const curtido = community.isActive(user, 'curtida', artigo.id);
   const salvo = community.isActive(user, 'salvo', artigo.id);
   const comentarios = community.comentariosDo(artigo.id);
@@ -56,9 +64,13 @@ export default function ArticleScreen({ navigation, route }) {
       title: 'Excluir artigo',
       message: `"${artigo.titulo}" será removido do app.`,
       confirmLabel: 'Excluir',
-      onConfirm: () => {
-        deleteArtigo(artigo.id);
-        navigation.goBack();
+      onConfirm: async () => {
+        try {
+          await deleteArtigo(artigo.id); // DELETE /api/artigos/:id
+          navigation.goBack();
+        } catch (falha) {
+          setErroExclusao(falha.message);
+        }
       },
     });
   }
@@ -82,9 +94,9 @@ export default function ArticleScreen({ navigation, route }) {
 
       <Pressable
         style={styles.author}
-        disabled={!autor}
-        onPress={() => navigation.navigate('Professional', { slug: autor.slug })}
-        accessibilityRole={autor ? 'link' : undefined}
+        disabled={!artigo.autorSlug}
+        onPress={() => navigation.navigate('Professional', { slug: artigo.autorSlug })}
+        accessibilityRole={artigo.autorSlug ? 'link' : undefined}
       >
         <Avatar name={artigo.autor} size={40} />
         <View style={styles.authorText}>
@@ -139,6 +151,7 @@ export default function ArticleScreen({ navigation, route }) {
             />
             <Button title="Excluir" icon="trash-outline" variant="danger" small onPress={excluirArtigo} />
           </View>
+          {erroExclusao ? <Notice tone="danger" title={erroExclusao} style={styles.notice} /> : null}
         </View>
       )}
 
@@ -258,5 +271,9 @@ const styles = StyleSheet.create({
   },
   commentField: {
     marginTop: spacing.md,
+  },
+  notice: {
+    marginTop: spacing.md,
+    marginBottom: 0,
   },
 });

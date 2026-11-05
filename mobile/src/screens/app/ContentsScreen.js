@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ArticleCard from '../../components/ArticleCard';
+import AsyncState from '../../components/AsyncState';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import EmptyState from '../../components/EmptyState';
@@ -11,10 +12,11 @@ import SectionHeader from '../../components/SectionHeader';
 import SegmentedControl from '../../components/SegmentedControl';
 import TextField from '../../components/TextField';
 import { useContent } from '../../contexts/ContentContext';
+import { useApi, useDebouncedValue } from '../../hooks/useApi';
+import { listarArtigos } from '../../services/artigosService';
 import { colunas } from '../../data/colunas';
 import { revistas } from '../../data/revistas';
 import { colors, fonts, radius, spacing, type } from '../../theme';
-import { normalize } from '../../utils/text';
 
 const segments = [
   { id: 'artigos', label: 'Artigos' },
@@ -29,7 +31,7 @@ const intros = {
 };
 
 export default function ContentsScreen({ navigation, route }) {
-  const { artigos, categorias } = useContent();
+  const { categorias } = useContent();
   const [segment, setSegment] = useState(route.params?.segment ?? 'artigos');
   const [busca, setBusca] = useState('');
   const [categoria, setCategoria] = useState('Todas');
@@ -39,13 +41,15 @@ export default function ContentsScreen({ navigation, route }) {
     if (route.params?.segment) setSegment(route.params.segment);
   }, [route.params]);
 
-  const termo = normalize(busca);
-  const resultados = artigos.filter((artigo) => {
-    const combinaCategoria = categoria === 'Todas' || artigo.categoria === categoria;
-    const combinaBusca =
-      !termo ||
-      [artigo.titulo, artigo.resumo, artigo.autor, ...(artigo.tags ?? [])].some((campo) => normalize(campo).includes(termo));
-    return combinaCategoria && combinaBusca;
+  // GET /api/artigos?busca=&categoria= — a busca espera o usuário parar de digitar
+  const termo = useDebouncedValue(busca.trim());
+  const {
+    data: resultados,
+    loading,
+    error,
+    reload,
+  } = useApi(() => listarArtigos({ busca: termo, categoria: categoria === 'Todas' ? '' : categoria }), [termo, categoria], {
+    recarregarAoFocar: true,
   });
 
   const [atual, ...anteriores] = revistas;
@@ -63,13 +67,15 @@ export default function ContentsScreen({ navigation, route }) {
               <Chip key={item} label={item} selected={categoria === item} onPress={() => setCategoria(item)} />
             ))}
           </ScrollView>
-          {resultados.length === 0 ? (
-            <EmptyState title="Nenhum artigo encontrado para esta busca." message="Tente outra palavra ou outra categoria." />
-          ) : (
-            resultados.map((artigo) => (
-              <ArticleCard key={artigo.id} artigo={artigo} onPress={() => navigation.navigate('Article', { id: artigo.id })} />
-            ))
-          )}
+          <AsyncState loading={loading && !resultados} error={error} onRetry={reload}>
+            {resultados?.length === 0 ? (
+              <EmptyState title="Nenhum artigo encontrado para esta busca." message="Tente outra palavra ou outra categoria." />
+            ) : (
+              resultados?.map((artigo) => (
+                <ArticleCard key={artigo.id} artigo={artigo} onPress={() => navigation.navigate('Article', { id: artigo.id })} />
+              ))
+            )}
+          </AsyncState>
         </>
       )}
 

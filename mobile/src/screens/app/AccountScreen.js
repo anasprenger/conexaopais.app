@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import ArticleCard from '../../components/ArticleCard';
 import Avatar from '../../components/Avatar';
@@ -24,6 +24,7 @@ export default function AccountScreen({ navigation }) {
   const { artigos, getArtigo, deleteArtigo } = useContent();
   const { savedIds } = useCommunity();
   const confirm = useConfirm();
+  const [erroExclusao, setErroExclusao] = useState('');
 
   const isProfissional = user.role === ROLES.PROFISSIONAL;
   const salvos = savedIds(user).map(getArtigo).filter(Boolean);
@@ -48,7 +49,13 @@ export default function AccountScreen({ navigation }) {
       title: 'Excluir artigo',
       message: `"${artigo.titulo}" será removido do app.`,
       confirmLabel: 'Excluir',
-      onConfirm: () => deleteArtigo(artigo.id),
+      onConfirm: async () => {
+        try {
+          await deleteArtigo(artigo.id); // DELETE /api/artigos/:id
+        } catch (falha) {
+          setErroExclusao(falha.message);
+        }
+      },
     });
   }
 
@@ -113,6 +120,7 @@ export default function AccountScreen({ navigation }) {
             onPress={() => navigation.navigate('PostForm')}
             style={styles.newPost}
           />
+          {erroExclusao ? <Notice tone="danger" title={erroExclusao} /> : null}
           {publicacoes.length === 0 && <Text style={type.muted}>Você ainda não publicou nada por aqui.</Text>}
           {publicacoes.map((artigo) => (
             <ArticleCard

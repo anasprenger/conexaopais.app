@@ -1,53 +1,72 @@
-import { createContext, useContext, useState } from 'react';
-import { artigosIniciais } from '../data/artigos';
-import { dataCurta, slugify, tempoLeitura } from '../utils/text';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import {
+  atualizarArtigo,
+  criarArtigo,
+  excluirArtigo,
+  listarArtigos,
+  listarCategorias,
+} from '../services/artigosService';
+import { useAuth } from './AuthContext';
 
 const ContentContext = createContext(null);
 
 export const categoriasPadrao = ['Desenvolvimento', 'Gerações', 'Educação', 'Convivência'];
 
-function comLeitura(artigo) {
-  return { ...artigo, leitura: tempoLeitura([artigo.titulo, artigo.resumo, ...artigo.conteudo]) };
-}
-
-// CRUD da entidade principal (publicações do tipo artigo).
-// Entrega 1: dados em memória. Entrega 2: GET/POST/PUT/DELETE /artigos com fetch() na API.
+// Lista de artigos (entidade principal) carregada da API e as operações de CRUD:
+// GET /api/artigos, POST /api/artigos, PUT /api/artigos/:id e DELETE /api/artigos/:id
 export function ContentProvider({ children }) {
-  const [artigos, setArtigos] = useState(() => artigosIniciais.map(comLeitura));
+  const { user } = useAuth();
+  const [artigos, setArtigos] = useState([]);
+  const [categoriasApi, setCategoriasApi] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const categorias = [...new Set([...categoriasPadrao, ...artigos.map((artigo) => artigo.categoria)])];
+  const reload = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [lista, categorias] = await Promise.all([listarArtigos(), listarCategorias()]);
+      setArtigos(lista);
+      setCategoriasApi(categorias);
+    } catch (falha) {
+      setError(falha);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Os conteúdos são carregados depois do login
+  useEffect(() => {
+    if (user) reload();
+    else setArtigos([]);
+  }, [user?.id, reload]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const categorias = [...new Set([...categoriasPadrao, ...categoriasApi])];
 
   function getArtigo(id) {
     return artigos.find((artigo) => artigo.id === id);
   }
 
-  function saveArtigo(data, autor) {
-    if (data.id) {
-      setArtigos((current) => current.map((item) => (item.id === data.id ? comLeitura({ ...item, ...data }) : item)));
-      return data.id;
-    }
-    const id = Date.now();
-    const novo = comLeitura({
-      ...data,
-      id,
-      slug: `${slugify(data.titulo)}-${id}`,
-      autor: autor.name,
-      autorId: autor.id,
-      data: dataCurta(),
-    });
-    setArtigos((current) => [novo, ...current]);
-    return id;
+  // Cria (POST) ou atualiza (PUT) e recarrega a lista. Devolve o id do artigo.
+  async function saveArtigo(dados, autor) {
+    const salvo = dados.id ? await atualizarArtigo(dados.id, dados) : await criarArtigo(dados, autor.id);
+    await reload();
+    return salvo.id;
   }
 
-  function deleteArtigo(id) {
-    setArtigos((current) => current.filter((item) => item.id !== id));
+  async function deleteArtigo(id) {
+    await excluirArtigo(id);
+    setArtigos((atual) => atual.filter((artigo) => artigo.id !== id));
   }
 
-  return (
-    <ContentContext.Provider value={{ artigos, categorias, getArtigo, saveArtigo, deleteArtigo }}>
-      {children}
-    </ContentContext.Provider>
-  );
+  // Atualiza os totais de um artigo sem buscar a lista inteira de novo (ex.: depois de curtir)
+  function patchArtigo(id, campos) {
+    setArtigos((atual) => atual.map((artigo) => (artigo.id === id ? { ...artigo, ...campos } : artigo)));
+  }
+
+  const value = { artigos, categorias, loading, error, reload, getArtigo, saveArtigo, deleteArtigo, patchArtigo };
+
+  return <ContentContext.Provider value={value}>{children}</ContentContext.Provider>;
 }
 
 export function useContent() {

@@ -1,5 +1,6 @@
-import { useLayoutEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import AsyncState from '../../components/AsyncState';
 import Button from '../../components/Button';
 import Chip from '../../components/Chip';
 import Notice from '../../components/Notice';
@@ -7,28 +8,52 @@ import Screen from '../../components/Screen';
 import TextField from '../../components/TextField';
 import { canEditArticle, useAuth } from '../../contexts/AuthContext';
 import { useContent } from '../../contexts/ContentContext';
+import { useApi } from '../../hooks/useApi';
+import { buscarArtigo } from '../../services/artigosService';
 import { colors, fonts, spacing } from '../../theme';
-import { paragrafos } from '../../utils/text';
 
-// Área de publicação: criar ou editar um artigo.
+const formularioVazio = { titulo: '', categoria: null, resumo: '', texto: '', tags: '' };
+
+// Área de publicação: criar (POST /api/artigos) ou editar (PUT /api/artigos/:id) um artigo.
 // Só existe na navegação para admin e profissional aprovado; o autor edita os próprios artigos e o admin, todos.
 export default function PostFormScreen({ navigation, route }) {
   const { user } = useAuth();
-  const { categorias, getArtigo, saveArtigo } = useContent();
+  const { categorias, saveArtigo } = useContent();
+  const idEdicao = route.params?.id;
 
-  const editando = route.params?.id ? getArtigo(route.params.id) : null;
-  const [form, setForm] = useState(() => ({
-    titulo: editando?.titulo ?? '',
-    categoria: editando?.categoria ?? null,
-    resumo: editando?.resumo ?? '',
-    texto: editando?.conteudo.join('\n\n') ?? '',
-    tags: editando?.tags?.join(', ') ?? '',
-  }));
+  // Na edição, busca o artigo completo (com o texto) na API
+  const { data: editando, loading, error, reload } = useApi(
+    () => (idEdicao ? buscarArtigo(idEdicao) : Promise.resolve(null)),
+    [idEdicao]
+  );
+  const [form, setForm] = useState(formularioVazio);
   const [errors, setErrors] = useState({});
+  const [erroApi, setErroApi] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    if (editando) {
+      setForm({
+        titulo: editando.titulo,
+        categoria: editando.categoria,
+        resumo: editando.resumo,
+        texto: editando.texto,
+        tags: editando.tags.join(', '),
+      });
+    }
+  }, [editando]);
 
   useLayoutEffect(() => {
-    navigation.setOptions({ title: editando ? 'Editar artigo' : 'Nova postagem' });
-  }, [navigation, editando]);
+    navigation.setOptions({ title: idEdicao ? 'Editar artigo' : 'Nova postagem' });
+  }, [navigation, idEdicao]);
+
+  if (idEdicao && !editando) {
+    return (
+      <Screen>
+        <AsyncState loading={loading} error={error} onRetry={reload} />
+      </Screen>
+    );
+  }
 
   if (editando && !canEditArticle(user, editando)) {
     return (
@@ -45,29 +70,38 @@ export default function PostFormScreen({ navigation, route }) {
     setErrors((current) => ({ ...current, [field]: undefined }));
   }
 
-  function publicar() {
+  async function publicar() {
     const newErrors = {};
     if (form.titulo.trim().length < 5) newErrors.titulo = 'Escreva um título (mínimo de 5 caracteres).';
     if (!form.categoria) newErrors.categoria = 'Escolha uma categoria.';
     if (form.resumo.trim().length < 20) newErrors.resumo = 'Escreva um resumo (mínimo de 20 caracteres).';
     if (form.texto.trim().length < 50) newErrors.texto = 'O texto precisa ter pelo menos 50 caracteres.';
     setErrors(newErrors);
+    setErroApi('');
     if (Object.keys(newErrors).length > 0) return;
 
-    const id = saveArtigo(
-      {
-        ...(editando && { id: editando.id }),
-        titulo: form.titulo.trim(),
-        categoria: form.categoria,
-        resumo: form.resumo.trim(),
-        conteudo: paragrafos(form.texto),
-        tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
-      },
-      user
-    );
-    // Edição volta para a tela anterior (o artigo já aberto se atualiza); publicação nova abre o artigo
-    if (editando) navigation.goBack();
-    else navigation.replace('Article', { id });
+    setSalvando(true);
+    try {
+      const id = await saveArtigo(
+        {
+          ...(editando && { id: editando.id }),
+          titulo: form.titulo.trim(),
+          categoria: form.categoria,
+          resumo: form.resumo.trim(),
+          conteudo: form.texto.trim(),
+          tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+        },
+        user
+      );
+      // Edição volta para a tela anterior (o artigo aberto busca de novo); publicação nova abre o artigo
+      if (editando) navigation.goBack();
+      else navigation.replace('Article', { id });
+    } catch (falha) {
+      const { conteudo, ...campos } = falha.campos;
+      setErrors({ ...campos, ...(conteudo && { texto: conteudo }) });
+      setErroApi(falha.message);
+      setSalvando(false);
+    }
   }
 
   return (
@@ -103,9 +137,17 @@ export default function PostFormScreen({ navigation, route }) {
         onChangeText={(v) => update('texto', v)}
         error={errors.texto}
       />
-      <TextField label="Tags (opcional)" placeholder="Ex.: Rotina, Organização" value={form.tags} onChangeText={(v) => update('tags', v)} />
+      <TextField label="Tags (opcional)" placeholder="Ex.: Rotina, Organização" value={form.tags} onChangeText={(v) => update('tags', v)} error={errors.tags} />
 
-      <Button title={editando ? 'Salvar alterações' : 'Publicar'} icon="paper-plane-outline" variant="accent" onPress={publicar} />
+      {erroApi ? <Notice tone="danger" title={erroApi} /> : null}
+
+      <Button
+        title={editando ? 'Salvar alterações' : 'Publicar'}
+        icon="paper-plane-outline"
+        variant="accent"
+        loading={salvando}
+        onPress={publicar}
+      />
       <Button title="Cancelar" variant="ghost" onPress={() => navigation.goBack()} style={styles.cancel} />
     </Screen>
   );

@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ArticleCard from '../../components/ArticleCard';
+import AsyncState from '../../components/AsyncState';
 import Button from '../../components/Button';
 import MagazineCover from '../../components/MagazineCover';
 import Notice from '../../components/Notice';
@@ -17,7 +18,7 @@ import { blob, colors, fonts, radius, shadow, spacing, type } from '../../theme'
 
 export default function HomeScreen({ navigation }) {
   const { user, canPublish } = useAuth();
-  const { artigos } = useContent();
+  const { artigos, loading, error, reload } = useContent();
 
   const destaque = artigos.find((artigo) => artigo.destaque) ?? artigos[0];
   const demais = artigos.filter((artigo) => artigo.id !== destaque?.id).slice(0, 3);
@@ -62,10 +63,12 @@ export default function HomeScreen({ navigation }) {
       </View>
 
       <SectionHeader title="Conteúdos para você" actionLabel="Ver todos" onAction={() => abrirConteudos('artigos')} />
-      {destaque && <ArticleCard artigo={destaque} featured onPress={() => abrirArtigo(destaque.id)} />}
-      {demais.map((artigo) => (
-        <ArticleCard key={artigo.id} artigo={artigo} onPress={() => abrirArtigo(artigo.id)} />
-      ))}
+      <AsyncState loading={loading && artigos.length === 0} error={error} onRetry={reload}>
+        {destaque && <ArticleCard artigo={destaque} featured onPress={() => abrirArtigo(destaque.id)} />}
+        {demais.map((artigo) => (
+          <ArticleCard key={artigo.id} artigo={artigo} onPress={() => abrirArtigo(artigo.id)} />
+        ))}
+      </AsyncState>
 
       <SectionHeader title="Nossa revista" actionLabel="Todas as edições" onAction={() => abrirConteudos('revista')} />
       <View style={styles.magazine}>
