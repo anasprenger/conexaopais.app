@@ -22,20 +22,29 @@ export default function LoginScreen({ navigation, route }) {
   const [email, setEmail] = useState(route.params?.email ?? '');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
+  const [erroApi, setErroApi] = useState('');
+  const [entrando, setEntrando] = useState(false);
 
   // Ao voltar do cadastro, preenche o e-mail recém-cadastrado
   useEffect(() => {
     if (route.params?.email) setEmail(route.params.email);
   }, [route.params?.email]);
 
-  function handleLogin() {
+  async function handleLogin() {
     const newErrors = {};
     if (!isValidEmail(email)) newErrors.email = 'Informe um e-mail válido.';
     if (password.length < 6) newErrors.password = 'A senha deve ter pelo menos 6 caracteres.';
     setErrors(newErrors);
+    setErroApi('');
+    if (Object.keys(newErrors).length > 0) return;
 
-    if (Object.keys(newErrors).length === 0) {
-      signIn(email);
+    // POST /api/auth/login — em caso de sucesso o RootNavigator troca para as telas logadas
+    setEntrando(true);
+    try {
+      await signIn(email, password);
+    } catch (erro) {
+      setErroApi(erro.message);
+      setEntrando(false);
     }
   }
 
@@ -43,6 +52,7 @@ export default function LoginScreen({ navigation, route }) {
     setEmail(DEMO_ACCOUNTS[profile].email);
     setPassword(DEMO_ACCOUNTS[profile].password);
     setErrors({});
+    setErroApi('');
   }
 
   return (
@@ -80,7 +90,9 @@ export default function LoginScreen({ navigation, route }) {
         error={errors.password}
       />
 
-      <Button title="Entrar" onPress={handleLogin} />
+      {erroApi ? <Notice tone="danger" title={erroApi} /> : null}
+
+      <Button title={entrando ? 'Entrando…' : 'Entrar'} loading={entrando} onPress={handleLogin} />
 
       <Pressable style={styles.link} onPress={() => navigation.navigate('Register')}>
         <Text style={styles.linkText}>Ainda não tenho conta</Text>
@@ -92,8 +104,7 @@ export default function LoginScreen({ navigation, route }) {
           <Text style={styles.demoTitle}>Modo demonstração</Text>
         </View>
         <Text style={type.small}>
-          Nesta versão o login é simulado. A autenticação com API, senha criptografada e JWT chega na Entrega 3.
-          Escolha um perfil para testar:
+          Contas criadas pelo banco de dados de exemplo (senha 123456). Escolha um perfil para preencher:
         </Text>
         <View style={styles.demoButtons}>
           {demoProfiles.map((profile) => (

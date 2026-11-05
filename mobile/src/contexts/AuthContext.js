@@ -1,6 +1,7 @@
 import { createContext, useContext, useState } from 'react';
+import { buscarUsuario, cadastrar, entrar } from '../services/usuariosService';
 
-// Níveis de usuário (os mesmos papéis do site: tabela user_roles / enum app_role)
+// Níveis de usuário (coluna "nivel" da tabela usuarios)
 export const ROLES = {
   USUARIO: 'usuario',
   PROFISSIONAL: 'profissional',
@@ -21,61 +22,14 @@ export const verificacaoLabels = {
   recusado: 'Recusado',
 };
 
-// Contas de demonstração (as mesmas contas de teste do site).
-// Entrega 1: login simulado. Entrega 3: POST /auth/login devolve um JWT, guardado no aparelho
-// e enviado como Bearer Token; a senha fica salva com hash no banco.
+// Contas de demonstração criadas pelo seed do banco (database/seed.sql)
 export const DEMO_ACCOUNTS = {
   usuario: { email: 'familia@conexaopais.test', password: '123456' },
   profissional: { email: 'profissional@conexaopais.test', password: '123456' },
   admin: { email: 'admin@conexaopais.test', password: '123456' },
 };
 
-const initialUsers = [
-  {
-    id: 1,
-    name: 'Ana Sprenger',
-    email: DEMO_ACCOUNTS.admin.email,
-    role: ROLES.ADMIN,
-    verificacao: 'aprovado',
-  },
-  {
-    id: 2,
-    name: 'Dra. Helena Prado',
-    email: DEMO_ACCOUNTS.profissional.email,
-    role: ROLES.PROFISSIONAL,
-    profissao: 'Psicóloga',
-    registro: 'CRP 07/123456',
-    verificacao: 'aprovado',
-  },
-  {
-    id: 3,
-    name: 'Marina Souza',
-    email: DEMO_ACCOUNTS.usuario.email,
-    role: ROLES.USUARIO,
-    verificacao: 'aprovado',
-  },
-  // Cadastros profissionais de exemplo, aguardando a análise da administração
-  {
-    id: 4,
-    name: 'Carla Mendes',
-    email: 'carla.mendes@exemplo.com',
-    role: ROLES.PROFISSIONAL,
-    profissao: 'Fonoaudióloga',
-    registro: 'CRFa 2-12345',
-    verificacao: 'pendente',
-  },
-  {
-    id: 5,
-    name: 'Paulo Ribeiro',
-    email: 'paulo.ribeiro@exemplo.com',
-    role: ROLES.PROFISSIONAL,
-    profissao: 'Nutricionista',
-    registro: 'CRN-3 45678',
-    verificacao: 'pendente',
-  },
-];
-
-// Regras de permissão usadas nas telas (na Entrega 3 o back-end aplica as mesmas regras)
+// Regras de permissão usadas nas telas (a API também confere quem pode publicar)
 export function canPublish(user) {
   return user?.role === ROLES.ADMIN || (user?.role === ROLES.PROFISSIONAL && user.verificacao === 'aprovado');
 }
@@ -87,56 +41,36 @@ export function canEditArticle(user, artigo) {
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [users, setUsers] = useState(initialUsers);
-  const [userId, setUserId] = useState(null);
+  const [user, setUser] = useState(null);
 
-  const user = users.find((item) => item.id === userId) ?? null;
-
-  // Login simulado: e-mail cadastrado entra com a conta dele; e-mail novo entra como família
-  function signIn(email) {
-    const normalized = email.trim().toLowerCase();
-    const found = users.find((item) => item.email === normalized);
-    if (found) {
-      setUserId(found.id);
-      return;
-    }
-    const newUser = { id: Date.now(), name: normalized.split('@')[0], email: normalized, role: ROLES.USUARIO, verificacao: 'aprovado' };
-    setUsers((current) => [...current, newUser]);
-    setUserId(newUser.id);
+  // Entrega 2: a API confere e-mail e senha (hash bcrypt) e devolve os dados do usuário.
+  // Entrega 3: a API devolve também um JWT, guardado no aparelho e enviado como Bearer Token.
+  async function signIn(email, senha) {
+    setUser(await entrar(email.trim().toLowerCase(), senha));
   }
 
   // Cadastro: conta de família é liberada na hora; conta profissional fica "pendente" até a administração aprovar
-  function signUp({ name, email, tipo, profissao, registro }) {
-    const isProfissional = tipo === ROLES.PROFISSIONAL;
-    const newUser = {
-      id: Date.now(),
-      name: name.trim(),
-      email: email.trim().toLowerCase(),
-      role: isProfissional ? ROLES.PROFISSIONAL : ROLES.USUARIO,
-      verificacao: isProfissional ? 'pendente' : 'aprovado',
-      ...(isProfissional && { profissao: profissao.trim(), registro: registro.trim() }),
-    };
-    setUsers((current) => [...current.filter((item) => item.email !== newUser.email), newUser]);
+  function signUp({ name, email, tipo, profissao, registro, password }) {
+    return cadastrar({ nome: name.trim(), email: email.trim().toLowerCase(), senha: password, tipo, profissao, registro });
+  }
+
+  // Busca de novo os dados do usuário (ex.: depois que a administração aprova o cadastro)
+  async function refreshUser() {
+    if (user) setUser(await buscarUsuario(user.id));
   }
 
   function signOut() {
-    setUserId(null);
-  }
-
-  // Decisão da administração sobre um cadastro profissional
-  function reviewProfessional(id, verificacao, observacao = '') {
-    setUsers((current) => current.map((item) => (item.id === id ? { ...item, verificacao, observacao } : item)));
+    setUser(null);
   }
 
   const value = {
     user,
-    users,
     isAdmin: user?.role === ROLES.ADMIN,
     canPublish: canPublish(user),
     signIn,
     signUp,
+    refreshUser,
     signOut,
-    reviewProfessional,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

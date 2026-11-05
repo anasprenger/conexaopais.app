@@ -27,6 +27,8 @@ export default function RegisterScreen({ navigation }) {
     confirm: '',
   });
   const [errors, setErrors] = useState({});
+  const [erroApi, setErroApi] = useState('');
+  const [enviando, setEnviando] = useState(false);
   const isProfissional = form.tipo === ROLES.PROFISSIONAL;
 
   function update(field, value) {
@@ -34,7 +36,7 @@ export default function RegisterScreen({ navigation }) {
     setErrors((current) => ({ ...current, [field]: undefined }));
   }
 
-  function handleRegister() {
+  async function handleRegister() {
     const newErrors = {};
     if (form.name.trim().length < 2) newErrors.name = 'Informe como podemos te chamar.';
     if (!isValidEmail(form.email)) newErrors.email = 'Informe um e-mail válido.';
@@ -44,9 +46,20 @@ export default function RegisterScreen({ navigation }) {
     if (form.confirm !== form.password) newErrors.confirm = 'As senhas não conferem.';
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
-      signUp(form);
+    setErroApi('');
+    if (Object.keys(newErrors).length > 0) return;
+
+    // POST /api/usuarios — a senha é salva no banco apenas como hash
+    setEnviando(true);
+    try {
+      await signUp(form);
       navigation.popTo('Login', { registered: form.tipo, email: form.email.trim() });
+    } catch (erro) {
+      // erros de validação da API voltam por campo (ex.: e-mail já cadastrado)
+      const { nome, senha, ...outros } = erro.campos;
+      setErrors({ ...outros, ...(nome && { name: nome }), ...(senha && { password: senha }) });
+      setErroApi(erro.message);
+      setEnviando(false);
     }
   }
 
@@ -126,7 +139,9 @@ export default function RegisterScreen({ navigation }) {
         error={errors.confirm}
       />
 
-      <Button title="Criar minha conta" variant="accent" onPress={handleRegister} />
+      {erroApi ? <Notice tone="danger" title={erroApi} /> : null}
+
+      <Button title="Criar minha conta" variant="accent" loading={enviando} onPress={handleRegister} />
 
       <Pressable style={styles.link} onPress={() => navigation.popTo('Login')}>
         <Text style={styles.linkText}>Já tenho uma conta</Text>

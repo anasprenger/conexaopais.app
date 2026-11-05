@@ -1,4 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import ArticleCard from '../../components/ArticleCard';
 import Avatar from '../../components/Avatar';
@@ -11,12 +13,14 @@ import { ROLES, roleLabels, useAuth, verificacaoLabels } from '../../contexts/Au
 import { useCommunity } from '../../contexts/CommunityContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useContent } from '../../contexts/ContentContext';
+import { useApi } from '../../hooks/useApi';
+import { listarContasProfissionais } from '../../services/usuariosService';
 import { colors, fonts, radius, shadow, spacing, type } from '../../theme';
 
 const verificacaoTone = { pendente: 'warning', aprovado: 'success', ajustes_solicitados: 'warning', recusado: 'danger' };
 
 export default function AccountScreen({ navigation }) {
-  const { user, users, isAdmin, canPublish, signOut } = useAuth();
+  const { user, isAdmin, canPublish, refreshUser, signOut } = useAuth();
   const { artigos, getArtigo, deleteArtigo } = useContent();
   const { savedIds } = useCommunity();
   const confirm = useConfirm();
@@ -25,7 +29,19 @@ export default function AccountScreen({ navigation }) {
   const salvos = savedIds(user).map(getArtigo).filter(Boolean);
   // Admin gerencia todas as publicações; o profissional, apenas as próprias
   const publicacoes = isAdmin ? artigos : artigos.filter((artigo) => artigo.autorId === user.id);
-  const pendentes = users.filter((item) => item.role === ROLES.PROFISSIONAL && item.verificacao === 'pendente').length;
+  // GET /api/usuarios?nivel=profissional&verificacao=pendente (só para a administração)
+  const { data: contasPendentes } = useApi(() => (isAdmin ? listarContasProfissionais('pendente') : Promise.resolve([])), [isAdmin], {
+    recarregarAoFocar: true,
+  });
+  const pendentes = contasPendentes?.length ?? 0;
+
+  // Ao abrir a tela, busca de novo os dados da conta (ex.: cadastro profissional aprovado)
+  useFocusEffect(
+    useCallback(() => {
+      refreshUser().catch(() => {});
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+  );
 
   function excluir(artigo) {
     confirm({
