@@ -27,7 +27,9 @@ export default function AccountScreen({ navigation }) {
   const [erroExclusao, setErroExclusao] = useState('');
 
   const isProfissional = user.role === ROLES.PROFISSIONAL;
-  const salvos = savedIds(user).map(getArtigo).filter(Boolean);
+  const salvos = savedIds()
+    .map((id) => getArtigo(id))
+    .filter(Boolean);
   // Admin gerencia todas as publicações; o profissional, apenas as próprias
   const publicacoes = isAdmin ? artigos : artigos.filter((artigo) => artigo.autorId === user.id);
   // GET /api/usuarios?nivel=profissional&verificacao=pendente (só para a administração)

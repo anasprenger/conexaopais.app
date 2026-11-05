@@ -20,7 +20,7 @@ export default function AsyncState({ loading, error, onRetry, children, compact 
       </View>
     );
   }
-  return children;
+  return children ?? null;
 }
 
 const styles = StyleSheet.create({

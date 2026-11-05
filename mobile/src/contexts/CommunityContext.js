@@ -1,88 +1,60 @@
-import { createContext, useContext, useState } from 'react';
-import { dataCurta } from '../utils/text';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { alternarInteracao } from '../services/artigosService';
+import { listarInteracoes } from '../services/usuariosService';
+import { useAuth } from './AuthContext';
+import { useContent } from './ContentContext';
 
 const CommunityContext = createContext(null);
 
-// Interações das contas de demonstração (como a tabela "interacoes" do site: curtida e salvo)
-const interacoesIniciais = [
-  { userId: 3, artigoId: 1, tipo: 'curtida' },
-  { userId: 3, artigoId: 1, tipo: 'salvo' },
-  { userId: 3, artigoId: 4, tipo: 'curtida' },
-  { userId: 1, artigoId: 1, tipo: 'curtida' },
-  { userId: 2, artigoId: 2, tipo: 'curtida' },
-  { userId: 1, artigoId: 3, tipo: 'salvo' },
-];
-
-const comentariosIniciais = [
-  {
-    id: 1,
-    artigoId: 1,
-    userId: 3,
-    autor: 'Marina Souza',
-    texto: 'A parte de descrever sem julgar mudou as conversas aqui em casa. Obrigada pelo texto!',
-    data: '14 ago 2026',
-  },
-  {
-    id: 2,
-    artigoId: 1,
-    userId: 2,
-    autor: 'Dra. Helena Prado',
-    texto: 'Que bom saber, Marina! Com o tempo, a própria criança começa a usar essas palavras.',
-    data: '15 ago 2026',
-  },
-];
-
-// Curtidas, conteúdos salvos e comentários (em memória até a integração com a API)
+// Curtidas e conteúdos salvos do usuário logado (tabela "interacoes" no banco)
 export function CommunityProvider({ children }) {
-  const [interacoes, setInteracoes] = useState(interacoesIniciais);
-  const [comentarios, setComentarios] = useState(comentariosIniciais);
+  const { user } = useAuth();
+  const { artigos, patchArtigo } = useContent();
+  const [interacoes, setInteracoes] = useState([]); // [{ publicacaoId, tipo }]
 
-  function isActive(user, tipo, artigoId) {
-    return interacoes.some((i) => i.userId === user?.id && i.tipo === tipo && i.artigoId === artigoId);
+  // GET /api/usuarios/:id/interacoes depois do login
+  useEffect(() => {
+    if (!user) {
+      setInteracoes([]);
+      return;
+    }
+    listarInteracoes(user.id)
+      .then(setInteracoes)
+      .catch(() => setInteracoes([]));
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  function isActive(tipo, artigoId) {
+    return interacoes.some((item) => item.tipo === tipo && item.publicacaoId === artigoId);
   }
 
-  function toggle(user, tipo, artigoId) {
-    setInteracoes((current) =>
-      isActive(user, tipo, artigoId)
-        ? current.filter((i) => !(i.userId === user.id && i.tipo === tipo && i.artigoId === artigoId))
-        : [...current, { userId: user.id, artigoId, tipo }]
-    );
-  }
-
-  function count(tipo, artigoId) {
-    return interacoes.filter((i) => i.tipo === tipo && i.artigoId === artigoId).length;
+  // POST /api/artigos/:id/interacoes — liga/desliga e atualiza o total no artigo
+  async function toggle(tipo, artigoId) {
+    const { ativo, total } = await alternarInteracao(artigoId, user.id, tipo);
+    setInteracoes((atual) => {
+      const sem = atual.filter((item) => !(item.tipo === tipo && item.publicacaoId === artigoId));
+      return ativo ? [{ publicacaoId: artigoId, tipo }, ...sem] : sem;
+    });
+    patchArtigo(artigoId, { [tipo === 'curtida' ? 'curtidas' : 'salvos']: total });
+    return { ativo, total };
   }
 
   // Artigos mais curtidos ou mais salvos (como o ranking da página Comunidade do site)
   function ranking(tipo, limite = 3) {
-    const totais = {};
-    interacoes.filter((i) => i.tipo === tipo).forEach((i) => (totais[i.artigoId] = (totais[i.artigoId] ?? 0) + 1));
-    return Object.entries(totais)
-      .map(([artigoId, total]) => ({ artigoId: Number(artigoId), total }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, limite);
+    const campo = tipo === 'curtida' ? 'curtidas' : 'salvos';
+    return artigos
+      .filter((artigo) => artigo[campo] > 0)
+      .sort((a, b) => b[campo] - a[campo])
+      .slice(0, limite)
+      .map((artigo) => ({ artigoId: artigo.id, total: artigo[campo] }));
   }
 
-  function savedIds(user) {
-    return interacoes.filter((i) => i.userId === user?.id && i.tipo === 'salvo').map((i) => i.artigoId);
+  function savedIds() {
+    return interacoes.filter((item) => item.tipo === 'salvo').map((item) => item.publicacaoId);
   }
 
-  function comentariosDo(artigoId) {
-    return comentarios.filter((c) => c.artigoId === artigoId);
-  }
-
-  function addComentario(user, artigoId, texto) {
-    const novo = { id: Date.now(), artigoId, userId: user.id, autor: user.name, texto: texto.trim(), data: dataCurta() };
-    setComentarios((current) => [...current, novo]);
-  }
-
-  function deleteComentario(id) {
-    setComentarios((current) => current.filter((c) => c.id !== id));
-  }
-
-  const value = { isActive, toggle, count, ranking, savedIds, comentariosDo, addComentario, deleteComentario };
-
-  return <CommunityContext.Provider value={value}>{children}</CommunityContext.Provider>;
+  return (
+    <CommunityContext.Provider value={{ isActive, toggle, ranking, savedIds }}>{children}</CommunityContext.Provider>
+  );
 }
 
 export function useCommunity() {

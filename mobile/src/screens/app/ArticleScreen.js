@@ -16,22 +16,25 @@ import { useCommunity } from '../../contexts/CommunityContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useContent } from '../../contexts/ContentContext';
 import { useApi } from '../../hooks/useApi';
-import { buscarArtigo } from '../../services/artigosService';
+import { buscarArtigo, comentar, excluirComentario, listarComentarios } from '../../services/artigosService';
 import { colors, fonts, radius, spacing, type } from '../../theme';
 
 export default function ArticleScreen({ navigation, route }) {
   const { user } = useAuth();
-  const { artigos, deleteArtigo } = useContent();
+  const { artigos, getArtigo, deleteArtigo, patchArtigo } = useContent();
   const community = useCommunity();
   const confirm = useConfirm();
   const [comentario, setComentario] = useState('');
   const [erro, setErro] = useState('');
   const [erroExclusao, setErroExclusao] = useState('');
+  const [erroInteracao, setErroInteracao] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const id = route.params?.id;
 
   // GET /api/artigos/:id — busca de novo ao voltar da edição
-  const { data: artigo, loading, error, reload } = useApi(() => buscarArtigo(route.params?.id), [route.params?.id], {
-    recarregarAoFocar: true,
-  });
+  const { data: artigo, loading, error, reload } = useApi(() => buscarArtigo(id), [id], { recarregarAoFocar: true });
+  // GET /api/artigos/:id/comentarios
+  const comentariosApi = useApi(() => listarComentarios(id), [id]);
 
   if (!artigo) {
     return (
@@ -43,20 +46,40 @@ export default function ArticleScreen({ navigation, route }) {
     );
   }
 
-  const curtido = community.isActive(user, 'curtida', artigo.id);
-  const salvo = community.isActive(user, 'salvo', artigo.id);
-  const comentarios = community.comentariosDo(artigo.id);
+  const curtido = community.isActive('curtida', artigo.id);
+  const salvo = community.isActive('salvo', artigo.id);
+  const curtidas = getArtigo(artigo.id)?.curtidas ?? artigo.curtidas; // total atualizado depois de curtir
+  const comentarios = comentariosApi.data ?? [];
   const relacionados = artigos.filter((item) => item.id !== artigo.id).slice(0, 2);
   const podeEditar = canEditArticle(user, artigo);
 
-  function publicarComentario() {
+  async function alternar(tipo) {
+    setErroInteracao('');
+    try {
+      await community.toggle(tipo, artigo.id);
+    } catch (falha) {
+      setErroInteracao(falha.message);
+    }
+  }
+
+  // POST /api/artigos/:id/comentarios
+  async function publicarComentario() {
     if (comentario.trim().length < 3) {
       setErro('Escreva seu comentário antes de publicar.');
       return;
     }
-    community.addComentario(user, artigo.id, comentario);
-    setComentario('');
-    setErro('');
+    setEnviando(true);
+    try {
+      await comentar(artigo.id, user.id, comentario.trim());
+      setComentario('');
+      setErro('');
+      await comentariosApi.reload();
+      patchArtigo(artigo.id, { comentarios: comentarios.length + 1 });
+    } catch (falha) {
+      setErro(falha.campos.texto ?? falha.message);
+    } finally {
+      setEnviando(false);
+    }
   }
 
   function excluirArtigo() {
@@ -75,12 +98,20 @@ export default function ArticleScreen({ navigation, route }) {
     });
   }
 
-  function excluirComentario(item) {
+  function confirmarExclusaoComentario(item) {
     confirm({
       title: 'Excluir comentário',
       message: 'Este comentário será removido da conversa.',
       confirmLabel: 'Excluir',
-      onConfirm: () => community.deleteComentario(item.id),
+      onConfirm: async () => {
+        try {
+          await excluirComentario(item.id); // DELETE /api/comentarios/:id
+          await comentariosApi.reload();
+          patchArtigo(artigo.id, { comentarios: Math.max(0, comentarios.length - 1) });
+        } catch (falha) {
+          setErro(falha.message);
+        }
+      },
     });
   }
 
@@ -115,20 +146,21 @@ export default function ArticleScreen({ navigation, route }) {
 
       <View style={styles.actions}>
         <Button
-          title={`${curtido ? 'Curtido' : 'Curtir'} · ${community.count('curtida', artigo.id)}`}
+          title={`${curtido ? 'Curtido' : 'Curtir'} · ${curtidas}`}
           icon={curtido ? 'heart' : 'heart-outline'}
           variant={curtido ? 'accent' : 'soft'}
           small
-          onPress={() => community.toggle(user, 'curtida', artigo.id)}
+          onPress={() => alternar('curtida')}
         />
         <Button
           title={salvo ? 'Salvo' : 'Salvar'}
           icon={salvo ? 'bookmark' : 'bookmark-outline'}
           variant={salvo ? 'accent' : 'soft'}
           small
-          onPress={() => community.toggle(user, 'salvo', artigo.id)}
+          onPress={() => alternar('salvo')}
         />
       </View>
+      {erroInteracao ? <Notice tone="danger" title={erroInteracao} /> : null}
 
       {artigo.conteudo.map((paragrafo, index) => (
         <Text key={index} style={[type.body, styles.paragraph]}>
@@ -156,9 +188,17 @@ export default function ArticleScreen({ navigation, route }) {
       )}
 
       <SectionHeader title={`Comentários (${comentarios.length})`} />
-      {comentarios.length === 0 && <Text style={type.muted}>Ninguém comentou ainda. Comece a conversa.</Text>}
+      <AsyncState
+        loading={comentariosApi.loading && !comentariosApi.data}
+        error={comentariosApi.error}
+        onRetry={comentariosApi.reload}
+        compact
+      >
+        {comentarios.length === 0 && <Text style={type.muted}>Ninguém comentou ainda. Comece a conversa.</Text>}
+      </AsyncState>
       {comentarios.map((item) => {
-        const podeExcluir = item.userId === user.id || user.role === ROLES.ADMIN;
+        // Entrega 3: a API também vai conferir quem pode excluir (autor do comentário ou admin)
+        const podeExcluir = item.usuarioId === user.id || user.role === ROLES.ADMIN;
         return (
           <View key={item.id} style={styles.comment}>
             <Avatar name={item.autor} size={36} tone="accent" />
@@ -169,7 +209,7 @@ export default function ArticleScreen({ navigation, route }) {
               <Text style={[type.body, styles.commentText]}>{item.texto}</Text>
             </View>
             {podeExcluir && (
-              <Pressable onPress={() => excluirComentario(item)} hitSlop={8} accessibilityLabel="Excluir comentário">
+              <Pressable onPress={() => confirmarExclusaoComentario(item)} hitSlop={8} accessibilityLabel="Excluir comentário">
                 <Ionicons name="trash-outline" size={18} color={colors.textMuted} />
               </Pressable>
             )}
@@ -185,7 +225,7 @@ export default function ArticleScreen({ navigation, route }) {
         error={erro}
         style={styles.commentField}
       />
-      <Button title="Publicar comentário" icon="chatbubble-outline" onPress={publicarComentario} />
+      <Button title="Publicar comentário" icon="chatbubble-outline" loading={enviando} onPress={publicarComentario} />
 
       <SectionHeader title="Conteúdos relacionados" />
       {relacionados.map((item) => (

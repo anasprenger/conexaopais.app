@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import AsyncState from '../../components/AsyncState';
 import Button from '../../components/Button';
 import Notice from '../../components/Notice';
 import PageHero from '../../components/PageHero';
@@ -11,31 +12,52 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCommunity } from '../../contexts/CommunityContext';
 import { useContent } from '../../contexts/ContentContext';
 import { recursosComunidade, regrasComunidade } from '../../data/institucional';
+import { enviarMensagem } from '../../services/mensagensService';
 import { colors, fonts, radius, shadow, spacing, type } from '../../theme';
 import { plural } from '../../utils/text';
 
 export default function CommunityScreen({ navigation }) {
   const { user } = useAuth();
-  const { artigos, getArtigo } = useContent();
+  const { artigos, getArtigo, loading, error, reload } = useContent();
   const community = useCommunity();
   const [aberto, setAberto] = useState(null);
   const [pergunta, setPergunta] = useState('');
   const [erro, setErro] = useState('');
   const [enviada, setEnviada] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erroInteracao, setErroInteracao] = useState('');
 
   const destaques = [
     { titulo: 'Artigos com mais curtidas', tipo: 'curtida', unidade: ['curtida', 'curtidas'], vazio: 'Ainda sem curtidas.' },
     { titulo: 'Artigos mais salvos', tipo: 'salvo', unidade: ['vez salvo', 'vezes salvo'], vazio: 'Nada salvo ainda.' },
   ];
 
-  function enviarPergunta() {
+  async function alternar(tipo, artigoId) {
+    setErroInteracao('');
+    try {
+      await community.toggle(tipo, artigoId); // POST /api/artigos/:id/interacoes
+    } catch (falha) {
+      setErroInteracao(falha.message);
+    }
+  }
+
+  // POST /api/mensagens (tipo "pergunta")
+  async function enviarPergunta() {
     if (pergunta.trim().length < 10) {
       setErro('Escreva um pouco mais para a equipe entender sua dúvida.');
       return;
     }
-    setPergunta('');
-    setErro('');
-    setEnviada(true);
+    setEnviando(true);
+    try {
+      await enviarMensagem({ tipo: 'pergunta', nome: user.name, email: user.email, mensagem: pergunta.trim(), usuarioId: user.id });
+      setPergunta('');
+      setErro('');
+      setEnviada(true);
+    } catch (falha) {
+      setErro(falha.campos.mensagem ?? falha.message);
+    } finally {
+      setEnviando(false);
+    }
   }
 
   return (
@@ -69,9 +91,11 @@ export default function CommunityScreen({ navigation }) {
 
       <SectionHeader title="Conversas em andamento" />
       <Text style={[type.muted, styles.hint]}>Curta e salve para acompanhar. Toque no título para abrir o conteúdo.</Text>
+      {erroInteracao ? <Notice tone="danger" title={erroInteracao} /> : null}
+      <AsyncState loading={loading && artigos.length === 0} error={error} onRetry={reload} />
       {artigos.map((artigo) => {
-        const curtido = community.isActive(user, 'curtida', artigo.id);
-        const salvo = community.isActive(user, 'salvo', artigo.id);
+        const curtido = community.isActive('curtida', artigo.id);
+        const salvo = community.isActive('salvo', artigo.id);
         return (
           <View key={artigo.id} style={styles.conversation}>
             <Text style={type.eyebrow}>
@@ -81,8 +105,7 @@ export default function CommunityScreen({ navigation }) {
               <Text style={[type.h3, styles.conversationTitle]}>{artigo.titulo}</Text>
             </Pressable>
             <Text style={type.small}>
-              {plural(community.comentariosDo(artigo.id).length, 'comentário', 'comentários')} ·{' '}
-              {plural(community.count('curtida', artigo.id), 'curtida', 'curtidas')}
+              {plural(artigo.comentarios, 'comentário', 'comentários')} · {plural(artigo.curtidas, 'curtida', 'curtidas')}
             </Text>
             <View style={styles.conversationActions}>
               <Button
@@ -90,14 +113,14 @@ export default function CommunityScreen({ navigation }) {
                 icon={curtido ? 'heart' : 'heart-outline'}
                 variant={curtido ? 'accent' : 'soft'}
                 small
-                onPress={() => community.toggle(user, 'curtida', artigo.id)}
+                onPress={() => alternar('curtida', artigo.id)}
               />
               <Button
                 title={salvo ? 'Salvo' : 'Salvar'}
                 icon={salvo ? 'bookmark' : 'bookmark-outline'}
                 variant={salvo ? 'accent' : 'soft'}
                 small
-                onPress={() => community.toggle(user, 'salvo', artigo.id)}
+                onPress={() => alternar('salvo', artigo.id)}
               />
             </View>
           </View>
@@ -146,7 +169,7 @@ export default function CommunityScreen({ navigation }) {
           }}
           error={erro}
         />
-        <Button title="Enviar pergunta" variant="accent" small onPress={enviarPergunta} style={styles.askButton} />
+        <Button title="Enviar pergunta" variant="accent" small loading={enviando} onPress={enviarPergunta} style={styles.askButton} />
       </View>
 
       <SectionHeader title="Regras de convivência" />
