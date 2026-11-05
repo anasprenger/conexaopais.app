@@ -8,6 +8,8 @@ const router = Router();
 router.get('/status', statusController.status);
 router.get('/categorias', artigosController.listarCategorias);
 
+router.use('/auth', require('./auth.routes'));
+router.use('/usuarios', require('./usuarios.routes'));
 router.use('/artigos', require('./artigos.routes'));
 router.use('/comentarios', require('./comentarios.routes'));
 
