@@ -12,5 +12,9 @@ router.use('/auth', require('./auth.routes'));
 router.use('/usuarios', require('./usuarios.routes'));
 router.use('/artigos', require('./artigos.routes'));
 router.use('/comentarios', require('./comentarios.routes'));
+router.use('/profissionais', require('./profissionais.routes'));
+router.use('/colunas', require('./colunas.routes'));
+router.use('/revistas', require('./revistas.routes'));
+router.use('/mensagens', require('./mensagens.routes'));
 
 module.exports = router;
