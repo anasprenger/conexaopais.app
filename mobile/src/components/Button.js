@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
 import { colors, fontSize, fonts, spacing } from '../theme';
 
 // Variantes equivalentes às do site: primary (verde), accent (ocre, "cta"),
@@ -13,24 +13,31 @@ const variants = {
   danger: { background: colors.dangerSoft, text: colors.danger, border: colors.dangerSoft },
 };
 
-export default function Button({ title, onPress, variant = 'primary', icon, small = false, disabled = false, style }) {
+// loading: mostra um indicador e bloqueia novos toques enquanto a API responde
+export default function Button({ title, onPress, variant = 'primary', icon, small = false, disabled = false, loading = false, style }) {
   const theme = variants[variant];
+  const bloqueado = disabled || loading;
 
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
+      disabled={bloqueado}
       accessibilityRole="button"
+      accessibilityState={{ disabled: bloqueado, busy: loading }}
       style={({ pressed }) => [
         styles.button,
         small && styles.small,
         { backgroundColor: theme.background, borderColor: theme.border },
         pressed && styles.pressed,
-        disabled && styles.disabled,
+        bloqueado && styles.disabled,
         style,
       ]}
     >
-      {icon && <Ionicons name={icon} size={small ? 16 : 19} color={theme.text} style={styles.icon} />}
+      {loading ? (
+        <ActivityIndicator size="small" color={theme.text} style={styles.icon} />
+      ) : (
+        icon && <Ionicons name={icon} size={small ? 16 : 19} color={theme.text} style={styles.icon} />
+      )}
       <Text style={[styles.text, small && styles.smallText, { color: theme.text }]}>{title}</Text>
     </Pressable>
   );
