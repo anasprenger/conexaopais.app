@@ -54,9 +54,12 @@ export function AuthProvider({ children }) {
     return cadastrar({ nome: name.trim(), email: email.trim().toLowerCase(), senha: password, tipo, profissao, registro });
   }
 
-  // Busca de novo os dados do usuário (ex.: depois que a administração aprova o cadastro)
+  // Busca de novo os dados do usuário (ex.: depois que a administração aprova o cadastro).
+  // Se a pessoa sair (ou trocar de conta) antes da resposta chegar, a resposta é ignorada.
   async function refreshUser() {
-    if (user) setUser(await buscarUsuario(user.id));
+    if (!user) return;
+    const atualizado = await buscarUsuario(user.id);
+    setUser((atual) => (atual?.id === atualizado.id ? atualizado : atual));
   }
 
   function signOut() {

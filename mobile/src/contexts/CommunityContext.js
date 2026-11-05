@@ -14,13 +14,15 @@ export function CommunityProvider({ children }) {
 
   // GET /api/usuarios/:id/interacoes depois do login
   useEffect(() => {
-    if (!user) {
-      setInteracoes([]);
-      return;
-    }
+    setInteracoes([]);
+    if (!user) return undefined;
+    let ativo = true; // ignora a resposta se a pessoa sair ou trocar de conta antes
     listarInteracoes(user.id)
-      .then(setInteracoes)
-      .catch(() => setInteracoes([]));
+      .then((lista) => ativo && setInteracoes(lista))
+      .catch(() => {});
+    return () => {
+      ativo = false;
+    };
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function isActive(tipo, artigoId) {
