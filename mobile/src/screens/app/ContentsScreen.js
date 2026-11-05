@@ -14,8 +14,7 @@ import TextField from '../../components/TextField';
 import { useContent } from '../../contexts/ContentContext';
 import { useApi, useDebouncedValue } from '../../hooks/useApi';
 import { listarArtigos } from '../../services/artigosService';
-import { colunas } from '../../data/colunas';
-import { revistas } from '../../data/revistas';
+import { listarColunas, listarRevistas } from '../../services/conteudoService';
 import { colors, fonts, radius, spacing, type } from '../../theme';
 
 const segments = [
@@ -52,7 +51,11 @@ export default function ContentsScreen({ navigation, route }) {
     recarregarAoFocar: true,
   });
 
-  const [atual, ...anteriores] = revistas;
+  // GET /api/colunas e GET /api/revistas
+  const colunasApi = useApi(() => listarColunas(), []);
+  const revistasApi = useApi(() => listarRevistas(), []);
+  const colunas = colunasApi.data ?? [];
+  const [atual, ...anteriores] = revistasApi.data ?? [];
 
   return (
     <Screen>
@@ -79,6 +82,9 @@ export default function ContentsScreen({ navigation, route }) {
         </>
       )}
 
+      {segment === 'colunas' && (
+        <AsyncState loading={colunasApi.loading && !colunasApi.data} error={colunasApi.error} onRetry={colunasApi.reload} />
+      )}
       {segment === 'colunas' &&
         colunas.map((coluna) => (
           <Pressable
@@ -92,12 +98,15 @@ export default function ContentsScreen({ navigation, route }) {
             <Text style={[type.muted, styles.columnText]}>{coluna.chamada}</Text>
             <Text style={styles.columnAuthor}>por {coluna.colunista}</Text>
             <Text style={[type.small, styles.columnCount]}>
-              {coluna.posts.length} {coluna.posts.length === 1 ? 'publicação' : 'publicações'} · abrir coluna
+              {coluna.totalPosts} {coluna.totalPosts === 1 ? 'publicação' : 'publicações'} · abrir coluna
             </Text>
           </Pressable>
         ))}
 
       {segment === 'revista' && (
+        <AsyncState loading={revistasApi.loading && !revistasApi.data} error={revistasApi.error} onRetry={revistasApi.reload} />
+      )}
+      {segment === 'revista' && atual && (
         <>
           <View style={styles.current}>
             <MagazineCover revista={atual} width={190} onPress={() => navigation.navigate('Magazine', { slug: atual.slug })} />

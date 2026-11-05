@@ -1,20 +1,25 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import AsyncState from '../../components/AsyncState';
 import Chip from '../../components/Chip';
 import EmptyState from '../../components/EmptyState';
 import PageHero from '../../components/PageHero';
 import ProfessionalCard from '../../components/ProfessionalCard';
 import Screen from '../../components/Screen';
 import TextField from '../../components/TextField';
-import { profissionais } from '../../data/profissionais';
+import { useApi } from '../../hooks/useApi';
+import { listarProfissionais } from '../../services/conteudoService';
 import { colors, radius, spacing, type } from '../../theme';
 import { normalize } from '../../utils/text';
 
-const areas = ['Todas', ...new Set(profissionais.map((p) => p.especialidade))];
-
 export default function ProfessionalsScreen({ navigation }) {
+  // GET /api/profissionais
+  const { data, loading, error, reload } = useApi(() => listarProfissionais(), []);
   const [busca, setBusca] = useState('');
   const [area, setArea] = useState('Todas');
+
+  const profissionais = data ?? [];
+  const areas = ['Todas', ...new Set(profissionais.map((p) => p.especialidade))];
 
   const termo = normalize(busca);
   const resultados = profissionais.filter((p) => {
@@ -38,17 +43,19 @@ export default function ProfessionalsScreen({ navigation }) {
         ))}
       </ScrollView>
 
-      {resultados.length === 0 ? (
-        <EmptyState title="Nenhum profissional encontrado para esta busca." />
-      ) : (
-        resultados.map((profissional) => (
-          <ProfessionalCard
-            key={profissional.slug}
-            profissional={profissional}
-            onPress={() => navigation.navigate('Professional', { slug: profissional.slug })}
-          />
-        ))
-      )}
+      <AsyncState loading={loading && !data} error={error} onRetry={reload}>
+        {resultados.length === 0 ? (
+          <EmptyState title="Nenhum profissional encontrado para esta busca." />
+        ) : (
+          resultados.map((profissional) => (
+            <ProfessionalCard
+              key={profissional.slug}
+              profissional={profissional}
+              onPress={() => navigation.navigate('Professional', { slug: profissional.slug })}
+            />
+          ))
+        )}
+      </AsyncState>
 
       <View style={styles.join}>
         <Text style={type.h3}>É profissional?</Text>

@@ -1,16 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useLayoutEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import AsyncState from '../../components/AsyncState';
 import EmptyState from '../../components/EmptyState';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
-import { getColuna } from '../../data/colunas';
-import { getProfissionalPorNome } from '../../data/profissionais';
+import { useApi } from '../../hooks/useApi';
+import { buscarColuna } from '../../services/conteudoService';
 import { blob, colors, fonts, radius, shadow, spacing, type } from '../../theme';
 
 export default function ColumnScreen({ navigation, route }) {
-  const coluna = getColuna(route.params?.slug);
-  const [aberto, setAberto] = useState(coluna?.posts[0]?.slug ?? null);
+  // GET /api/colunas/:slug
+  const { data: coluna, loading, error, reload } = useApi(() => buscarColuna(route.params?.slug), [route.params?.slug]);
+  const [escolhido, setEscolhido] = useState(undefined);
+  const aberto = escolhido === undefined ? coluna?.posts[0]?.slug : escolhido; // a mais recente começa aberta
 
   useLayoutEffect(() => {
     if (coluna) navigation.setOptions({ title: coluna.nome });
@@ -19,12 +22,12 @@ export default function ColumnScreen({ navigation, route }) {
   if (!coluna) {
     return (
       <Screen>
-        <EmptyState icon="document-outline" title="Coluna não encontrada" />
+        <AsyncState loading={loading} error={error?.status === 404 ? null : error} onRetry={reload}>
+          <EmptyState icon="document-outline" title="Coluna não encontrada" />
+        </AsyncState>
       </Screen>
     );
   }
-
-  const colunista = getProfissionalPorNome(coluna.colunista);
 
   return (
     <Screen>
@@ -34,13 +37,13 @@ export default function ColumnScreen({ navigation, route }) {
         <Text style={styles.title}>{coluna.nome}</Text>
         <Text style={styles.call}>{coluna.chamada}</Text>
         <Pressable
-          disabled={!colunista}
-          onPress={() => navigation.navigate('Professional', { slug: colunista.slug })}
+          disabled={!coluna.colunistaSlug}
+          onPress={() => navigation.navigate('Professional', { slug: coluna.colunistaSlug })}
           style={styles.author}
-          accessibilityRole={colunista ? 'link' : undefined}
+          accessibilityRole={coluna.colunistaSlug ? 'link' : undefined}
         >
           <Text style={styles.authorText}>por {coluna.colunista}</Text>
-          {colunista && <Ionicons name="arrow-forward" size={16} color={colors.textOnPrimary} />}
+          {coluna.colunistaSlug && <Ionicons name="arrow-forward" size={16} color={colors.textOnPrimary} />}
         </Pressable>
       </View>
 
@@ -53,7 +56,7 @@ export default function ColumnScreen({ navigation, route }) {
           <Pressable
             key={post.slug}
             style={styles.post}
-            onPress={() => setAberto(open ? null : post.slug)}
+            onPress={() => setEscolhido(open ? null : post.slug)}
             accessibilityRole="button"
             accessibilityState={{ expanded: open }}
           >

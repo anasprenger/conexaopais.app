@@ -10,15 +10,18 @@ import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
 import { ROLES, useAuth } from '../../contexts/AuthContext';
 import { useContent } from '../../contexts/ContentContext';
-import { colunas } from '../../data/colunas';
 import { comoFunciona } from '../../data/institucional';
-import { profissionais } from '../../data/profissionais';
-import { revistas } from '../../data/revistas';
+import { useApi } from '../../hooks/useApi';
+import { listarColunas, listarProfissionais, listarRevistas } from '../../services/conteudoService';
 import { blob, colors, fonts, radius, shadow, spacing, type } from '../../theme';
 
 export default function HomeScreen({ navigation }) {
   const { user, canPublish } = useAuth();
   const { artigos, loading, error, reload } = useContent();
+
+  // GET /api/revistas, /api/profissionais e /api/colunas ao mesmo tempo
+  const vitrine = useApi(() => Promise.all([listarRevistas(), listarProfissionais(), listarColunas()]), []);
+  const [revistas = [], profissionais = [], colunas = []] = vitrine.data ?? [];
 
   const destaque = artigos.find((artigo) => artigo.destaque) ?? artigos[0];
   const demais = artigos.filter((artigo) => artigo.id !== destaque?.id).slice(0, 3);
@@ -71,26 +74,29 @@ export default function HomeScreen({ navigation }) {
       </AsyncState>
 
       <SectionHeader title="Nossa revista" actionLabel="Todas as edições" onAction={() => abrirConteudos('revista')} />
-      <View style={styles.magazine}>
-        <MagazineCover
-          revista={edicaoAtual}
-          width={128}
-          onPress={() => navigation.navigate('Magazine', { slug: edicaoAtual.slug })}
-        />
-        <View style={styles.magazineText}>
-          <Text style={type.h3}>{edicaoAtual.subtitulo}</Text>
-          <Text style={[type.small, styles.magazineDescription]} numberOfLines={4}>
-            {edicaoAtual.descricao}
-          </Text>
-          <Button
-            title="Conheça esta edição"
-            variant="accent"
-            small
+      <AsyncState loading={vitrine.loading && !vitrine.data} error={vitrine.error} onRetry={vitrine.reload} compact />
+      {edicaoAtual && (
+        <View style={styles.magazine}>
+          <MagazineCover
+            revista={edicaoAtual}
+            width={128}
             onPress={() => navigation.navigate('Magazine', { slug: edicaoAtual.slug })}
-            style={styles.magazineButton}
           />
+          <View style={styles.magazineText}>
+            <Text style={type.h3}>{edicaoAtual.subtitulo}</Text>
+            <Text style={[type.small, styles.magazineDescription]} numberOfLines={4}>
+              {edicaoAtual.descricao}
+            </Text>
+            <Button
+              title="Conheça esta edição"
+              variant="accent"
+              small
+              onPress={() => navigation.navigate('Magazine', { slug: edicaoAtual.slug })}
+              style={styles.magazineButton}
+            />
+          </View>
         </View>
-      </View>
+      )}
 
       <SectionHeader title="Conheça quem pode ajudar" actionLabel="Ver todos" onAction={() => navigation.navigate('Professionals')} />
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.carousel} contentContainerStyle={styles.carouselContent}>

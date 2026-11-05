@@ -2,19 +2,19 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLayoutEffect } from 'react';
 import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import ArticleCard from '../../components/ArticleCard';
+import AsyncState from '../../components/AsyncState';
 import Avatar from '../../components/Avatar';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
-import { useContent } from '../../contexts/ContentContext';
-import { colunas } from '../../data/colunas';
-import { getProfissional } from '../../data/profissionais';
+import { useApi } from '../../hooks/useApi';
+import { buscarProfissional } from '../../services/conteudoService';
 import { colors, fonts, radius, spacing, type } from '../../theme';
 
 export default function ProfessionalScreen({ navigation, route }) {
-  const { artigos } = useContent();
-  const profissional = getProfissional(route.params?.slug);
+  // GET /api/profissionais/:slug (perfil com artigos e colunas da pessoa)
+  const { data: profissional, loading, error, reload } = useApi(() => buscarProfissional(route.params?.slug), [route.params?.slug]);
 
   useLayoutEffect(() => {
     if (profissional) navigation.setOptions({ title: 'Perfil profissional' });
@@ -23,13 +23,15 @@ export default function ProfessionalScreen({ navigation, route }) {
   if (!profissional) {
     return (
       <Screen>
-        <EmptyState icon="person-outline" title="Perfil não encontrado" message="Este profissional pode não estar mais com o perfil público." />
+        <AsyncState loading={loading} error={error?.status === 404 ? null : error} onRetry={reload}>
+          <EmptyState icon="person-outline" title="Perfil não encontrado" message="Este profissional pode não estar mais com o perfil público." />
+        </AsyncState>
       </Screen>
     );
   }
 
-  const conteudos = artigos.filter((artigo) => artigo.autor === profissional.nome);
-  const colunasDoAutor = colunas.filter((coluna) => coluna.colunista === profissional.nome);
+  const conteudos = profissional.artigos;
+  const colunasDoAutor = profissional.colunas;
   const mensagem = encodeURIComponent(`Olá, ${profissional.nome}! Encontrei seu perfil no Conexão Pais.`);
 
   return (

@@ -1,16 +1,19 @@
 import { useLayoutEffect, useState } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
+import AsyncState from '../../components/AsyncState';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
 import MagazineCover from '../../components/MagazineCover';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
-import { getRevista } from '../../data/revistas';
+import { useApi } from '../../hooks/useApi';
+import { buscarRevista } from '../../services/conteudoService';
 import { colors, fonts, radius, shadow, spacing, type } from '../../theme';
 
 // Leitor da revista digital: uma página por vez, como o leitor do site
 export default function MagazineScreen({ navigation, route }) {
-  const revista = getRevista(route.params?.slug);
+  // GET /api/revistas/:slug (edição com as páginas)
+  const { data: revista, loading, error, reload } = useApi(() => buscarRevista(route.params?.slug), [route.params?.slug]);
   const [pagina, setPagina] = useState(0);
 
   useLayoutEffect(() => {
@@ -20,7 +23,9 @@ export default function MagazineScreen({ navigation, route }) {
   if (!revista) {
     return (
       <Screen>
-        <EmptyState icon="book-outline" title="Edição não encontrada" />
+        <AsyncState loading={loading} error={error?.status === 404 ? null : error} onRetry={reload}>
+          <EmptyState icon="book-outline" title="Edição não encontrada" />
+        </AsyncState>
       </Screen>
     );
   }

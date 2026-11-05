@@ -5,6 +5,7 @@ import Notice from '../../components/Notice';
 import Screen from '../../components/Screen';
 import TextField from '../../components/TextField';
 import { useAuth } from '../../contexts/AuthContext';
+import { enviarMensagem } from '../../services/mensagensService';
 import { spacing, type } from '../../theme';
 import { isValidEmail } from '../../utils/validation';
 
@@ -13,6 +14,8 @@ export default function ContactScreen() {
   const [form, setForm] = useState({ nome: user.name, email: user.email, assunto: '', mensagem: '' });
   const [errors, setErrors] = useState({});
   const [enviada, setEnviada] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [erroApi, setErroApi] = useState('');
 
   function update(field, value) {
     setForm((current) => ({ ...current, [field]: value }));
@@ -20,16 +23,27 @@ export default function ContactScreen() {
     setEnviada(false);
   }
 
-  function enviar() {
+  // POST /api/mensagens (tipo "contato")
+  async function enviar() {
     const newErrors = {};
     if (!form.nome.trim()) newErrors.nome = 'Informe seu nome.';
     if (!isValidEmail(form.email)) newErrors.email = 'Informe um e-mail válido.';
     if (form.mensagem.trim().length < 10) newErrors.mensagem = 'Escreva sua mensagem (mínimo de 10 caracteres).';
     setErrors(newErrors);
 
-    if (Object.keys(newErrors).length === 0) {
+    setErroApi('');
+    if (Object.keys(newErrors).length > 0) return;
+
+    setEnviando(true);
+    try {
+      await enviarMensagem({ tipo: 'contato', ...form, usuarioId: user.id });
       setForm((current) => ({ ...current, assunto: '', mensagem: '' }));
       setEnviada(true);
+    } catch (falha) {
+      setErrors(falha.campos);
+      setErroApi(falha.message);
+    } finally {
+      setEnviando(false);
     }
   }
 
@@ -66,7 +80,8 @@ export default function ContactScreen() {
         onChangeText={(v) => update('mensagem', v)}
         error={errors.mensagem}
       />
-      <Button title="Enviar mensagem" icon="send-outline" variant="accent" onPress={enviar} />
+      {erroApi ? <Notice tone="danger" title={erroApi} /> : null}
+      <Button title="Enviar mensagem" icon="send-outline" variant="accent" loading={enviando} onPress={enviar} />
     </Screen>
   );
 }
