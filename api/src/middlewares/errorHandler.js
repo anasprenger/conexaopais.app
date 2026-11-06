@@ -1,4 +1,5 @@
 const HttpError = require('../utils/HttpError');
+const { ehErroDeConexao, mensagemErroMysql } = require('../utils/erroMysql');
 
 // Rota inexistente
 function notFound(req, res) {
@@ -17,8 +18,8 @@ function errorHandler(err, req, res, next) {
   if (err.code === 'ER_DUP_ENTRY') {
     return res.status(409).json({ erro: 'Já existe um registro com esses dados.' });
   }
-  if (err.code === 'ECONNREFUSED' || err.code === 'ER_ACCESS_DENIED_ERROR' || err.code === 'ER_BAD_DB_ERROR') {
-    console.error('Falha ao conectar no MySQL:', err.message);
+  if (ehErroDeConexao(err)) {
+    console.error('Falha ao conectar no MySQL:', mensagemErroMysql(err));
     return res.status(503).json({ erro: 'Banco de dados indisponível. Confira o MySQL e o arquivo .env da API.' });
   }
 

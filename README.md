@@ -576,6 +576,14 @@ npm run db:setup
 
 > Também dá para rodar os dois arquivos `.sql` no MySQL Workbench, nessa ordem.
 
+Se o `db:setup` falhar, a mensagem diz o motivo:
+
+- *"Não há MySQL respondendo em 127.0.0.1:3306"*: o MySQL está desligado. No Windows, abra **Serviços**
+  (`services.msc`) e inicie o serviço **MySQL80**; no XAMPP, clique em **Start** na linha do MySQL. Confira também
+  a porta (`DB_PORT`) no `.env`.
+- *"O MySQL recusou o usuário ou a senha"*: corrija `DB_USER` e `DB_PASSWORD` no `.env`.
+- *"Arquivo api/.env não encontrado"*: copie o `.env.example` para `.env`.
+
 Suba a API (ela reinicia sozinha quando o código muda):
 
 ```bash

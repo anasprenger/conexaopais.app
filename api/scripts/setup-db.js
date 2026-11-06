@@ -1,14 +1,21 @@
 // Cria o banco e carrega os dados iniciais: executa database/schema.sql e database/seed.sql.
 // Uso: npm run db:setup (lê a conexão do arquivo .env). ATENÇÃO: recria as tabelas.
-require('dotenv').config({ quiet: true });
-
 const fs = require('node:fs');
 const path = require('node:path');
+
+const arquivoEnv = path.join(__dirname, '..', '.env');
+if (!fs.existsSync(arquivoEnv)) {
+  console.error('Arquivo api/.env não encontrado. Copie o .env.example para .env e coloque a senha do seu MySQL.');
+  process.exit(1);
+}
+require('dotenv').config({ path: arquivoEnv, quiet: true });
+
 const mysql = require('mysql2/promise');
+const { mensagemErroMysql } = require('../src/utils/erroMysql');
 
 async function main() {
   const conexao = await mysql.createConnection({
-    host: process.env.DB_HOST || 'localhost',
+    host: process.env.DB_HOST || '127.0.0.1',
     port: Number(process.env.DB_PORT || 3306),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
@@ -28,6 +35,6 @@ async function main() {
 }
 
 main().catch((erro) => {
-  console.error('Não foi possível preparar o banco:', erro.message);
+  console.error('Não foi possível preparar o banco:', mensagemErroMysql(erro));
   process.exit(1);
 });
