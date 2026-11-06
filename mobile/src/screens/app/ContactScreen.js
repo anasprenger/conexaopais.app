@@ -11,7 +11,8 @@ import { isValidEmail } from '../../utils/validation';
 
 export default function ContactScreen() {
   const { user } = useAuth();
-  const [form, setForm] = useState({ nome: user.name, email: user.email, assunto: '', mensagem: '' });
+  // Contato fica aberto também a visitantes (como no site); quem entrou já tem nome e e-mail preenchidos
+  const [form, setForm] = useState({ nome: user?.name ?? '', email: user?.email ?? '', assunto: '', mensagem: '' });
   const [errors, setErrors] = useState({});
   const [enviada, setEnviada] = useState(false);
   const [enviando, setEnviando] = useState(false);
@@ -36,7 +37,7 @@ export default function ContactScreen() {
 
     setEnviando(true);
     try {
-      await enviarMensagem({ tipo: 'contato', ...form, usuarioId: user.id });
+      await enviarMensagem({ tipo: 'contato', ...form, usuarioId: user?.id ?? null });
       setForm((current) => ({ ...current, assunto: '', mensagem: '' }));
       setEnviada(true);
     } catch (falha) {

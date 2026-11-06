@@ -6,6 +6,7 @@ import ArticleCard from '../../components/ArticleCard';
 import Avatar from '../../components/Avatar';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
+import Logo from '../../components/Logo';
 import Notice from '../../components/Notice';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
@@ -19,7 +20,54 @@ import { colors, fonts, radius, shadow, spacing, type } from '../../theme';
 
 const verificacaoTone = { pendente: 'warning', aprovado: 'success', ajustes_solicitados: 'warning', recusado: 'danger' };
 
+// Aba Conta: dados da conta para quem entrou; convite para entrar ou criar conta para visitantes
 export default function AccountScreen({ navigation }) {
+  const { user } = useAuth();
+  return user ? <ContaLogada navigation={navigation} /> : <ContaVisitante navigation={navigation} />;
+}
+
+function ContaVisitante({ navigation }) {
+  return (
+    <Screen>
+      <View style={styles.guest}>
+        <Logo size={72} showName={false} />
+        <Text style={[type.h1, styles.guestTitle]}>Faça parte dessa conexão.</Text>
+        <Text style={[type.muted, styles.guestText]}>
+          Você já pode ler artigos, colunas e a revista e conhecer os profissionais. Com uma conta, também pode curtir,
+          salvar, comentar e perguntar à equipe.
+        </Text>
+      </View>
+      <Button title="Entrar" icon="log-in-outline" onPress={() => navigation.navigate('Login')} />
+      <Button
+        title="Criar minha conta"
+        variant="outline"
+        onPress={() => navigation.navigate('Register')}
+        style={styles.guestSecondary}
+      />
+      <LinksInstitucionais navigation={navigation} />
+    </Screen>
+  );
+}
+
+function LinksInstitucionais({ navigation }) {
+  return (
+    <>
+      <SectionHeader title="Conexão Pais" />
+      <Pressable style={styles.row} onPress={() => navigation.navigate('About')} accessibilityRole="button">
+        <Ionicons name="leaf-outline" size={22} color={colors.primary} />
+        <Text style={styles.rowText}>Sobre, história e equipe</Text>
+        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+      </Pressable>
+      <Pressable style={styles.row} onPress={() => navigation.navigate('Contact')} accessibilityRole="button">
+        <Ionicons name="mail-outline" size={22} color={colors.primary} />
+        <Text style={styles.rowText}>Fale com a equipe</Text>
+        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+      </Pressable>
+    </>
+  );
+}
+
+function ContaLogada({ navigation }) {
   const { user, isAdmin, canPublish, refreshUser, signOut } = useAuth();
   const { artigos, getArtigo, deleteArtigo } = useContent();
   const { savedIds } = useCommunity();
@@ -166,25 +214,31 @@ export default function AccountScreen({ navigation }) {
         ))
       )}
 
-      <SectionHeader title="Conexão Pais" />
-      <Pressable style={styles.row} onPress={() => navigation.navigate('About')} accessibilityRole="button">
-        <Ionicons name="leaf-outline" size={22} color={colors.primary} />
-        <Text style={styles.rowText}>Sobre, história e equipe</Text>
-        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-      </Pressable>
-      <Pressable style={styles.row} onPress={() => navigation.navigate('Contact')} accessibilityRole="button">
-        <Ionicons name="mail-outline" size={22} color={colors.primary} />
-        <Text style={styles.rowText}>Fale com a equipe</Text>
-        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-      </Pressable>
+      <LinksInstitucionais navigation={navigation} />
 
       <Button title="Sair" icon="log-out-outline" variant="danger" onPress={signOut} style={styles.logout} />
-      <Text style={[type.small, styles.version]}>Versão 1.0.0 · Entrega 1</Text>
+      <Text style={[type.small, styles.version]}>Versão 1.0.0 · Entrega 2</Text>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
+  guest: {
+    alignItems: 'center',
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  guestTitle: {
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  guestText: {
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+  guestSecondary: {
+    marginTop: spacing.sm,
+  },
   profile: {
     flexDirection: 'row',
     alignItems: 'center',

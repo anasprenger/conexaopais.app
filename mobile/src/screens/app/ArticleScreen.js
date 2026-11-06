@@ -6,6 +6,7 @@ import AsyncState from '../../components/AsyncState';
 import Avatar from '../../components/Avatar';
 import Badge from '../../components/Badge';
 import Button from '../../components/Button';
+import ConviteLogin from '../../components/ConviteLogin';
 import EmptyState from '../../components/EmptyState';
 import Notice from '../../components/Notice';
 import Screen from '../../components/Screen';
@@ -16,6 +17,7 @@ import { useCommunity } from '../../contexts/CommunityContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useContent } from '../../contexts/ContentContext';
 import { useApi } from '../../hooks/useApi';
+import { useExigirLogin } from '../../hooks/useExigirLogin';
 import { buscarArtigo, comentar, excluirComentario, listarComentarios } from '../../services/artigosService';
 import { colors, fonts, radius, spacing, type } from '../../theme';
 
@@ -24,6 +26,7 @@ export default function ArticleScreen({ navigation, route }) {
   const { artigos, getArtigo, deleteArtigo, patchArtigo } = useContent();
   const community = useCommunity();
   const confirm = useConfirm();
+  const exigirLogin = useExigirLogin();
   const [comentario, setComentario] = useState('');
   const [erro, setErro] = useState('');
   const [erroExclusao, setErroExclusao] = useState('');
@@ -54,6 +57,12 @@ export default function ArticleScreen({ navigation, route }) {
   const podeEditar = canEditArticle(user, artigo);
 
   async function alternar(tipo) {
+    // visitante lê o artigo, mas precisa entrar para curtir ou salvar
+    const aviso =
+      tipo === 'curtida'
+        ? 'Entre na sua conta para curtir este artigo.'
+        : 'Entre na sua conta para salvar este artigo e ler depois.';
+    if (!exigirLogin(aviso)) return;
     setErroInteracao('');
     try {
       await community.toggle(tipo, artigo.id);
@@ -171,7 +180,7 @@ export default function ArticleScreen({ navigation, route }) {
       {podeEditar && (
         <View style={styles.manage}>
           <Text style={type.small}>
-            {user.role === ROLES.ADMIN ? 'Você administra este conteúdo.' : 'Você é o autor deste artigo.'}
+            {user?.role === ROLES.ADMIN ? 'Você administra este conteúdo.' : 'Você é o autor deste artigo.'}
           </Text>
           <View style={styles.manageButtons}>
             <Button
@@ -198,7 +207,7 @@ export default function ArticleScreen({ navigation, route }) {
       </AsyncState>
       {comentarios.map((item) => {
         // Entrega 3: a API também vai conferir quem pode excluir (autor do comentário ou admin)
-        const podeExcluir = item.usuarioId === user.id || user.role === ROLES.ADMIN;
+        const podeExcluir = Boolean(user) && (item.usuarioId === user.id || user.role === ROLES.ADMIN);
         return (
           <View key={item.id} style={styles.comment}>
             <Avatar name={item.autor} size={36} tone="accent" />
@@ -217,15 +226,25 @@ export default function ArticleScreen({ navigation, route }) {
         );
       })}
 
-      <TextField
-        placeholder="Escreva seu comentário com respeito e cuidado."
-        multiline
-        value={comentario}
-        onChangeText={setComentario}
-        error={erro}
-        style={styles.commentField}
-      />
-      <Button title="Publicar comentário" icon="chatbubble-outline" loading={enviando} onPress={publicarComentario} />
+      {user ? (
+        <>
+          <TextField
+            placeholder="Escreva seu comentário com respeito e cuidado."
+            multiline
+            value={comentario}
+            onChangeText={setComentario}
+            error={erro}
+            style={styles.commentField}
+          />
+          <Button title="Publicar comentário" icon="chatbubble-outline" loading={enviando} onPress={publicarComentario} />
+        </>
+      ) : (
+        <ConviteLogin
+          title="Quer participar da conversa?"
+          message="Entre na sua conta para comentar e conversar com outras famílias e com quem escreveu o texto."
+          style={styles.convite}
+        />
+      )}
 
       <SectionHeader title="Conteúdos relacionados" />
       {relacionados.map((item) => (
@@ -315,5 +334,8 @@ const styles = StyleSheet.create({
   notice: {
     marginTop: spacing.md,
     marginBottom: 0,
+  },
+  convite: {
+    marginTop: spacing.md,
   },
 });

@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import ArticleCard from '../../components/ArticleCard';
 import AsyncState from '../../components/AsyncState';
 import Button from '../../components/Button';
+import ConviteLogin from '../../components/ConviteLogin';
 import MagazineCover from '../../components/MagazineCover';
 import Notice from '../../components/Notice';
 import ProfessionalCard from '../../components/ProfessionalCard';
@@ -26,15 +27,15 @@ export default function HomeScreen({ navigation }) {
   const destaque = artigos.find((artigo) => artigo.destaque) ?? artigos[0];
   const demais = artigos.filter((artigo) => artigo.id !== destaque?.id).slice(0, 3);
   const edicaoAtual = revistas[0];
-  const firstName = user.name.replace(/^Dra?\.\s+/, '').split(' ')[0];
-  const emVerificacao = user.role === ROLES.PROFISSIONAL && user.verificacao !== 'aprovado';
+  const firstName = user?.name.replace(/^Dra?\.\s+/, '').split(' ')[0];
+  const emVerificacao = user?.role === ROLES.PROFISSIONAL && user.verificacao !== 'aprovado';
 
   const abrirArtigo = (id) => navigation.navigate('Article', { id });
   const abrirConteudos = (segment) => navigation.navigate('Contents', { segment });
 
   return (
     <Screen>
-      <Text style={type.h1}>Olá, {firstName}!</Text>
+      <Text style={type.h1}>{firstName ? `Olá, ${firstName}!` : 'Olá!'}</Text>
       <Text style={[type.muted, styles.greeting]}>
         Informação, acolhimento e conexão para quem cuida, educa e acompanha.
       </Text>
@@ -140,6 +141,13 @@ export default function HomeScreen({ navigation }) {
           </View>
         </View>
       ))}
+
+      {!user && (
+        <ConviteLogin
+          message="Crie sua conta para salvar conteúdos, comentar e conversar com profissionais."
+          style={styles.convite}
+        />
+      )}
     </Screen>
   );
 }
@@ -246,6 +254,9 @@ const styles = StyleSheet.create({
   },
   stepText: {
     flex: 1,
+  },
+  convite: {
+    marginTop: spacing.md,
   },
   stepLabel: {
     fontFamily: fonts.bold,

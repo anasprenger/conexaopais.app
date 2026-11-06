@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import AsyncState from '../../components/AsyncState';
 import Button from '../../components/Button';
+import ConviteLogin from '../../components/ConviteLogin';
 import Notice from '../../components/Notice';
 import PageHero from '../../components/PageHero';
 import Screen from '../../components/Screen';
@@ -12,6 +13,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useCommunity } from '../../contexts/CommunityContext';
 import { useContent } from '../../contexts/ContentContext';
 import { recursosComunidade, regrasComunidade } from '../../data/institucional';
+import { useExigirLogin } from '../../hooks/useExigirLogin';
 import { enviarMensagem } from '../../services/mensagensService';
 import { colors, fonts, radius, shadow, spacing, type } from '../../theme';
 import { plural } from '../../utils/text';
@@ -20,6 +22,7 @@ export default function CommunityScreen({ navigation }) {
   const { user } = useAuth();
   const { artigos, getArtigo, loading, error, reload } = useContent();
   const community = useCommunity();
+  const exigirLogin = useExigirLogin();
   const [aberto, setAberto] = useState(null);
   const [pergunta, setPergunta] = useState('');
   const [erro, setErro] = useState('');
@@ -33,6 +36,7 @@ export default function CommunityScreen({ navigation }) {
   ];
 
   async function alternar(tipo, artigoId) {
+    if (!exigirLogin('Entre na sua conta para curtir e salvar conteúdos.')) return;
     setErroInteracao('');
     try {
       await community.toggle(tipo, artigoId); // POST /api/artigos/:id/interacoes
@@ -154,22 +158,32 @@ export default function CommunityScreen({ navigation }) {
       <View style={styles.ask}>
         <Text style={type.h2}>Pergunte à equipe</Text>
         <Text style={[type.muted, styles.askText]}>Sua dúvida pode virar resposta na coluna Consultório aberto.</Text>
-        {enviada && (
-          <Notice tone="success" title="Pergunta enviada para a moderação.">
-            Em breve alguém responde.
-          </Notice>
+        {user ? (
+          <>
+            {enviada && (
+              <Notice tone="success" title="Pergunta enviada para a moderação.">
+                Em breve alguém responde.
+              </Notice>
+            )}
+            <TextField
+              placeholder="Escreva sua pergunta..."
+              multiline
+              value={pergunta}
+              onChangeText={(value) => {
+                setPergunta(value);
+                setEnviada(false);
+              }}
+              error={erro}
+            />
+            <Button title="Enviar pergunta" variant="accent" small loading={enviando} onPress={enviarPergunta} style={styles.askButton} />
+          </>
+        ) : (
+          <ConviteLogin
+            title="Entre para perguntar"
+            message="Com uma conta você envia perguntas para a equipe e acompanha as respostas."
+            style={styles.convite}
+          />
         )}
-        <TextField
-          placeholder="Escreva sua pergunta..."
-          multiline
-          value={pergunta}
-          onChangeText={(value) => {
-            setPergunta(value);
-            setEnviada(false);
-          }}
-          error={erro}
-        />
-        <Button title="Enviar pergunta" variant="accent" small loading={enviando} onPress={enviarPergunta} style={styles.askButton} />
       </View>
 
       <SectionHeader title="Regras de convivência" />
@@ -271,6 +285,9 @@ const styles = StyleSheet.create({
   },
   askButton: {
     alignSelf: 'flex-start',
+  },
+  convite: {
+    backgroundColor: colors.card,
   },
   rule: {
     flexDirection: 'row',

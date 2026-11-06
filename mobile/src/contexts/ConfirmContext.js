@@ -7,6 +7,7 @@ const ConfirmContext = createContext(null);
 
 // Caixa de confirmação própria do app (mesma aparência no Android, iOS e navegador).
 // Uso: const confirm = useConfirm(); confirm({ title, message, confirmLabel, onConfirm })
+// Opcionais: cancelLabel e tone ("danger" para excluir/recusar, "primary" para ações comuns como entrar)
 export function ConfirmProvider({ children }) {
   const [request, setRequest] = useState(null);
 
@@ -29,8 +30,13 @@ export function ConfirmProvider({ children }) {
             <Text style={styles.title}>{request?.title}</Text>
             <Text style={styles.message}>{request?.message}</Text>
             <View style={styles.actions}>
-              <Button title="Cancelar" variant="ghost" small onPress={close} />
-              <Button title={request?.confirmLabel ?? 'Confirmar'} variant="danger" small onPress={handleConfirm} />
+              <Button title={request?.cancelLabel ?? 'Cancelar'} variant="ghost" small onPress={close} />
+              <Button
+                title={request?.confirmLabel ?? 'Confirmar'}
+                variant={request?.tone === 'primary' ? 'primary' : 'danger'}
+                small
+                onPress={handleConfirm}
+              />
             </View>
           </Pressable>
         </Pressable>

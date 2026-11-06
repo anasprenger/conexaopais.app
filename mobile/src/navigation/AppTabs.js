@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Logo from '../components/Logo';
+import { useAuth } from '../contexts/AuthContext';
 import AccountScreen from '../screens/app/AccountScreen';
 import CommunityScreen from '../screens/app/CommunityScreen';
 import ContentsScreen from '../screens/app/ContentsScreen';
@@ -19,8 +20,10 @@ const icons = {
   Account: 'person-circle',
 };
 
-// Abas inferiores exibidas depois do login (as seções principais do site)
+// Abas inferiores com as seções principais do site (abertas também a visitantes)
 export default function AppTabs() {
+  const { user } = useAuth();
+
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -43,7 +46,11 @@ export default function AppTabs() {
       <Tab.Screen name="Contents" component={ContentsScreen} options={{ title: 'Conteúdos' }} />
       <Tab.Screen name="Professionals" component={ProfessionalsScreen} options={{ title: 'Profissionais' }} />
       <Tab.Screen name="Community" component={CommunityScreen} options={{ title: 'Comunidade' }} />
-      <Tab.Screen name="Account" component={AccountScreen} options={{ title: 'Minha conta', tabBarLabel: 'Conta' }} />
+      <Tab.Screen
+        name="Account"
+        component={AccountScreen}
+        options={user ? { title: 'Minha conta', tabBarLabel: 'Conta' } : { title: 'Entrar', tabBarLabel: 'Entrar' }}
+      />
     </Tab.Navigator>
   );
 }

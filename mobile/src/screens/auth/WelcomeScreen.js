@@ -1,8 +1,8 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Button from '../../components/Button';
 import Logo from '../../components/Logo';
 import Screen from '../../components/Screen';
-import { blob, colors, spacing, type } from '../../theme';
+import { blob, colors, fonts, spacing, type } from '../../theme';
 
 export default function WelcomeScreen({ navigation }) {
   return (
@@ -32,6 +32,10 @@ export default function WelcomeScreen({ navigation }) {
       <View style={styles.actions}>
         <Button title="Entrar" variant="accent" onPress={() => navigation.navigate('Login')} />
         <Button title="Criar minha conta" variant="outline" onPress={() => navigation.navigate('Register')} />
+        {/* Visitantes podem ler tudo; a conta só é pedida para interagir */}
+        <Pressable onPress={() => navigation.replace('Tabs')} style={styles.explorar} accessibilityRole="button">
+          <Text style={styles.explorarTexto}>Explorar sem conta</Text>
+        </Pressable>
       </View>
     </Screen>
   );
@@ -83,5 +87,15 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: spacing.sm,
+  },
+  explorar: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+  },
+  explorarTexto: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.primary,
+    textDecorationLine: 'underline',
   },
 });

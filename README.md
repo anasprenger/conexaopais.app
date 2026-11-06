@@ -87,7 +87,7 @@ Os níveis são os mesmos do site (`app_role`):
 
 | Tipo | Nível | Quem é |
 | --- | --- | --- |
-| **Visitante** | — | Pessoa ainda não autenticada |
+| **Visitante** | — | Pessoa sem conta ou que ainda não entrou: lê os conteúdos e vê os profissionais |
 | **Família** | `usuario` | Pai, mãe, avó/avô ou outro responsável |
 | **Profissional** | `profissional` | Profissional parceiro. Começa **em verificação** e só publica depois de **aprovado** pela administração |
 | **Administração** | `admin` | Equipe do Conexão Pais (curadoria, moderação e verificação) |
@@ -99,14 +99,19 @@ Situações do cadastro profissional: `pendente` → `aprovado`, `ajustes_solici
 | Ação | Visitante | Família | Profissional em verificação | Profissional aprovado | Admin |
 | --- | :---: | :---: | :---: | :---: | :---: |
 | Ver boas-vindas, entrar e criar conta | ✅ | — | — | — | — |
-| Ler artigos, colunas e revista | ❌ | ✅ | ✅ | ✅ | ✅ |
-| Ver profissionais e chamar no WhatsApp | ❌ | ✅ | ✅ | ✅ | ✅ |
+| Ler artigos, colunas e revista | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Ver profissionais e chamar no WhatsApp | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Enviar mensagem de contato | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Curtir, salvar e comentar | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Excluir o próprio comentário | ❌ | ✅ | ✅ | ✅ | ✅ |
 | Publicar artigo | ❌ | ❌ | ❌ | ✅ | ✅ |
 | Editar e excluir artigo | ❌ | ❌ | ❌ | só os próprios | todos |
 | Excluir comentário de outra pessoa | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Aprovar, pedir ajustes ou recusar profissionais | ❌ | ❌ | ❌ | ❌ | ✅ |
+
+**Mudança na Entrega 2:** a leitura passou a ser aberta a visitantes, como no site. A conta é pedida só para
+interagir: ao tocar em Curtir ou Salvar sem conta, o app oferece Entrar; os campos de comentário e de pergunta dão
+lugar a um convite para entrar ou criar conta. Depois do login, a pessoa volta para a tela onde estava.
 
 São as mesmas regras do banco do site (políticas da tabela `publicacoes`: *"Admin e profissional aprovado
 criam"*, *"Autor ou admin edita"*, *"Autor ou admin remove"*). Na Entrega 3 elas serão garantidas **no back-end**
@@ -131,20 +136,20 @@ Todas as telas abaixo existem no app. A seção 2.2 mostra quais rotas da API ca
 
 | # | Tela | Acesso | Descrição |
 | --- | --- | --- | --- |
-| 1 | Boas-vindas | Visitante | Apresentação, foto da família e acesso a Entrar / Criar conta |
+| 1 | Boas-vindas | Visitante | Apresentação, foto da família, Entrar / Criar conta e Explorar sem conta |
 | 2 | Entrar | Visitante | E-mail e senha (+ perfis de demonstração) |
 | 3 | Criar conta | Visitante | Nome, e-mail, tipo de conta, profissão/registro (profissional) e senha |
-| 4 | Início | Logado | Saudação, destaques e atalhos |
-| 5 | Conteúdos | Logado | Artigos (busca e categorias), Colunas e Revista |
-| 6 | Artigo | Logado | Leitura, curtir, salvar, comentários e conteúdos relacionados |
-| 7 | Coluna | Logado | Apresentação da coluna e publicações |
-| 8 | Revista | Logado | Capa, destaques e leitor página a página |
-| 9 | Profissionais | Logado | Diretório com busca e filtro por especialidade |
-| 10 | Perfil profissional | Logado | Dados, contato por WhatsApp, conteúdos e colunas |
-| 11 | Comunidade | Logado | Recursos, conversas, destaques, pergunta à equipe e regras |
-| 12 | Minha conta | Logado | Perfil, nível, salvos, publicações e administração |
-| 13 | Sobre | Logado | Valores, como surgiu e equipe |
-| 14 | Contato | Logado | Formulário de mensagem para a equipe |
+| 4 | Início | Todos | Saudação, destaques e atalhos |
+| 5 | Conteúdos | Todos | Artigos (busca e categorias), Colunas e Revista |
+| 6 | Artigo | Todos | Leitura, curtir, salvar, comentários e conteúdos relacionados |
+| 7 | Coluna | Todos | Apresentação da coluna e publicações |
+| 8 | Revista | Todos | Capa, destaques e leitor página a página |
+| 9 | Profissionais | Todos | Diretório com busca e filtro por especialidade |
+| 10 | Perfil profissional | Todos | Dados, contato por WhatsApp, conteúdos e colunas |
+| 11 | Comunidade | Todos | Recursos, conversas, destaques, pergunta à equipe e regras |
+| 12 | Minha conta | Todos | Logado: perfil, nível, salvos, publicações e administração. Visitante: Entrar / Criar conta |
+| 13 | Sobre | Todos | Valores, como surgiu e equipe |
+| 14 | Contato | Todos | Formulário de mensagem para a equipe |
 | 15 | Nova postagem / Editar artigo | Profissional aprovado e admin | Formulário do artigo |
 | 16 | Novos profissionais | Somente admin | Aprovar, pedir ajustes ou recusar cadastros |
 
@@ -154,6 +159,7 @@ Todas as telas abaixo existem no app. A seção 2.2 mostra quais rotas da API ca
 flowchart TD
     W[Boas-vindas] --> L[Entrar]
     W --> C[Criar conta]
+    W -->|explorar sem conta| T
     C -->|família ou profissional| L
     L --> T{{Abas do app}}
 
@@ -175,14 +181,15 @@ flowchart TD
 
     MC -.->|profissional aprovado e admin| NP[Nova postagem / Editar]
     A -.->|autor ou admin| NP
+    A -.->|visitante tenta curtir, salvar ou comentar| L
     MC -.->|somente admin| NV[Novos profissionais]
 ```
 
 **Como a navegação está organizada (React Navigation):**
 
-- **Stack raiz** (`native-stack`): mostra só as telas públicas quando não há usuário logado. Depois do login,
-  registra as telas de leitura e, **conforme o nível**, a área de publicação (`canPublish`) e a verificação de
-  profissionais (`isAdmin`). Uma tela que não foi registrada não pode ser aberta.
+- **Stack raiz** (`native-stack`): as abas e as telas de leitura ficam disponíveis para todos. Boas-vindas, Entrar
+  e Criar conta existem só para quem não entrou; **conforme o nível**, entram a área de publicação (`canPublish`)
+  e a verificação de profissionais (`isAdmin`). Uma tela que não foi registrada não pode ser aberta.
 - **Abas inferiores** (`bottom-tabs`): Início, Conteúdos, Profissionais, Comunidade e Minha conta.
 - **Telas empilhadas sobre as abas:** Artigo, Coluna, Revista, Perfil profissional, Sobre, Contato, Nova postagem e
   Novos profissionais.
@@ -210,6 +217,7 @@ flowchart TD
 | RF13 | Enviar mensagem de contato e pergunta à equipe | ✅ API + banco |
 | RF14 | Aprovar, pedir ajustes ou recusar cadastros profissionais (admin) | ✅ API + banco · restrito ao admin na Entrega 3 |
 | RF15 | Proteger as rotas com token JWT e nível de usuário | ⏳ Entrega 3 |
+| RF16 | Ler conteúdos sem conta; para interagir, o app pede login e volta para a mesma tela depois | ✅ |
 
 **Requisitos não funcionais já atendidos:** senha nunca é salva em texto (bcrypt); validação dos dados no app **e**
 na API; consultas SQL com parâmetros (`?`), que evitam SQL injection; respostas de erro padronizadas
@@ -440,8 +448,9 @@ Organização do código da API (`api/src`): **routes** (endereços) → **contr
 | Rotas | Quem poderá usar (Entrega 3, com JWT) |
 | --- | --- |
 | `GET /status`, `POST /auth/login`, `POST /usuarios` | Qualquer pessoa |
-| `GET` de artigos, categorias, comentários, profissionais, colunas e revistas | Usuário logado |
-| `POST /artigos/:id/comentarios`, `POST /artigos/:id/interacoes`, `POST /mensagens` | Usuário logado (o id sai do token) |
+| `GET` de artigos, categorias, comentários, profissionais, colunas e revistas | Qualquer pessoa (visitante incluído) |
+| `POST /artigos/:id/comentarios`, `POST /artigos/:id/interacoes`, `POST /mensagens` (pergunta) | Usuário logado (o id sai do token) |
+| `POST /mensagens` (contato) | Qualquer pessoa |
 | `GET /usuarios/:id`, `GET /usuarios/:id/interacoes` | O próprio usuário ou admin |
 | `POST /artigos` | Profissional aprovado ou admin |
 | `PUT /artigos/:id`, `DELETE /artigos/:id` | Autor do artigo ou admin |
@@ -473,6 +482,7 @@ Bearer Token, e um middleware vai bloquear as rotas conforme a tabela acima.
 
 - 16 telas com React Navigation 7 (stack raiz + abas inferiores) e a identidade visual do site;
 - telas e ações diferentes para cada nível (família, profissional em verificação, profissional aprovado e admin);
+- visitantes leem tudo sem conta; para curtir, salvar, comentar ou perguntar, o app pede login;
 - **todos os dados vêm do MySQL pela API**, com `fetch()`: cadastro, login, artigos (CRUD completo), comentários,
   curtidas, salvos, colunas, revista, profissionais, mensagens e verificação de profissionais;
 - estados de carregamento e de erro em todas as telas, com opção de tentar de novo;

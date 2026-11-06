@@ -6,7 +6,6 @@ import {
   listarArtigos,
   listarCategorias,
 } from '../services/artigosService';
-import { useAuth } from './AuthContext';
 
 const ContentContext = createContext(null);
 
@@ -15,7 +14,6 @@ export const categoriasPadrao = ['Desenvolvimento', 'Gerações', 'Educação', 
 // Lista de artigos (entidade principal) carregada da API e as operações de CRUD:
 // GET /api/artigos, POST /api/artigos, PUT /api/artigos/:id e DELETE /api/artigos/:id
 export function ContentProvider({ children }) {
-  const { user } = useAuth();
   const [artigos, setArtigos] = useState([]);
   const [categoriasApi, setCategoriasApi] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -35,11 +33,10 @@ export function ContentProvider({ children }) {
     }
   }, []);
 
-  // Os conteúdos são carregados depois do login
+  // Os conteúdos são públicos: carregam ao abrir o app, mesmo sem login
   useEffect(() => {
-    if (user) reload();
-    else setArtigos([]);
-  }, [user?.id, reload]); // eslint-disable-line react-hooks/exhaustive-deps
+    reload();
+  }, [reload]);
 
   const categorias = [...new Set([...categoriasPadrao, ...categoriasApi])];
 
