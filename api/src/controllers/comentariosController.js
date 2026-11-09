@@ -1,5 +1,4 @@
 const comentarioModel = require('../models/comentarioModel');
-const usuarioModel = require('../models/usuarioModel');
 const HttpError = require('../utils/HttpError');
 const { idDaRota, texto, verificarCampos } = require('../utils/validacao');
 const { buscarOuFalhar } = require('./artigosController');
@@ -10,17 +9,14 @@ async function listar(req, res) {
   res.json(await comentarioModel.listarPorPublicacao(artigo.id));
 }
 
-// POST /api/artigos/:id/comentarios — Entrega 2: usuarioId no corpo; Entrega 3: vem do token
+// POST /api/artigos/:id/comentarios — quem comenta é o usuário do token
 async function criar(req, res) {
   const artigo = await buscarOuFalhar(req.params.id);
   const textoComentario = texto(req.body?.texto);
   verificarCampos({
     texto: (textoComentario.length < 3 || textoComentario.length > 1000) && 'O comentário deve ter entre 3 e 1000 caracteres.',
   });
-  const usuario = await usuarioModel.buscarPorId(Number(req.body?.usuarioId) || 0);
-  if (!usuario) throw new HttpError(400, 'Usuário não encontrado.');
-
-  const comentario = await comentarioModel.criar({ publicacaoId: artigo.id, usuarioId: usuario.id, texto: textoComentario });
+  const comentario = await comentarioModel.criar({ publicacaoId: artigo.id, usuarioId: req.usuario.id, texto: textoComentario });
   res.status(201).json(comentario);
 }
 
