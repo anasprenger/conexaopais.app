@@ -49,16 +49,14 @@ async function criar(req, res) {
   res.status(201).json(artigo);
 }
 
-// PUT /api/artigos/:id
+// PUT /api/artigos/:id — o middleware autorDoArtigoOuAdmin já conferiu quem pode editar
 async function atualizar(req, res) {
-  const artigo = await buscarOuFalhar(req.params.id);
-  res.json(await artigoModel.atualizar(artigo.id, dadosDoArtigo(req.body)));
+  res.json(await artigoModel.atualizar(req.artigo.id, dadosDoArtigo(req.body)));
 }
 
-// DELETE /api/artigos/:id
+// DELETE /api/artigos/:id — o middleware autorDoArtigoOuAdmin já conferiu quem pode excluir
 async function excluir(req, res) {
-  const artigo = await buscarOuFalhar(req.params.id);
-  await artigoModel.excluir(artigo.id);
+  await artigoModel.excluir(req.artigo.id);
   res.status(204).end();
 }
 

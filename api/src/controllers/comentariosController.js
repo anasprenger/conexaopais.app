@@ -1,6 +1,5 @@
 const comentarioModel = require('../models/comentarioModel');
-const HttpError = require('../utils/HttpError');
-const { idDaRota, texto, verificarCampos } = require('../utils/validacao');
+const { texto, verificarCampos } = require('../utils/validacao');
 const { buscarOuFalhar } = require('./artigosController');
 
 // GET /api/artigos/:id/comentarios
@@ -20,10 +19,9 @@ async function criar(req, res) {
   res.status(201).json(comentario);
 }
 
-// DELETE /api/comentarios/:id
+// DELETE /api/comentarios/:id — o middleware autorDoComentarioOuAdmin já conferiu quem pode excluir
 async function excluir(req, res) {
-  const removido = await comentarioModel.excluir(idDaRota(req.params.id, 'Comentário'));
-  if (!removido) throw new HttpError(404, 'Comentário não encontrado.');
+  await comentarioModel.excluir(req.comentario.id);
   res.status(204).end();
 }
 
