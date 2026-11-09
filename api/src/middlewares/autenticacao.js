@@ -4,11 +4,12 @@ const HttpError = require('../utils/HttpError');
 const { verificarToken } = require('../utils/token');
 
 // Lê o token do cabeçalho "Authorization: Bearer <token>". Sem cabeçalho, devolve null.
+// O nome do esquema não diferencia maiúsculas de minúsculas (Bearer, bearer...), como manda o padrão HTTP.
 function tokenDoCabecalho(req) {
   const cabecalho = req.headers.authorization;
   if (!cabecalho) return null;
   const [esquema, token, ...resto] = cabecalho.trim().split(/\s+/);
-  if (esquema !== 'Bearer' || !token || resto.length > 0) {
+  if (esquema?.toLowerCase() !== 'bearer' || !token || resto.length > 0) {
     throw new HttpError(401, 'Envie o token no cabeçalho Authorization no formato "Bearer <token>".');
   }
   return token;

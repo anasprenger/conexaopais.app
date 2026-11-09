@@ -124,6 +124,11 @@ describe('Cadastro, login e JWT', () => {
       assert.equal(dados.email, email);
     });
 
+    test('o nome do esquema não diferencia maiúsculas ("bearer" também vale)', async () => {
+      const { status } = await api.req('GET', '/auth/perfil', { headers: { Authorization: `bearer ${token}` } });
+      assert.equal(status, 200);
+    });
+
     test('token de uma conta que não existe mais: 401', async () => {
       const temporaria = await api.req('POST', '/usuarios', {
         body: { nome: 'Conta temporária', email: emailDeTeste('temp'), senha, tipo: 'usuario' },
