@@ -13,7 +13,7 @@ Projeto avaliativo da disciplina de Aplicações Mobile (React Native + API REST
 | **1** | Problema, proposta, projeto Expo, telas, navegação e repositório | ✅ Entregue |
 | **2** | Modelagem, MySQL, API Express, integração com `fetch()` | ✅ Entregue |
 | **3** | JWT, Bearer Token, middleware, níveis no back-end, rotas protegidas e logout | ✅ Concluída |
-| 4 | Testes, correções, README final, APK e apresentação | ⏳ Próxima etapa |
+| **4** | Testes, correções, README final, APK e apresentação | 🔧 Em andamento: falta gerar o APK e testar no celular (seção 4) |
 
 ---
 
@@ -152,6 +152,7 @@ Todas as telas abaixo existem no app. A seção 2.2 mostra quais rotas da API ca
 | 14 | Contato | Todos | Formulário de mensagem para a equipe |
 | 15 | Nova postagem / Editar artigo | Profissional aprovado e admin | Formulário do artigo |
 | 16 | Novos profissionais | Somente admin | Aprovar, pedir ajustes ou recusar cadastros |
+| 17 | Conexão com a API | Todos | Endereço da API usado pelo app (testa antes de salvar). Incluída na Entrega 4, para o APK |
 
 ### 1.10 Fluxo inicial de navegação
 
@@ -629,7 +630,112 @@ Os testes apagam as contas e as mensagens que criam. Exemplos para testar à mã
 
 ---
 
-## 4. Versão atual do app
+## 4. Finalização, testes e APK (Entrega 4)
+
+### 4.1 Testes realizados
+
+**API (automáticos):** `cd api && npm test` roda 28 testes contra a API e o MySQL de verdade (detalhes na seção 3.7).
+Resultado atual: **28 de 28 passando**.
+
+**App (roteiro por nível):** cada cenário abaixo foi executado no app ligado à API real, com o navegador controlado
+pelo Playwright (versão web do Expo) e checagem de erros de página, de console e de respostas da API.
+
+| Área | Cenário | Nível | Resultado |
+| --- | --- | --- | :---: |
+| Navegação | Início, Conteúdos (busca, colunas, revista), Artigo, Coluna, Profissionais, Perfil, Comunidade, Sobre e Contato | Visitante | ✅ |
+| Navegação | Boas-vindas cabe na tela sem rolar (360 × 640) | Visitante | ✅ |
+| Cadastro | Criar conta de família e entrar em seguida | Visitante | ✅ |
+| Cadastro | Criar conta profissional: fica "em verificação" e sem *Nova postagem* | Profissional pendente | ✅ |
+| Login | Token guardado no aparelho e enviado como Bearer Token | Todos | ✅ |
+| Sessão | Continua logado ao reabrir o app | Todos | ✅ |
+| Sessão | Token inválido ou vencido: sai da conta e avisa *"Sua sessão expirou"* | Todos | ✅ |
+| Logout | *Sair* pede confirmação e apaga o token | Todos | ✅ |
+| Permissões | Curtir, salvar e comentar sem conta pedem login | Visitante | ✅ |
+| Permissões | Família não vê editar/excluir artigo, *Nova postagem* nem *Novos profissionais* | Família | ✅ |
+| Permissões | Admin aprova o cadastro e o profissional passa a publicar **sem sair da conta** | Admin → Profissional | ✅ |
+| Comunidade | Comentar, excluir o próprio comentário, curtir, salvar e perguntar à equipe | Família | ✅ |
+| CRUD | Publicar, ver, editar e excluir artigo (o autor vem do token) | Profissional aprovado | ✅ |
+| Administração | *Novos profissionais*: lista e filtros (a analisar, aprovados, recusados) | Admin | ✅ |
+| Conexão | Endereço errado não é salvo; endereço certo é salvo e vale ao reabrir; voltar ao padrão | Todos | ✅ |
+
+**No celular:** ⏳ falta repetir o roteiro no APK instalado (seção 4.3), com a API rodando no notebook.
+
+### 4.2 O que mudou nesta etapa
+
+- **APK com EAS Build:** [`mobile/eas.json`](mobile/eas.json) com o perfil `preview`, que gera um `.apk` instalável.
+- **HTTP liberado no Android:** o Android bloqueia conexões sem criptografia por padrão, e a API roda no notebook em
+  `http://IP:3333`. O plugin `expo-build-properties` liga `usesCleartextTraffic` (conferido no `AndroidManifest.xml`
+  gerado).
+- **Endereço da API configurável no app:** o IP do notebook muda de uma rede Wi-Fi para outra (casa, faculdade). Na
+  tela **Conexão com a API** (ícone no canto da tela de Boas-vindas ou em *Minha conta*), basta digitar o IP; o app
+  testa a conexão e só salva se a API responder. Não precisa gerar outro APK.
+- **A API mostra o endereço para o celular** ao subir (`npm run dev`).
+
+| Conexão com a API |
+| --- |
+| ![Conexão com a API](docs/telas/conexao-api.png) |
+
+### 4.3 Como gerar o APK
+
+O APK é compilado nos servidores da Expo (EAS Build, gratuito). Precisa de uma conta em
+[expo.dev](https://expo.dev/signup).
+
+1. Instale o EAS CLI e entre na conta (uma vez só):
+
+   ```bash
+   npm install -g eas-cli
+   ```
+
+   ```bash
+   eas login
+   ```
+
+2. (Opcional) Em [`mobile/eas.json`](mobile/eas.json), troque `EXPO_PUBLIC_API_URL` pelo IP do notebook. É só o
+   endereço padrão: dá para mudar depois, dentro do app.
+
+3. Gere o APK:
+
+   ```bash
+   cd mobile
+   npm run build:apk
+   ```
+
+   Na primeira vez, o EAS pergunta se pode criar o projeto na sua conta e uma chave de assinatura Android: responda
+   **sim** (Y) nas duas. A compilação leva de 10 a 20 minutos e, no fim, mostra um link e um QR Code para baixar o
+   `.apk`.
+
+4. No celular Android, abra o link, baixe o arquivo e instale (o Android pede para permitir a instalação de apps
+   desta fonte).
+
+### 4.4 Usando o APK com a API no notebook
+
+1. No notebook, ligue o MySQL e suba a API:
+
+   ```bash
+   cd api
+   npm run dev
+   ```
+
+   O terminal mostra *"No celular (mesmo Wi-Fi), use em 'Conexão com a API': http://192.168.x.x:3333/api"*. No
+   Windows, use o endereço do **Wi-Fi** (em geral começa com 192.168 ou 10.); ignore os que começam com 172. (redes
+   virtuais). Na dúvida, confira com `ipconfig`.
+
+2. Celular e notebook no **mesmo Wi-Fi**. Se o Windows perguntar, permita o Node.js em **redes privadas** no firewall.
+
+3. No app: ícone de servidor na tela de Boas-vindas → digite o IP → **Testar** → **Salvar**.
+
+Se não conectar: abra `http://IP_DO_NOTEBOOK:3333/api/status` no navegador do celular. Se não abrir, o problema está
+na rede ou no firewall, não no app. Redes de faculdade às vezes bloqueiam a comunicação entre aparelhos; nesse caso,
+use o roteador do celular (o notebook se conecta no Wi-Fi do celular).
+
+### 4.5 Apresentação
+
+O roteiro da apresentação, com a demonstração passo a passo e as explicações de JWT, hash, Bearer Token e
+middleware, está em [`docs/apresentacao.md`](docs/apresentacao.md).
+
+---
+
+## 5. Versão atual do app
 
 | Boas-vindas | Início | Conteúdos | Artigo |
 | --- | --- | --- | --- |
@@ -651,7 +757,7 @@ Entrega 3 (sessão com JWT):
 
 **O que já funciona:**
 
-- 16 telas com React Navigation 7 (stack raiz + abas inferiores) e a identidade visual do site;
+- 17 telas com React Navigation 7 (stack raiz + abas inferiores) e a identidade visual do site;
 - telas e ações diferentes para cada nível (família, profissional em verificação, profissional aprovado e admin);
 - visitantes leem tudo sem conta; para curtir, salvar, comentar ou perguntar, o app pede login;
 - **todos os dados vêm do MySQL pela API**, com `fetch()`: cadastro, login, artigos (CRUD completo), comentários,
@@ -660,9 +766,8 @@ Entrega 3 (sessão com JWT):
 - validação nos formulários e na API, com os erros da API mostrados no campo certo;
 - **login com JWT**: o token fica guardado no aparelho, vai em toda requisição como Bearer Token e mantém a pessoa
   logada ao reabrir o app; logout apaga o token; token vencido encerra a sessão com aviso;
-- **permissões garantidas pela API**: middlewares conferem o token e o nível em cada rota protegida (seção 3).
-
-**Próxima etapa (Entrega 4):** testes no aparelho, correções, README final, APK e apresentação.
+- **permissões garantidas pela API**: middlewares conferem o token e o nível em cada rota protegida (seção 3);
+- **pronto para o APK**: HTTP liberado para a API local e endereço da API configurável dentro do app (seção 4).
 
 ### Contas de demonstração
 
@@ -683,14 +788,15 @@ profissional e publique um artigo.
 
 ---
 
-## 5. Tecnologias
+## 6. Tecnologias
 
 | Camada | Tecnologia |
 | --- | --- |
 | App | React Native 0.88 + Expo SDK 58 (JavaScript) |
 | Navegação | React Navigation 7 (`native-stack` e `bottom-tabs`) |
 | Comunicação | `fetch()` com JSON e Bearer Token (camada `src/services`) e `expo-constants` para achar o IP da API |
-| Sessão no aparelho | `expo-secure-store` (token criptografado) |
+| Sessão no aparelho | `expo-secure-store` (token e endereço da API, criptografados) |
+| Build do APK | EAS Build (`eas.json`) e `expo-build-properties` (HTTP liberado para a API local) |
 | Visual | `@expo/vector-icons` (Ionicons), `expo-font` com Fraunces e DM Sans (`@expo-google-fonts`) |
 | Estado | React Context (autenticação, artigos, comunidade, confirmação) e hook `useApi` |
 | API | Node.js 20+ e Express 5 (`cors`, `dotenv`) |
@@ -699,7 +805,7 @@ profissional e publique um artigo.
 | Autenticação | JWT com `jsonwebtoken` (HS256), enviado como Bearer Token |
 | Testes da API | `node:test` (embutido no Node.js) |
 
-## 6. Estrutura do repositório
+## 7. Estrutura do repositório
 
 ```
 conexaopais.app/
@@ -724,15 +830,17 @@ conexaopais.app/
 │       ├── models/           # consultas SQL
 │       └── utils/            # token.js (gera e confere o JWT), validação e texto
 ├── docs/
+│   ├── apresentacao.md       # roteiro da apresentação e defesa
 │   ├── banco-de-dados.md     # dicionário de dados (todos os campos)
 │   └── telas/                # imagens das telas usadas neste README
 └── mobile/                   # aplicativo React Native (Expo)
     ├── App.js                # fontes, provedores de contexto e NavigationContainer
-    ├── app.json              # nome, ícone, splash e pacote Android (app.conexaopais)
+    ├── app.json              # nome, ícone, splash, pacote Android (app.conexaopais) e plugins
+    ├── eas.json              # perfis de build do EAS (preview = APK)
     ├── .env.example          # EXPO_PUBLIC_API_URL (opcional)
     ├── assets/               # logo da árvore, ícones, splash e fotos do site
     └── src/
-        ├── services/         # api.js (fetch + Bearer Token), sessao.js (token no aparelho) e serviços por recurso
+        ├── services/         # api.js (fetch + Bearer Token), sessao.js e configuracao.js (dados no aparelho) e serviços por recurso
         ├── hooks/            # useApi (carregando / erro / recarregar)
         ├── components/       # Button, TextField, ArticleCard, AsyncState...
         ├── contexts/         # AuthContext, ContentContext (CRUD de artigos), CommunityContext...
@@ -743,12 +851,12 @@ conexaopais.app/
         └── utils/            # validações e funções de texto
 ```
 
-## 7. Como executar
+## 8. Como executar
 
 Pré-requisitos: [Node.js](https://nodejs.org) 20 ou superior, **MySQL 8** (ou MariaDB 10.6+, como no XAMPP) e o app
 **Expo Go** no celular. O celular e o computador precisam estar **na mesma rede Wi-Fi**.
 
-### 7.1 Banco de dados e API
+### 8.1 Banco de dados e API
 
 ```bash
 cd api
@@ -796,7 +904,7 @@ npm test
 > **Atualizando de uma versão anterior** (`git pull`): rode `npm install` de novo em `api/` e em `mobile/` (entraram
 > `jsonwebtoken` e `expo-secure-store`) e `npm run jwt:segredo` uma vez.
 
-### 7.2 App
+### 8.2 App
 
 Em outro terminal:
 
@@ -811,17 +919,29 @@ porta 3333. Se o app mostrar *"Não foi possível conectar à API"*:
 
 - confira se a API está rodando e se o celular está no mesmo Wi-Fi;
 - libere a porta **3333** no firewall do computador (no Windows, permita o Node.js em redes privadas);
-- ou informe o endereço manualmente: crie `mobile/.env` com `EXPO_PUBLIC_API_URL=http://IP_DO_COMPUTADOR:3333/api`
-  e reinicie com `npx expo start -c`.
+- ou informe o endereço no próprio app, em **Conexão com a API** (ícone na tela de Boas-vindas ou em *Minha conta*);
+- ou crie `mobile/.env` com `EXPO_PUBLIC_API_URL=http://IP_DO_COMPUTADOR:3333/api` e reinicie com `npx expo start -c`.
 
-No navegador do computador: `npx expo start --web`.
+No navegador do computador: `npx expo start --web`. Para gerar o APK, veja a seção 4.3.
 
 ---
 
-## 8. Próximas entregas
+## 9. Entrega final
 
-- **Entrega 4:** testes no aparelho, correções, README final, APK e apresentação. No APK, o Android bloqueia HTTP
-  sem criptografia: será preciso liberar o acesso à API local (`usesCleartextTraffic`) ou publicar a API com HTTPS.
+Checklist das entregas obrigatórias do PDF:
+
+| Item | Onde | Situação |
+| --- | --- | :---: |
+| Link do repositório atualizado | este repositório | ✅ |
+| Código-fonte completo | `mobile/` e `api/` | ✅ |
+| API e scripts necessários | `api/` (`npm run db:setup`, `jwt:segredo`, `dev`, `test`) | ✅ |
+| README atualizado | este arquivo | ✅ |
+| Script SQL / estrutura do banco | `database/schema.sql`, `database/seed.sql`, `docs/banco-de-dados.md` | ✅ |
+| APK final | gerado pelo EAS (seção 4.3); link a incluir aqui | ⏳ |
+| Material da apresentação | `docs/apresentacao.md` | ✅ |
+
+Antes de entregar: o APK precisa ser gerado a partir da mesma versão que está no repositório (faça o build depois do
+último commit e push).
 
 ## Autoria
 

@@ -17,15 +17,24 @@ Orientações: PDF "Projeto Avaliativo – Aplicação Mobile com JWT", com 4 en
   (apaga o token; JWT é stateless). Identidade sempre do token: `autorId`/`usuarioId` do corpo são ignorados.
 
 ## Situação
-- **Entregas 1, 2 e 3 ✅** (README seções 1, 2 e 3; dicionário de dados em `docs/banco-de-dados.md`).
+- **Entregas 1, 2 e 3 ✅; Entrega 4 quase pronta** (README seções 1 a 4; roteiro em `docs/apresentacao.md`).
 - Branch principal (padrão do repositório): `claude/conexao-pais-app-entrega-1-dkbo5f`, ainda não renomeada para
-  `main`. A Entrega 3 foi feita na branch `claude/clever-galileo-2xtsnf` e entra na principal pelo pull request.
+  `main`. As Entregas 3 e 4 foram feitas na branch `claude/clever-galileo-2xtsnf` e entram na principal pelo PR #1
+  (a Ana optou por merge depois; até lá a principal está na Entrega 2).
 - **Entrega 3 (feita):** login devolve JWT; token guardado com expo-secure-store (localStorage no Expo Web) e enviado
   como Bearer Token por `services/api.js`; middlewares `autenticacao.js` e `permissoes.js`; rotas protegidas
   conforme README 3.6; `GET /auth/perfil`; logout com confirmação; sessão restaurada ao abrir o app; token recusado
   (401) encerra a sessão com aviso "Sua sessão expirou". 28 testes automatizados em `api/tests` (`npm test`).
-- **Entrega 4 (próxima):** testar no celular (Expo Go), correções, README final, APK e apresentação. O Android
-  bloqueia HTTP sem criptografia no APK; vai precisar de ajuste (ex.: `usesCleartextTraffic`) ou de API com HTTPS.
+- **Entrega 4 (feita aqui):** `mobile/eas.json` (perfil `preview` = APK), `expo-build-properties` com
+  `usesCleartextTraffic` (API no notebook por HTTP; conferido no AndroidManifest do prebuild), tela
+  **Conexão com a API** (`ApiConfigScreen`, guarda o endereço com `services/configuracao.js`), API imprime os IPs da
+  rede ao subir, roteiro de testes por nível no README 4.1, roteiro da apresentação.
+- **Falta (com a Ana):** gerar o APK no notebook (`npm install -g eas-cli`, `eas login`, `cd mobile`,
+  `npm run build:apk`), testar no celular, colocar o link do APK no README (seção 9) e fazer o merge do PR #1.
+  Decisões: API fica no notebook (não hospedada); APK pelo EAS Build.
+- **Pendente:** o app ainda não abriu no celular da Ana pelo Expo Go ("não é possível carregar"); ela vai mandar o
+  print do erro. Suspeitas: IP errado do Expo (172.x), Expo Go desatualizado para o SDK 58 ou `npm install` não rodado
+  depois de trocar de branch.
 
 ## Estrutura
 - `database/schema.sql` + `seed.sql`: 10 tabelas, contas de demonstração com senha `123456`
@@ -41,6 +50,8 @@ Orientações: PDF "Projeto Avaliativo – Aplicação Mobile com JWT", com 4 en
 
 ## Problemas já resolvidos no notebook (Windows)
 - Depois de atualizar para a Entrega 3: `npm install` em `api/` e `mobile/` e `npm run jwt:segredo` uma vez.
+- `npm run jwt:segredo` dando "Missing script": o notebook estava na branch principal (Entrega 2); a Entrega 3 está
+  na branch do PR até o merge (`git checkout claude/clever-galileo-2xtsnf`).
 - `db:setup` falhando com mensagem vazia: o MySQL estava desligado. Agora a mensagem explica a causa.
 - QR Code "nenhum dado utilizável": é preciso ler pelo app Expo Go, não pela câmera. Se o IP do Expo não for o do
   Wi-Fi (ex.: 172.x), rodar `set REACT_NATIVE_PACKAGER_HOSTNAME=<IP do Wi-Fi>` antes do `npx expo start`.
