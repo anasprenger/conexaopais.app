@@ -27,8 +27,14 @@ export default function AccountScreen({ navigation }) {
 }
 
 function ContaVisitante({ navigation }) {
+  const { sessaoExpirada } = useAuth();
   return (
     <Screen>
+      {sessaoExpirada && (
+        <Notice tone="warning" title="Sua sessão expirou.">
+          Entre de novo para curtir, salvar, comentar e publicar.
+        </Notice>
+      )}
       <View style={styles.guest}>
         <Logo size={72} showName={false} />
         <Text style={[type.h1, styles.guestTitle]}>Faça parte dessa conexão.</Text>
@@ -93,6 +99,16 @@ function ContaLogada({ navigation }) {
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
   );
+
+  // Logout: apaga o token JWT do aparelho. Para voltar a interagir, é preciso entrar de novo.
+  function sair() {
+    confirm({
+      title: 'Sair da conta',
+      message: 'Você continua podendo ler os conteúdos. Para curtir, salvar, comentar ou publicar, entre de novo.',
+      confirmLabel: 'Sair',
+      onConfirm: signOut,
+    });
+  }
 
   function excluir(artigo) {
     confirm({
@@ -216,8 +232,8 @@ function ContaLogada({ navigation }) {
 
       <LinksInstitucionais navigation={navigation} />
 
-      <Button title="Sair" icon="log-out-outline" variant="danger" onPress={signOut} style={styles.logout} />
-      <Text style={[type.small, styles.version]}>Versão 1.0.0 · Entrega 2</Text>
+      <Button title="Sair" icon="log-out-outline" variant="danger" onPress={sair} style={styles.logout} />
+      <Text style={[type.small, styles.version]}>Versão 1.0.0 · Entrega 3</Text>
     </Screen>
   );
 }

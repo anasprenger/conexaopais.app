@@ -53,7 +53,7 @@ export default function CommunityScreen({ navigation }) {
     }
     setEnviando(true);
     try {
-      await enviarMensagem({ tipo: 'pergunta', nome: user.name, email: user.email, mensagem: pergunta.trim(), usuarioId: user.id });
+      await enviarMensagem({ tipo: 'pergunta', nome: user.name, email: user.email, mensagem: pergunta.trim() });
       setPergunta('');
       setErro('');
       setEnviada(true);

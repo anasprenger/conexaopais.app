@@ -16,7 +16,7 @@ const demoProfiles = [
 ];
 
 export default function LoginScreen({ navigation, route }) {
-  const { signIn } = useAuth();
+  const { signIn, sessaoExpirada } = useAuth();
   const registered = route.params?.registered;
 
   const [email, setEmail] = useState(route.params?.email ?? '');
@@ -38,7 +38,8 @@ export default function LoginScreen({ navigation, route }) {
     setErroApi('');
     if (Object.keys(newErrors).length > 0) return;
 
-    // POST /api/auth/login — em caso de sucesso o RootNavigator troca para as telas logadas
+    // POST /api/auth/login — a API devolve o token JWT, que fica guardado no aparelho.
+    // Em caso de sucesso o RootNavigator troca para as telas logadas.
     setEntrando(true);
     try {
       await signIn(email, password);
@@ -62,6 +63,11 @@ export default function LoginScreen({ navigation, route }) {
         Acesse sua conta para salvar conteúdos, comentar e conversar com profissionais.
       </Text>
 
+      {sessaoExpirada && !registered && (
+        <Notice tone="warning" title="Sua sessão expirou.">
+          Por segurança, o acesso vale por um tempo limitado. Entre de novo para continuar.
+        </Notice>
+      )}
       {registered === 'usuario' && <Notice tone="success" title="Conta criada! Agora é só entrar." />}
       {registered === 'profissional' && (
         <Notice tone="success" title="Conta criada!">

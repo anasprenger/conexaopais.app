@@ -79,7 +79,7 @@ export default function ArticleScreen({ navigation, route }) {
     }
     setEnviando(true);
     try {
-      await comentar(artigo.id, user.id, comentario.trim());
+      await comentar(artigo.id, comentario.trim());
       setComentario('');
       setErro('');
       await comentariosApi.reload();
@@ -206,7 +206,7 @@ export default function ArticleScreen({ navigation, route }) {
         {comentarios.length === 0 && <Text style={type.muted}>Ninguém comentou ainda. Comece a conversa.</Text>}
       </AsyncState>
       {comentarios.map((item) => {
-        // Entrega 3: a API também vai conferir quem pode excluir (autor do comentário ou admin)
+        // A API também confere quem pode excluir (autor do comentário ou admin)
         const podeExcluir = Boolean(user) && (item.usuarioId === user.id || user.role === ROLES.ADMIN);
         return (
           <View key={item.id} style={styles.comment}>

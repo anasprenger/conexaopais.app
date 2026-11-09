@@ -37,7 +37,7 @@ export default function ContactScreen() {
 
     setEnviando(true);
     try {
-      await enviarMensagem({ tipo: 'contato', ...form, usuarioId: user?.id ?? null });
+      await enviarMensagem({ tipo: 'contato', ...form });
       setForm((current) => ({ ...current, assunto: '', mensagem: '' }));
       setEnviada(true);
     } catch (falha) {

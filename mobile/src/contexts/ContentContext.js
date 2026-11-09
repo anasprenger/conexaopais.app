@@ -45,8 +45,8 @@ export function ContentProvider({ children }) {
   }
 
   // Cria (POST) ou atualiza (PUT) e recarrega a lista. Devolve o id do artigo.
-  async function saveArtigo(dados, autor) {
-    const salvo = dados.id ? await atualizarArtigo(dados.id, dados) : await criarArtigo(dados, autor.id);
+  async function saveArtigo(dados) {
+    const salvo = dados.id ? await atualizarArtigo(dados.id, dados) : await criarArtigo(dados);
     await reload();
     return salvo.id;
   }
