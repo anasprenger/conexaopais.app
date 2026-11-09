@@ -69,6 +69,11 @@ function LinksInstitucionais({ navigation }) {
         <Text style={styles.rowText}>Fale com a equipe</Text>
         <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
       </Pressable>
+      <Pressable style={styles.row} onPress={() => navigation.navigate('ApiConfig')} accessibilityRole="button">
+        <Ionicons name="server-outline" size={22} color={colors.primary} />
+        <Text style={styles.rowText}>Conexão com a API</Text>
+        <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+      </Pressable>
     </>
   );
 }

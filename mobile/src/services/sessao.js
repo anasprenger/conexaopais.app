@@ -1,21 +1,10 @@
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import armazenamento from './armazenamento';
 
 // Guarda a sessão no aparelho (token JWT + dados do usuário) para o app continuar logado ao ser reaberto.
-// - Celular: expo-secure-store, que criptografa os dados (Keystore no Android, Keychain no iOS).
-// - Navegador (Expo Web): localStorage, porque o SecureStore não existe na web. Serve só para testes no computador.
+// No celular os dados ficam criptografados (expo-secure-store); veja services/armazenamento.js.
 
 const CHAVE_TOKEN = 'conexaopais.token';
 const CHAVE_USUARIO = 'conexaopais.usuario';
-
-const armazenamento =
-  Platform.OS === 'web'
-    ? {
-        getItemAsync: async (chave) => globalThis.localStorage?.getItem(chave) ?? null,
-        setItemAsync: async (chave, valor) => globalThis.localStorage?.setItem(chave, valor),
-        deleteItemAsync: async (chave) => globalThis.localStorage?.removeItem(chave),
-      }
-    : SecureStore;
 
 // Devolve { token, usuario } ou null se não houver sessão guardada
 export async function lerSessao() {

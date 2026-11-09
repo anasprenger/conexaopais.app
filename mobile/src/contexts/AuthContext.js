@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { aoSessaoRecusada, definirToken, obterToken } from '../services/api';
+import { aoSessaoRecusada, definirToken, definirUrlDaApi, obterToken } from '../services/api';
+import { lerUrlSalva } from '../services/configuracao';
 import { apagarSessao, lerSessao, salvarSessao } from '../services/sessao';
 import { buscarPerfil, cadastrar, entrar } from '../services/usuariosService';
 
@@ -80,12 +81,14 @@ export function AuthProvider({ children }) {
     return () => aoSessaoRecusada(null);
   }, [encerrarSessao]);
 
-  // Ao abrir o app: recupera a sessão guardada e confere com a API se o token ainda vale
+  // Ao abrir o app: aplica o endereço da API escolhido pela pessoa (se houver),
+  // recupera a sessão guardada e confere com a API se o token ainda vale
   useEffect(() => {
     let ativo = true;
     (async () => {
-      const sessao = await lerSessao();
+      const [urlSalva, sessao] = await Promise.all([lerUrlSalva(), lerSessao()]);
       if (!ativo) return;
+      if (urlSalva) definirUrlDaApi(urlSalva);
       if (sessao) {
         definirToken(sessao.token);
         setUser(sessao.usuario);

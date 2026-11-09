@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
 import ProfessionalRequestsScreen from '../screens/admin/ProfessionalRequestsScreen';
 import AboutScreen from '../screens/app/AboutScreen';
+import ApiConfigScreen from '../screens/app/ApiConfigScreen';
 import ArticleScreen from '../screens/app/ArticleScreen';
 import ColumnScreen from '../screens/app/ColumnScreen';
 import ContactScreen from '../screens/app/ContactScreen';
@@ -17,7 +18,7 @@ import { headerOptions } from './theme';
 const Stack = createNativeStackNavigator();
 
 // Stack raiz.
-// - Leitura (abas, artigo, coluna, revista, profissionais, sobre e contato): aberta a todos, inclusive visitantes.
+// - Leitura (abas, artigo, coluna, revista, profissionais, sobre e contato) e a conexão com a API: abertas a todos.
 // - Boas-vindas, Entrar e Criar conta: só para quem ainda não entrou. Ao entrar, essas telas saem
 //   da pilha e a pessoa volta para onde estava.
 // - Área de publicação: profissional aprovado e admin. Verificação de novos profissionais: só admin.
@@ -36,6 +37,7 @@ export default function RootNavigator() {
         <Stack.Screen name="Professional" component={ProfessionalScreen} options={{ title: 'Perfil profissional' }} />
         <Stack.Screen name="About" component={AboutScreen} options={{ title: 'Sobre' }} />
         <Stack.Screen name="Contact" component={ContactScreen} options={{ title: 'Contato' }} />
+        <Stack.Screen name="ApiConfig" component={ApiConfigScreen} options={{ title: 'Conexão com a API' }} />
       </Stack.Group>
 
       {user ? (
