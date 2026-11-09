@@ -12,8 +12,8 @@ Projeto avaliativo da disciplina de Aplicações Mobile (React Native + API REST
 | --- | --- | --- |
 | **1** | Problema, proposta, projeto Expo, telas, navegação e repositório | ✅ Entregue |
 | **2** | Modelagem, MySQL, API Express, integração com `fetch()` | ✅ Entregue |
-| 3 | JWT, Bearer Token, middleware, níveis no back-end, rotas protegidas e logout | ⏳ Próxima etapa |
-| 4 | Testes, correções, README final, APK e apresentação | ⏳ |
+| **3** | JWT, Bearer Token, middleware, níveis no back-end, rotas protegidas e logout | ✅ Concluída |
+| 4 | Testes, correções, README final, APK e apresentação | ⏳ Próxima etapa |
 
 ---
 
@@ -75,7 +75,7 @@ flowchart LR
 ```
 
 Situação atual: telas, navegação e regras de acesso por nível (Entrega 1); API Express + MySQL integrados ao app
-com `fetch()` (Entrega 2). O token JWT e a proteção das rotas por nível entram na Entrega 3.
+com `fetch()` (Entrega 2); login com JWT, Bearer Token e rotas protegidas por nível no back-end (Entrega 3).
 
 ### 1.5 Nome da aplicação
 
@@ -114,8 +114,8 @@ interagir: ao tocar em Curtir ou Salvar sem conta, o app oferece Entrar; os camp
 lugar a um convite para entrar ou criar conta. Depois do login, a pessoa volta para a tela onde estava.
 
 São as mesmas regras do banco do site (políticas da tabela `publicacoes`: *"Admin e profissional aprovado
-criam"*, *"Autor ou admin edita"*, *"Autor ou admin remove"*). Na Entrega 3 elas serão garantidas **no back-end**
-por middleware de autenticação (JWT enviado como Bearer Token) e de autorização por nível.
+criam"*, *"Autor ou admin edita"*, *"Autor ou admin remove"*). Desde a Entrega 3 elas são garantidas **no back-end**
+por middlewares de autenticação (JWT enviado como Bearer Token) e de autorização por nível (seção 3).
 
 ### 1.8 Principais funcionalidades
 
@@ -203,32 +203,37 @@ flowchart TD
 | # | Requisito | Situação |
 | --- | --- | --- |
 | RF01 | Criar conta de família ou profissional (profissão e registro), com senha salva em hash | ✅ API + banco |
-| RF02 | Entrar com e-mail e senha conferidos pela API | ✅ API + banco · JWT na Entrega 3 |
-| RF03 | Sair da conta | ✅ · descartar o token na Entrega 3 |
+| RF02 | Entrar com e-mail e senha conferidos pela API | ✅ API + banco · devolve um JWT (Entrega 3) |
+| RF03 | Sair da conta | ✅ apaga o token do aparelho (Entrega 3) |
 | RF04 | Listar artigos e buscar por termo e categoria | ✅ API + banco |
 | RF05 | Ler o artigo completo | ✅ API + banco |
-| RF06 | Publicar artigo (só profissional aprovado ou admin) | ✅ API confere o nível do autor |
-| RF07 | Editar e excluir artigo (autor ou admin) | ✅ no app · conferência no back-end na Entrega 3 |
+| RF06 | Publicar artigo (só profissional aprovado ou admin) | ✅ middleware `exigirPublicador` (Entrega 3) |
+| RF07 | Editar e excluir artigo (autor ou admin) | ✅ middleware `autorDoArtigoOuAdmin` (Entrega 3) |
 | RF08 | Curtir e salvar artigos; ver os salvos em Minha conta | ✅ API + banco |
-| RF09 | Comentar e excluir o próprio comentário | ✅ API + banco |
+| RF09 | Comentar e excluir o próprio comentário | ✅ API + banco · autor ou admin exclui (Entrega 3) |
 | RF10 | Ver colunas e suas publicações | ✅ API + banco |
 | RF11 | Ler a revista digital página a página | ✅ API + banco |
 | RF12 | Buscar profissionais e ver o perfil com artigos e colunas | ✅ API + banco |
 | RF13 | Enviar mensagem de contato e pergunta à equipe | ✅ API + banco |
-| RF14 | Aprovar, pedir ajustes ou recusar cadastros profissionais (admin) | ✅ API + banco · restrito ao admin na Entrega 3 |
-| RF15 | Proteger as rotas com token JWT e nível de usuário | ⏳ Entrega 3 |
+| RF14 | Aprovar, pedir ajustes ou recusar cadastros profissionais (admin) | ✅ API + banco · só admin (Entrega 3) |
+| RF15 | Proteger as rotas com token JWT e nível de usuário | ✅ Entrega 3 (seção 3) |
 | RF16 | Ler conteúdos sem conta; para interagir, o app pede login e volta para a mesma tela depois | ✅ |
+| RF17 | Continuar logado ao reabrir o app e sair sozinho quando o token vence, com aviso | ✅ Entrega 3 |
 
 **Requisitos não funcionais já atendidos:** senha nunca é salva em texto (bcrypt); validação dos dados no app **e**
 na API; consultas SQL com parâmetros (`?`), que evitam SQL injection; respostas de erro padronizadas
-(`{ erro, campos }`) exibidas nas telas; credenciais do banco fora do repositório (`.env`).
+(`{ erro, campos }`) exibidas nas telas; credenciais do banco fora do repositório (`.env`). Na Entrega 3: token
+JWT assinado (HS256) e com validade, segredo `JWT_SECRET` fora do repositório, token guardado criptografado no
+aparelho e permissões conferidas no back-end em toda requisição protegida.
 
 ### 2.2 Telas e fluxos atualizados
 
-As telas e a navegação continuam as da seção 1.10. O que mudou é a origem dos dados: agora tudo vem da API.
+As telas e a navegação continuam as da seção 1.10. O que mudou é a origem dos dados: agora tudo vem da API. Desde a
+Entrega 3, as requisições de quem entrou levam o token no cabeçalho `Authorization: Bearer <token>`.
 
 | Tela | Rotas da API usadas |
 | --- | --- |
+| Abertura do app | `GET /api/auth/perfil` (confere o token guardado) |
 | Entrar | `POST /api/auth/login` |
 | Criar conta | `POST /api/usuarios` |
 | Início | `GET /api/artigos`, `GET /api/revistas`, `GET /api/profissionais`, `GET /api/colunas` |
@@ -238,7 +243,7 @@ As telas e a navegação continuam as da seção 1.10. O que mudou é a origem d
 | Revista | `GET /api/revistas/:slug` |
 | Profissionais / Perfil profissional | `GET /api/profissionais`, `GET /api/profissionais/:slug` |
 | Comunidade | `GET /api/artigos`, `POST /api/artigos/:id/interacoes`, `POST /api/mensagens` |
-| Minha conta | `GET /api/usuarios/:id`, `GET /api/usuarios/:id/interacoes`, `DELETE /api/artigos/:id`; admin: `GET /api/usuarios?nivel=profissional&verificacao=pendente` |
+| Minha conta | `GET /api/auth/perfil`, `GET /api/usuarios/:id/interacoes`, `DELETE /api/artigos/:id`; admin: `GET /api/usuarios?nivel=profissional&verificacao=pendente` |
 | Nova postagem / Editar artigo | `POST /api/artigos`, `GET` e `PUT /api/artigos/:id`, `GET /api/categorias` |
 | Novos profissionais | `GET /api/usuarios?nivel=profissional`, `PATCH /api/usuarios/:id/verificacao` |
 | Contato | `POST /api/mensagens` |
@@ -253,10 +258,11 @@ sequenceDiagram
     participant C as artigosController
     participant M as artigoModel
     participant DB as MySQL
-    T->>S: criarArtigo(dados, autorId)
-    S->>R: fetch() com JSON
+    T->>S: criarArtigo(dados)
+    S->>R: fetch() com JSON + Bearer Token
+    R->>R: middlewares autenticar e exigirPublicador (seção 3.5)
     R->>C: criar(req, res)
-    C->>C: valida os campos e o nível do autor
+    C->>C: valida os campos (autor = req.usuario)
     C->>M: criar(...)
     M->>DB: INSERT INTO publicacoes
     DB-->>M: id do novo artigo
@@ -265,7 +271,7 @@ sequenceDiagram
     S-->>T: artigo formatado (a tela abre o artigo publicado)
 ```
 
-Se algo der errado, a API responde com o status adequado (400, 403, 404, 409, 503) e uma mensagem. A tela mostra
+Se algo der errado, a API responde com o status adequado (400, 401, 403, 404, 409, 503) e uma mensagem. A tela mostra
 essa mensagem e, nos formulários, o erro aparece embaixo do campo correspondente.
 
 ### 2.3 Estrutura do banco de dados
@@ -420,7 +426,8 @@ Base: `http://localhost:3333/api`. Corpo e respostas em JSON. Exemplos prontos p
 | Método | Rota | O que faz |
 | --- | --- | --- |
 | GET | `/status` | Confere se a API e o banco estão respondendo |
-| POST | `/auth/login` | Confere e-mail e senha e devolve o usuário |
+| POST | `/auth/login` | Confere e-mail e senha e devolve o **token JWT** e o usuário |
+| GET | `/auth/perfil` | Dados de quem está logado (pelo token) |
 | POST | `/usuarios` | Cria conta (família ou profissional) |
 | GET | `/usuarios?nivel=&verificacao=` | Lista contas (ex.: profissionais pendentes) |
 | GET | `/usuarios/:id` | Dados de uma conta |
@@ -440,12 +447,15 @@ Base: `http://localhost:3333/api`. Corpo e respostas em JSON. Exemplos prontos p
 | GET | `/revistas`, `/revistas/:slug` | Edições e páginas |
 | POST | `/mensagens` | Contato ou pergunta à equipe |
 
-Organização do código da API (`api/src`): **routes** (endereços) → **controllers** (validação, regras e resposta HTTP)
-→ **models** (SQL) → **config/database.js** (pool de conexões com o MySQL). Erros passam por um middleware central.
+Quem pode usar cada rota está na seção 3.6.
+
+Organização do código da API (`api/src`): **routes** (endereços) → **middlewares** (token e nível, Entrega 3) →
+**controllers** (validação, regras e resposta HTTP) → **models** (SQL) → **config/database.js** (pool de conexões com
+o MySQL). Erros passam por um middleware central.
 
 ### 2.6 Níveis de usuário e permissões previstas na API
 
-| Rotas | Quem poderá usar (Entrega 3, com JWT) |
+| Rotas | Quem pode usar (implementado na Entrega 3) |
 | --- | --- |
 | `GET /status`, `POST /auth/login`, `POST /usuarios` | Qualquer pessoa |
 | `GET` de artigos, categorias, comentários, profissionais, colunas e revistas | Qualquer pessoa (visitante incluído) |
@@ -457,14 +467,169 @@ Organização do código da API (`api/src`): **routes** (endereços) → **contr
 | `DELETE /comentarios/:id` | Autor do comentário ou admin |
 | `GET /usuarios`, `PATCH /usuarios/:id/verificacao` | Somente admin |
 
-**Já nesta entrega**, a API confere a senha (bcrypt), impede e-mail repetido, valida todos os campos e só deixa
-publicar quem é profissional aprovado ou admin. O que fica para a Entrega 3: hoje o app informa quem é o usuário
-no corpo da requisição (`autorId`, `usuarioId`). Com o JWT, essa identidade passa a vir do token enviado como
-Bearer Token, e um middleware vai bloquear as rotas conforme a tabela acima.
+Na Entrega 2, a API já conferia a senha (bcrypt), impedia e-mail repetido e validava os campos, mas o app informava
+quem era o usuário no corpo da requisição (`autorId`, `usuarioId`). Na Entrega 3, essa identidade passou a vir do
+token enviado como Bearer Token, e os middlewares da seção 3.5 aplicam esta tabela.
 
 ---
 
-## 3. Versão atual do app
+## 3. Autenticação, JWT e controle de acesso (Entrega 3)
+
+O app passa a ter usuários autenticados de verdade: no login a API entrega um **token JWT**, o app guarda esse token
+no aparelho e o envia em toda requisição como **Bearer Token**, e **middlewares no back-end** decidem o que cada
+nível pode fazer.
+
+```
+CADASTRO → LOGIN → JWT → NÍVEL → PERMISSÃO → CRUD
+```
+
+### 3.1 Caminho de uma ação protegida
+
+Exemplo: a Dra. Helena (profissional aprovada) entra e publica um artigo.
+
+```mermaid
+sequenceDiagram
+    participant App as App (AuthContext + api.js)
+    participant API as API Express
+    participant MW as Middlewares
+    participant DB as MySQL
+    App->>API: POST /auth/login { email, senha }
+    API->>DB: busca a conta pelo e-mail
+    API->>API: bcrypt.compare(senha, senha_hash)
+    API-->>App: 200 { token, usuario }
+    App->>App: guarda o token no aparelho (expo-secure-store)
+    App->>API: POST /artigos com Authorization: Bearer + token
+    API->>MW: autenticar
+    MW->>MW: jwt.verify: assinatura e validade
+    MW->>DB: busca a conta do token (nível atual)
+    MW->>MW: exigirPublicador: admin ou profissional aprovado?
+    MW->>API: req.usuario
+    API->>DB: INSERT INTO publicacoes (autor = req.usuario.id)
+    API-->>App: 201 Created + artigo
+```
+
+- Sem token, com token vencido ou adulterado: `autenticar` responde **401** e o app encerra a sessão.
+- Token válido, mas o nível não permite a ação: **403**, e a tela mostra a mensagem da API.
+
+### 3.2 Cadastro, login e proteção da senha
+
+| Etapa | Onde | Como |
+| --- | --- | --- |
+| Cadastro | `POST /usuarios` → `usuariosController.cadastrar` | Valida os campos, impede e-mail repetido (409) e salva só o hash `bcrypt.hash(senha, 10)`. Ninguém se cadastra como admin; conta profissional nasce `pendente` |
+| Login | `POST /auth/login` → `authController.login` | `bcrypt.compare` com o hash do banco. Senha errada e e-mail inexistente recebem a mesma resposta (401) no mesmo tempo, para não revelar quais e-mails têm conta |
+| Respostas | `usuarioModel` | O hash nunca sai da API: só o login lê a coluna `senha_hash` |
+
+### 3.3 O token JWT
+
+Gerado em [`api/src/utils/token.js`](api/src/utils/token.js) com a biblioteca `jsonwebtoken`. Conteúdo de um token
+(a parte do meio, decodificada):
+
+```json
+{ "nivel": "usuario", "iat": 1794222455, "exp": 1794827255, "sub": "3" }
+```
+
+- `sub` é o id da conta, `nivel` é o nível na hora do login e `exp` é a validade (`JWT_EXPIRES_IN`, padrão **7 dias**).
+- O token é assinado com **HS256** e o segredo `JWT_SECRET`, que fica só no `api/.env` (fora do Git). Quem altera o
+  conteúdo invalida a assinatura; sem o segredo, ninguém gera um token que a API aceite.
+- A API não sobe sem um `JWT_SECRET` de pelo menos 32 caracteres. `npm run jwt:segredo` gera um aleatório e grava no `.env`.
+
+### 3.4 Sessão no app
+
+| O quê | Onde | Como |
+| --- | --- | --- |
+| Guardar o token | [`mobile/src/services/sessao.js`](mobile/src/services/sessao.js) | `expo-secure-store`, que criptografa os dados (Keystore no Android, Keychain no iOS). No Expo Web usa `localStorage`, só para testes |
+| Enviar o token | [`mobile/src/services/api.js`](mobile/src/services/api.js) | Toda requisição de quem entrou leva `Authorization: Bearer <token>` |
+| Continuar logado | [`mobile/src/contexts/AuthContext.js`](mobile/src/contexts/AuthContext.js) | Ao abrir, o app lê a sessão guardada (a tela de abertura espera) e confere o token em `GET /auth/perfil` |
+| Sessão expirada | `api.js`, `AuthContext` e `App.js` | Se a API responder 401 a uma requisição feita com token, o app sai da conta e avisa *"Sua sessão expirou"*, com botão para entrar de novo |
+| Logout | Minha conta → **Sair** | Pede confirmação e apaga o token do aparelho e da memória. As próximas requisições saem sem token |
+| Atualizar a conta | `refreshUser` (ao abrir Minha conta) | `GET /auth/perfil` traz o nível e a situação atuais (ex.: cadastro profissional aprovado) |
+
+O JWT não fica guardado no servidor (é *stateless*). Por isso o logout acontece no app, apagando o token, e a validade
+limita o tempo de uso de um token que tenha ficado guardado em outro lugar.
+
+### 3.5 Middlewares de autenticação e de nível
+
+Em [`api/src/middlewares/`](api/src/middlewares):
+
+| Middleware | O que confere | Se falhar |
+| --- | --- | --- |
+| `autenticar` | Token no formato `Bearer`, assinatura, validade e se a conta ainda existe. Deixa a conta em `req.usuario` | 401 |
+| `autenticarSeHouverToken` | O mesmo, mas o token é opcional (contato, aberto a visitantes) | 401 se o token enviado for inválido |
+| `permitirNiveis('admin')` | Nível da conta | 403 |
+| `exigirPublicador` | Admin ou profissional **aprovado** | 403 |
+| `proprioUsuarioOuAdmin` | O `:id` da rota é a própria pessoa, ou ela é admin | 403 |
+| `autorDoArtigoOuAdmin` | Admin, ou autor do artigo que ainda pode publicar | 404 / 403 |
+| `autorDoComentarioOuAdmin` | Admin, ou quem escreveu o comentário | 404 / 403 |
+
+**O nível vem do banco, não só do token.** A cada requisição protegida, `autenticar` busca a conta pelo `sub` do
+token. Assim, quando a administração aprova ou recusa um profissional, a mudança vale na hora, sem novo login, e
+uma conta apagada perde o acesso mesmo com um token ainda dentro da validade.
+
+**A identidade vem do token.** O app não envia mais `autorId` nem `usuarioId`; se alguém enviar, a API ignora.
+
+### 3.6 Rotas protegidas e CRUD da entidade principal
+
+Como fica no código ([`api/src/routes/artigos.routes.js`](api/src/routes/artigos.routes.js)):
+
+```js
+router.get('/', artigosController.listar); // aberta
+router.get('/:id', artigosController.buscar); // aberta
+router.post('/', autenticar, exigirPublicador, artigosController.criar);
+router.put('/:id', autenticar, autorDoArtigoOuAdmin, artigosController.atualizar);
+router.delete('/:id', autenticar, autorDoArtigoOuAdmin, artigosController.excluir);
+```
+
+| Rota | Middlewares | Visitante | Família | Prof. em verificação | Prof. aprovado | Admin |
+| --- | --- | :---: | :---: | :---: | :---: | :---: |
+| `GET` de artigos, categorias, comentários, profissionais, colunas e revistas | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `POST /usuarios`, `POST /auth/login` | — | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `POST /mensagens` (contato) | `autenticarSeHouverToken` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `POST /mensagens` (pergunta) | `autenticarSeHouverToken` | 401 | ✅ | ✅ | ✅ | ✅ |
+| `GET /auth/perfil` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
+| `POST /artigos/:id/comentarios`, `POST /artigos/:id/interacoes` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
+| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes` | `autenticar`, `proprioUsuarioOuAdmin` | 401 | a própria | a própria | a própria | ✅ |
+| `DELETE /comentarios/:id` | `autenticar`, `autorDoComentarioOuAdmin` | 401 | os próprios | os próprios | os próprios | ✅ |
+| `POST /artigos` | `autenticar`, `exigirPublicador` | 401 | 403 | 403 | ✅ | ✅ |
+| `PUT /artigos/:id`, `DELETE /artigos/:id` | `autenticar`, `autorDoArtigoOuAdmin` | 401 | 403 | 403 | os próprios | ✅ |
+| `GET /usuarios`, `PATCH /usuarios/:id/verificacao` | `autenticar`, `permitirNiveis('admin')` | 401 | 403 | 403 | 403 | ✅ |
+
+**CRUD completo da entidade principal (`publicacoes`):**
+
+| Operação | Rota | Tela do app | Quem pode |
+| --- | --- | --- | --- |
+| Criar | `POST /artigos` | Nova postagem | Profissional aprovado e admin |
+| Ler | `GET /artigos`, `GET /artigos/:id` | Início, Conteúdos, Artigo | Todos, inclusive visitantes |
+| Atualizar | `PUT /artigos/:id` | Editar artigo | Autor ou admin |
+| Excluir | `DELETE /artigos/:id` | Artigo e Minha conta | Autor ou admin |
+
+No app, as telas continuam escondendo o que cada nível não pode fazer (seção 1.7), mas quem garante as regras é a
+API: uma requisição feita fora do app, sem token ou com o nível errado, recebe 401 ou 403.
+
+### 3.7 Testes
+
+```bash
+cd api
+npm test
+```
+
+São 28 testes automatizados ([`api/tests/`](api/tests), com `node:test`, sem dependências extras). Eles sobem a API
+numa porta livre e usam o banco do `.env` (rode `npm run db:setup` antes):
+
+- **Cadastro e senha:** a resposta não traz a senha nem o hash; o banco guarda um hash bcrypt; e-mail repetido
+  recebe 409; ninguém vira admin pelo cadastro.
+- **Login e JWT:** 401 igual para senha errada e para e-mail inexistente; o token traz id, nível e validade.
+- **Validação do token:** sem token, fora do formato `Bearer`, adulterado (nível trocado para admin), assinado com
+  outro segredo, vencido ou de conta apagada: sempre 401.
+- **Níveis e CRUD:** visitante, família, profissional pendente, aprovado e recusado e admin, cada um recebendo
+  200/201/204, 401 ou 403 conforme a tabela da seção 3.6. Aprovação e recusa valem com o mesmo token, e `autorId` ou
+  `usuarioId` enviados no corpo são ignorados.
+
+Os testes apagam as contas e as mensagens que criam. Exemplos para testar à mão (com o token) estão em
+[`api/requests.http`](api/requests.http).
+
+---
+
+## 4. Versão atual do app
 
 | Boas-vindas | Início | Conteúdos | Artigo |
 | --- | --- | --- | --- |
@@ -478,6 +643,12 @@ Bearer Token, e um middleware vai bloquear as rotas conforme a tabela acima.
 | --- | --- | --- | --- |
 | ![Criar conta](docs/telas/criar-conta.png) | ![Novos profissionais](docs/telas/novos-profissionais.png) | ![Nova postagem](docs/telas/nova-postagem.png) | ![Artigo publicado](docs/telas/artigo-publicado.png) |
 
+Entrega 3 (sessão com JWT):
+
+| Sair da conta (logout) | Token vencido: aviso | Entrar de novo |
+| --- | --- | --- |
+| ![Sair da conta](docs/telas/sair-da-conta.png) | ![Sessão expirada](docs/telas/sessao-expirada.png) | ![Entrar depois da sessão expirada](docs/telas/entrar-sessao-expirada.png) |
+
 **O que já funciona:**
 
 - 16 telas com React Navigation 7 (stack raiz + abas inferiores) e a identidade visual do site;
@@ -486,10 +657,12 @@ Bearer Token, e um middleware vai bloquear as rotas conforme a tabela acima.
 - **todos os dados vêm do MySQL pela API**, com `fetch()`: cadastro, login, artigos (CRUD completo), comentários,
   curtidas, salvos, colunas, revista, profissionais, mensagens e verificação de profissionais;
 - estados de carregamento e de erro em todas as telas, com opção de tentar de novo;
-- validação nos formulários e na API, com os erros da API mostrados no campo certo.
+- validação nos formulários e na API, com os erros da API mostrados no campo certo;
+- **login com JWT**: o token fica guardado no aparelho, vai em toda requisição como Bearer Token e mantém a pessoa
+  logada ao reabrir o app; logout apaga o token; token vencido encerra a sessão com aviso;
+- **permissões garantidas pela API**: middlewares conferem o token e o nível em cada rota protegida (seção 3).
 
-**Próxima etapa (Entrega 3):** a sessão ainda fica só na memória do app. Com o JWT, o token será guardado no
-aparelho, enviado como Bearer Token e conferido pela API em cada rota protegida.
+**Próxima etapa (Entrega 4):** testes no aparelho, correções, README final, APK e apresentação.
 
 ### Contas de demonstração
 
@@ -510,21 +683,23 @@ profissional e publique um artigo.
 
 ---
 
-## 4. Tecnologias
+## 5. Tecnologias
 
 | Camada | Tecnologia |
 | --- | --- |
 | App | React Native 0.88 + Expo SDK 58 (JavaScript) |
 | Navegação | React Navigation 7 (`native-stack` e `bottom-tabs`) |
-| Comunicação | `fetch()` com JSON (camada `src/services`) e `expo-constants` para achar o IP da API |
+| Comunicação | `fetch()` com JSON e Bearer Token (camada `src/services`) e `expo-constants` para achar o IP da API |
+| Sessão no aparelho | `expo-secure-store` (token criptografado) |
 | Visual | `@expo/vector-icons` (Ionicons), `expo-font` com Fraunces e DM Sans (`@expo-google-fonts`) |
 | Estado | React Context (autenticação, artigos, comunidade, confirmação) e hook `useApi` |
 | API | Node.js 20+ e Express 5 (`cors`, `dotenv`) |
 | Banco | MySQL 8 (ou MariaDB 10.6+) com `mysql2` (pool de conexões e consultas parametrizadas) |
 | Senhas | `bcryptjs` (hash) |
-| Autenticação (Entrega 3) | JWT enviado como Bearer Token |
+| Autenticação | JWT com `jsonwebtoken` (HS256), enviado como Bearer Token |
+| Testes da API | `node:test` (embutido no Node.js) |
 
-## 5. Estrutura do repositório
+## 6. Estrutura do repositório
 
 ```
 conexaopais.app/
@@ -534,17 +709,20 @@ conexaopais.app/
 │   └── seed.sql              # conteúdo do site, contas de demonstração e interações
 ├── api/                      # API REST (Node.js + Express)
 │   ├── .env.example          # modelo de configuração (o .env real não vai para o Git)
-│   ├── requests.http         # exemplos de requisições para testar as rotas
-│   ├── scripts/setup-db.js   # npm run db:setup: executa schema.sql + seed.sql
+│   ├── requests.http         # exemplos de requisições (login e rotas com Bearer Token)
+│   ├── scripts/
+│   │   ├── setup-db.js       # npm run db:setup: executa schema.sql + seed.sql
+│   │   └── gerar-segredo.js  # npm run jwt:segredo: grava um JWT_SECRET aleatório no .env
+│   ├── tests/                # npm test: cadastro, JWT, níveis e CRUD
 │   └── src/
-│       ├── server.js         # sobe o servidor na porta 3333
+│       ├── server.js         # confere o JWT_SECRET e sobe o servidor na porta 3333
 │       ├── app.js            # Express, CORS, JSON, rotas e tratamento de erros
 │       ├── config/           # conexão com o MySQL (pool)
-│       ├── routes/           # endereços da API (um arquivo por recurso)
+│       ├── routes/           # endereços da API e os middlewares de cada rota
+│       ├── middlewares/      # autenticacao.js (JWT), permissoes.js (níveis) e erros
 │       ├── controllers/      # validação, regras e respostas HTTP
 │       ├── models/           # consultas SQL
-│       ├── middlewares/      # rota não encontrada e erros
-│       └── utils/            # validação e funções de texto
+│       └── utils/            # token.js (gera e confere o JWT), validação e texto
 ├── docs/
 │   ├── banco-de-dados.md     # dicionário de dados (todos os campos)
 │   └── telas/                # imagens das telas usadas neste README
@@ -554,7 +732,7 @@ conexaopais.app/
     ├── .env.example          # EXPO_PUBLIC_API_URL (opcional)
     ├── assets/               # logo da árvore, ícones, splash e fotos do site
     └── src/
-        ├── services/         # api.js (fetch) e serviços por recurso + formatadores
+        ├── services/         # api.js (fetch + Bearer Token), sessao.js (token no aparelho) e serviços por recurso
         ├── hooks/            # useApi (carregando / erro / recarregar)
         ├── components/       # Button, TextField, ArticleCard, AsyncState...
         ├── contexts/         # AuthContext, ContentContext (CRUD de artigos), CommunityContext...
@@ -565,20 +743,26 @@ conexaopais.app/
         └── utils/            # validações e funções de texto
 ```
 
-## 6. Como executar
+## 7. Como executar
 
 Pré-requisitos: [Node.js](https://nodejs.org) 20 ou superior, **MySQL 8** (ou MariaDB 10.6+, como no XAMPP) e o app
 **Expo Go** no celular. O celular e o computador precisam estar **na mesma rede Wi-Fi**.
 
-### 6.1 Banco de dados e API
+### 7.1 Banco de dados e API
 
 ```bash
 cd api
 npm install
 ```
 
-Copie `api/.env.example` para `api/.env` e coloque o usuário e a senha do seu MySQL. Depois crie o banco com os
-dados iniciais (isso executa `database/schema.sql` e `database/seed.sql`):
+Copie `api/.env.example` para `api/.env` e coloque o usuário e a senha do seu MySQL. Depois gere o segredo que
+assina os tokens JWT (ele é gravado no `.env`, que não vai para o Git):
+
+```bash
+npm run jwt:segredo
+```
+
+Crie o banco com os dados iniciais (isso executa `database/schema.sql` e `database/seed.sql`):
 
 ```bash
 npm run db:setup
@@ -600,9 +784,19 @@ Suba a API (ela reinicia sozinha quando o código muda):
 npm run dev
 ```
 
-Teste no navegador: <http://localhost:3333/api/status> deve mostrar `{"api":"ok","banco":"ok"}`.
+Se aparecer *"JWT_SECRET não está definido"*, rode `npm run jwt:segredo` e suba de novo.
 
-### 6.2 App
+Teste no navegador: <http://localhost:3333/api/status> deve mostrar `{"api":"ok","banco":"ok"}`. Para rodar os
+testes automatizados (com o MySQL ligado):
+
+```bash
+npm test
+```
+
+> **Atualizando de uma versão anterior** (`git pull`): rode `npm install` de novo em `api/` e em `mobile/` (entraram
+> `jsonwebtoken` e `expo-secure-store`) e `npm run jwt:segredo` uma vez.
+
+### 7.2 App
 
 Em outro terminal:
 
@@ -624,11 +818,10 @@ No navegador do computador: `npx expo start --web`.
 
 ---
 
-## 7. Próximas entregas
+## 8. Próximas entregas
 
-- **Entrega 3:** login devolvendo JWT, token guardado no aparelho e enviado como Bearer Token, middleware de
-  autenticação e de nível, rotas protegidas conforme a seção 2.6 e logout.
-- **Entrega 4:** testes, correções, README final, APK e apresentação.
+- **Entrega 4:** testes no aparelho, correções, README final, APK e apresentação. No APK, o Android bloqueia HTTP
+  sem criptografia: será preciso liberar o acesso à API local (`usesCleartextTraffic`) ou publicar a API com HTTPS.
 
 ## Autoria
 
