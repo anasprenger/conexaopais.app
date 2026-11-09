@@ -26,4 +26,10 @@ async function login(req, res) {
   res.json({ token: gerarToken(dados), usuario: dados });
 }
 
-module.exports = { login };
+// GET /api/auth/perfil — dados de quem está logado (o middleware autenticar já conferiu o token).
+// O app usa ao abrir, para saber se o token guardado ainda vale, e para atualizar nível e situação do cadastro.
+function perfil(req, res) {
+  res.json(req.usuario);
+}
+
+module.exports = { login, perfil };
