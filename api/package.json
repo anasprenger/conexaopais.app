@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
+    "test": "node --test --test-reporter=spec",
     "db:setup": "node scripts/setup-db.js",
     "jwt:segredo": "node scripts/gerar-segredo.js"
   },
