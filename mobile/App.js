@@ -8,14 +8,14 @@ import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from './src/contexts/AuthContext';
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
 import { CommunityProvider } from './src/contexts/CommunityContext';
 import { ConfirmProvider } from './src/contexts/ConfirmContext';
 import { ContentProvider } from './src/contexts/ContentContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationTheme } from './src/navigation/theme';
 
-// Mantém a tela de abertura até as fontes do site (Fraunces e DM Sans) carregarem
+// Mantém a tela de abertura até as fontes do site (Fraunces e DM Sans) carregarem e a sessão guardada ser lida
 SplashScreen.preventAutoHideAsync();
 
 export default function App() {
@@ -26,26 +26,36 @@ export default function App() {
     DMSans_700Bold,
   });
 
-  useEffect(() => {
-    if (fontsLoaded || fontError) SplashScreen.hideAsync();
-  }, [fontsLoaded, fontError]);
-
-  if (!fontsLoaded && !fontError) return null;
-
   return (
     <SafeAreaProvider>
       <AuthProvider>
         <ContentProvider>
           <CommunityProvider>
             <ConfirmProvider>
-              <NavigationContainer theme={navigationTheme}>
-                <RootNavigator />
-                <StatusBar style="dark" />
-              </NavigationContainer>
+              <Navegacao fontesProntas={fontsLoaded || Boolean(fontError)} />
             </ConfirmProvider>
           </CommunityProvider>
         </ContentProvider>
       </AuthProvider>
     </SafeAreaProvider>
+  );
+}
+
+// Só mostra as telas depois de saber se há uma sessão guardada (evita piscar a tela de boas-vindas para quem já entrou)
+function Navegacao({ fontesProntas }) {
+  const { restaurando } = useAuth();
+  const pronto = fontesProntas && !restaurando;
+
+  useEffect(() => {
+    if (pronto) SplashScreen.hideAsync();
+  }, [pronto]);
+
+  if (!pronto) return null;
+
+  return (
+    <NavigationContainer theme={navigationTheme}>
+      <RootNavigator />
+      <StatusBar style="dark" />
+    </NavigationContainer>
   );
 }

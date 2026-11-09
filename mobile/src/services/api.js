@@ -23,11 +23,29 @@ export class ApiError extends Error {
   }
 }
 
-// Requisição à API com fetch(): envia/recebe JSON, limita o tempo de espera
-// e transforma qualquer falha em ApiError com uma mensagem clara.
+// Token JWT da sessão atual (definido pelo AuthContext no login e ao reabrir o app)
+let tokenAtual = null;
+let aoRecusarToken = null;
+
+export function definirToken(token) {
+  tokenAtual = token;
+}
+
+export function obterToken() {
+  return tokenAtual;
+}
+
+// Avisa quando a API recusa o token (401): sessão expirada ou inválida. O AuthContext usa para sair da conta.
+export function aoSessaoRecusada(callback) {
+  aoRecusarToken = callback;
+}
+
+// Requisição à API com fetch(): envia/recebe JSON, manda o token como Bearer Token,
+// limita o tempo de espera e transforma qualquer falha em ApiError com uma mensagem clara.
 export async function api(caminho, { method = 'GET', body, timeout = 10000 } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
+  const tokenEnviado = tokenAtual;
 
   try {
     const resposta = await fetch(`${API_URL}${caminho}`, {
@@ -35,6 +53,7 @@ export async function api(caminho, { method = 'GET', body, timeout = 10000 } = {
       headers: {
         Accept: 'application/json',
         ...(body !== undefined && { 'Content-Type': 'application/json' }),
+        ...(tokenEnviado && { Authorization: `Bearer ${tokenEnviado}` }),
       },
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: controller.signal,
@@ -42,6 +61,9 @@ export async function api(caminho, { method = 'GET', body, timeout = 10000 } = {
 
     const dados = resposta.status === 204 ? null : await resposta.json().catch(() => null);
     if (!resposta.ok) {
+      // Token recusado: só encerra a sessão se ainda for o token atual
+      // (se a pessoa saiu ou trocou de conta enquanto esperava, a resposta antiga é ignorada)
+      if (resposta.status === 401 && tokenEnviado && tokenEnviado === tokenAtual) aoRecusarToken?.();
       throw new ApiError(dados?.erro ?? 'A API respondeu com um erro inesperado.', resposta.status, dados?.campos);
     }
     return dados;
