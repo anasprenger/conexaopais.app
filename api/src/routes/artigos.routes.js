@@ -2,19 +2,21 @@ const { Router } = require('express');
 const artigosController = require('../controllers/artigosController');
 const comentariosController = require('../controllers/comentariosController');
 const interacoesController = require('../controllers/interacoesController');
+const { autenticar } = require('../middlewares/autenticacao');
+const { autorDoArtigoOuAdmin, exigirPublicador } = require('../middlewares/permissoes');
 
-// Entidade principal: CRUD de artigos
-// Entrega 3: POST/PUT/DELETE passam a exigir token (autor do artigo ou admin)
+// Entidade principal: CRUD de artigos.
+// Leitura aberta a todos (visitante incluído); escrita exige token e nível.
 const router = Router();
 
 router.get('/', artigosController.listar);
 router.get('/:id', artigosController.buscar);
-router.post('/', artigosController.criar);
-router.put('/:id', artigosController.atualizar);
-router.delete('/:id', artigosController.excluir);
+router.post('/', autenticar, exigirPublicador, artigosController.criar);
+router.put('/:id', autenticar, autorDoArtigoOuAdmin, artigosController.atualizar);
+router.delete('/:id', autenticar, autorDoArtigoOuAdmin, artigosController.excluir);
 
 router.get('/:id/comentarios', comentariosController.listar);
-router.post('/:id/comentarios', comentariosController.criar);
-router.post('/:id/interacoes', interacoesController.alternar);
+router.post('/:id/comentarios', autenticar, comentariosController.criar);
+router.post('/:id/interacoes', autenticar, interacoesController.alternar);
 
 module.exports = router;

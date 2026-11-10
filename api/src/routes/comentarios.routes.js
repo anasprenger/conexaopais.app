@@ -1,8 +1,10 @@
 const { Router } = require('express');
 const comentariosController = require('../controllers/comentariosController');
+const { autenticar } = require('../middlewares/autenticacao');
+const { autorDoComentarioOuAdmin } = require('../middlewares/permissoes');
 
 const router = Router();
 
-router.delete('/:id', comentariosController.excluir); // Entrega 3: autor do comentário ou admin
+router.delete('/:id', autenticar, autorDoComentarioOuAdmin, comentariosController.excluir);
 
 module.exports = router;

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import Button from '../../components/Button';
 import Logo from '../../components/Logo';
@@ -10,7 +11,19 @@ export default function WelcomeScreen({ navigation }) {
       <View style={[styles.blobMint, blob(300)]} />
       <View style={styles.ring} />
 
-      <Logo size={40} direction="row" />
+      <View style={styles.topo}>
+        <Logo size={40} direction="row" />
+        {/* No APK, o IP do computador que roda a API pode mudar de uma rede para outra */}
+        <Pressable
+          onPress={() => navigation.navigate('ApiConfig')}
+          style={styles.conexao}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Conexão com a API"
+        >
+          <Ionicons name="server-outline" size={20} color={colors.textMuted} />
+        </Pressable>
+      </View>
 
       <View style={styles.photoFrame}>
         <Image
@@ -97,5 +110,13 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.primary,
     textDecorationLine: 'underline',
+  },
+  topo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  conexao: {
+    padding: spacing.xs,
   },
 });

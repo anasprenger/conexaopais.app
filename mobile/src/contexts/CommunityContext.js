@@ -32,7 +32,7 @@ export function CommunityProvider({ children }) {
   // POST /api/artigos/:id/interacoes — liga/desliga e atualiza o total no artigo
   async function toggle(tipo, artigoId) {
     if (!user) throw new Error('Entre na sua conta para curtir e salvar conteúdos.');
-    const { ativo, total } = await alternarInteracao(artigoId, user.id, tipo);
+    const { ativo, total } = await alternarInteracao(artigoId, tipo);
     setInteracoes((atual) => {
       const sem = atual.filter((item) => !(item.tipo === tipo && item.publicacaoId === artigoId));
       return ativo ? [{ publicacaoId: artigoId, tipo }, ...sem] : sem;

@@ -82,17 +82,15 @@ export default function PostFormScreen({ navigation, route }) {
 
     setSalvando(true);
     try {
-      const id = await saveArtigo(
-        {
-          ...(editando && { id: editando.id }),
-          titulo: form.titulo.trim(),
-          categoria: form.categoria,
-          resumo: form.resumo.trim(),
-          conteudo: form.texto.trim(),
-          tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
-        },
-        user
-      );
+      // POST ou PUT com o token: a API confere se a pessoa pode publicar ou editar este artigo
+      const id = await saveArtigo({
+        ...(editando && { id: editando.id }),
+        titulo: form.titulo.trim(),
+        categoria: form.categoria,
+        resumo: form.resumo.trim(),
+        conteudo: form.texto.trim(),
+        tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
+      });
       // Edição volta para a tela anterior (o artigo aberto busca de novo); publicação nova abre o artigo
       if (editando) navigation.goBack();
       else navigation.replace('Article', { id });

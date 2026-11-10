@@ -1,5 +1,4 @@
 const artigoModel = require('../models/artigoModel');
-const usuarioModel = require('../models/usuarioModel');
 const HttpError = require('../utils/HttpError');
 const { idDaRota, texto, verificarCampos } = require('../utils/validacao');
 
@@ -42,30 +41,22 @@ async function buscar(req, res) {
   res.json(await buscarOuFalhar(req.params.id));
 }
 
-// POST /api/artigos — só admin ou profissional aprovado publicam (mesma regra do site).
-// Entrega 2: o autor vem no corpo (autorId). Entrega 3: vem do token JWT.
+// POST /api/artigos — o middleware exigirPublicador já liberou só admin e profissional aprovado.
+// O autor é quem está logado (vem do token); um "autorId" no corpo é ignorado.
 async function criar(req, res) {
   const dados = dadosDoArtigo(req.body);
-  const autor = await usuarioModel.buscarPorId(Number(req.body?.autorId) || 0);
-  if (!autor) throw new HttpError(400, 'Autor não encontrado.', { autorId: 'Informe um autor válido.' });
-
-  const podePublicar = autor.nivel === 'admin' || (autor.nivel === 'profissional' && autor.verificacao === 'aprovado');
-  if (!podePublicar) throw new HttpError(403, 'Esta conta ainda não pode publicar artigos.');
-
-  const artigo = await artigoModel.criar({ ...dados, autorId: autor.id });
+  const artigo = await artigoModel.criar({ ...dados, autorId: req.usuario.id });
   res.status(201).json(artigo);
 }
 
-// PUT /api/artigos/:id
+// PUT /api/artigos/:id — o middleware autorDoArtigoOuAdmin já conferiu quem pode editar
 async function atualizar(req, res) {
-  const artigo = await buscarOuFalhar(req.params.id);
-  res.json(await artigoModel.atualizar(artigo.id, dadosDoArtigo(req.body)));
+  res.json(await artigoModel.atualizar(req.artigo.id, dadosDoArtigo(req.body)));
 }
 
-// DELETE /api/artigos/:id
+// DELETE /api/artigos/:id — o middleware autorDoArtigoOuAdmin já conferiu quem pode excluir
 async function excluir(req, res) {
-  const artigo = await buscarOuFalhar(req.params.id);
-  await artigoModel.excluir(artigo.id);
+  await artigoModel.excluir(req.artigo.id);
   res.status(204).end();
 }
 

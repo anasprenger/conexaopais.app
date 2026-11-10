@@ -1,25 +1,35 @@
 # Exemplos de requisições para testar a API.
 # No VS Code, instale a extensão "REST Client" e clique em "Send Request" acima de cada bloco.
-# Antes: npm run db:setup e npm run dev
+# Antes: npm run jwt:segredo, npm run db:setup e npm run dev
+#
+# 1. Rode os três logins abaixo (família, profissional e admin): cada um guarda o token da conta.
+# 2. As rotas protegidas usam esses tokens no cabeçalho "Authorization: Bearer <token>".
 
 @api = http://localhost:3333/api
+@tokenFamilia = {{loginFamilia.response.body.$.token}}
+@tokenProfissional = {{loginProfissional.response.body.$.token}}
+@tokenAdmin = {{loginAdmin.response.body.$.token}}
 
 ### Situação da API e do banco
 GET {{api}}/status
 
-### Login (contas do seed: senha 123456)
-POST {{api}}/auth/login
+
+# =============================================================================
+# CADASTRO E LOGIN (rotas abertas)
+# =============================================================================
+
+### Criar conta de família (a senha é salva só como hash bcrypt)
+POST {{api}}/usuarios
 Content-Type: application/json
 
-{ "email": "profissional@conexaopais.test", "senha": "123456" }
+{
+  "nome": "Joana Lima",
+  "email": "joana@exemplo.com",
+  "senha": "123456",
+  "tipo": "usuario"
+}
 
-### Login com senha errada (401)
-POST {{api}}/auth/login
-Content-Type: application/json
-
-{ "email": "profissional@conexaopais.test", "senha": "errada" }
-
-### Criar conta profissional (fica "pendente")
+### Criar conta profissional (fica "pendente" até o admin aprovar)
 POST {{api}}/usuarios
 Content-Type: application/json
 
@@ -32,27 +42,90 @@ Content-Type: application/json
   "registro": "MEC 12345"
 }
 
-### Profissionais aguardando verificação
-GET {{api}}/usuarios?nivel=profissional&verificacao=pendente
-
-### Aprovar um cadastro profissional (troque o id)
-PATCH {{api}}/usuarios/4/verificacao
+### Login da família: devolve { token, usuario }
+# @name loginFamilia
+POST {{api}}/auth/login
 Content-Type: application/json
 
-{ "verificacao": "aprovado" }
+{ "email": "familia@conexaopais.test", "senha": "123456" }
 
-### Listar artigos (com busca e categoria opcionais)
+### Login da profissional aprovada (Dra. Helena Prado)
+# @name loginProfissional
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "profissional@conexaopais.test", "senha": "123456" }
+
+### Login da administração
+# @name loginAdmin
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "admin@conexaopais.test", "senha": "123456" }
+
+### Login com senha errada (401, sem token)
+POST {{api}}/auth/login
+Content-Type: application/json
+
+{ "email": "profissional@conexaopais.test", "senha": "errada" }
+
+
+# =============================================================================
+# TOKEN (middleware autenticar)
+# =============================================================================
+
+### Quem está logado (200)
+GET {{api}}/auth/perfil
+Authorization: Bearer {{tokenFamilia}}
+
+### Sem token (401)
+GET {{api}}/auth/perfil
+
+### Token inválido ou adulterado (401)
+GET {{api}}/auth/perfil
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwibml2ZWwiOiJhZG1pbiJ9.assinatura-falsa
+
+
+# =============================================================================
+# ARTIGOS: CRUD da entidade principal
+# =============================================================================
+
+### Listar artigos: aberto a visitantes (busca e categoria opcionais)
 GET {{api}}/artigos?busca=rotina&categoria=Educação
 
-### Artigo completo
+### Artigo completo: aberto a visitantes
 GET {{api}}/artigos/1
 
-### Publicar artigo (autorId 2 = Dra. Helena Prado, profissional aprovada)
+### Publicar sem token (401)
 POST {{api}}/artigos
 Content-Type: application/json
 
 {
-  "autorId": 2,
+  "titulo": "Um artigo qualquer",
+  "categoria": "Educação",
+  "resumo": "Este resumo tem mais de vinte caracteres.",
+  "conteudo": "Este texto também precisa ter pelo menos cinquenta caracteres para passar."
+}
+
+### Publicar com conta de família (403: nível não permite)
+POST {{api}}/artigos
+Authorization: Bearer {{tokenFamilia}}
+Content-Type: application/json
+
+{
+  "titulo": "Um artigo qualquer",
+  "categoria": "Educação",
+  "resumo": "Este resumo tem mais de vinte caracteres.",
+  "conteudo": "Este texto também precisa ter pelo menos cinquenta caracteres para passar."
+}
+
+### Publicar como profissional aprovada (201). O autor vem do token.
+# @name novoArtigo
+POST {{api}}/artigos
+Authorization: Bearer {{tokenProfissional}}
+Content-Type: application/json
+
+{
   "titulo": "A volta às aulas sem drama",
   "categoria": "Educação",
   "resumo": "Pequenos combinados que ajudam na primeira semana de aula.",
@@ -60,20 +133,21 @@ Content-Type: application/json
   "tags": ["Escola", "Rotina"]
 }
 
-### Tentar publicar com conta de família (403)
-POST {{api}}/artigos
+### Editar o artigo criado acima com a conta da família (403: não é a autora)
+PUT {{api}}/artigos/{{novoArtigo.response.body.$.id}}
+Authorization: Bearer {{tokenFamilia}}
 Content-Type: application/json
 
 {
-  "autorId": 3,
-  "titulo": "Um artigo qualquer",
+  "titulo": "Título trocado",
   "categoria": "Educação",
-  "resumo": "Este resumo tem mais de vinte caracteres.",
-  "conteudo": "Este texto também precisa ter pelo menos cinquenta caracteres para passar."
+  "resumo": "Pequenos combinados que ajudam na primeira semana de aula.",
+  "conteudo": "Comece a rotina de sono uma semana antes.\n\nVisite a escola junto com a criança."
 }
 
-### Editar artigo (troque o id)
-PUT {{api}}/artigos/5
+### Editar o artigo criado acima com a conta da autora (200)
+PUT {{api}}/artigos/{{novoArtigo.response.body.$.id}}
+Authorization: Bearer {{tokenProfissional}}
 Content-Type: application/json
 
 {
@@ -84,26 +158,98 @@ Content-Type: application/json
   "tags": "Escola, Rotina, Adaptação"
 }
 
-### Excluir artigo (troque o id)
-DELETE {{api}}/artigos/5
+### Excluir o artigo criado acima (204; autora ou admin)
+DELETE {{api}}/artigos/{{novoArtigo.response.body.$.id}}
+Authorization: Bearer {{tokenProfissional}}
 
-### Comentários de um artigo
+
+# =============================================================================
+# COMUNIDADE (usuário logado)
+# =============================================================================
+
+### Comentários de um artigo: aberto a visitantes
 GET {{api}}/artigos/1/comentarios
 
-### Comentar
+### Comentar (quem comenta é a conta do token)
+# @name novoComentario
 POST {{api}}/artigos/1/comentarios
+Authorization: Bearer {{tokenFamilia}}
 Content-Type: application/json
 
-{ "usuarioId": 3, "texto": "Obrigada pelas dicas!" }
+{ "texto": "Obrigada pelas dicas!" }
+
+### Excluir o comentário com outra conta (403)
+DELETE {{api}}/comentarios/{{novoComentario.response.body.$.id}}
+Authorization: Bearer {{tokenProfissional}}
+
+### Excluir o próprio comentário (204)
+DELETE {{api}}/comentarios/{{novoComentario.response.body.$.id}}
+Authorization: Bearer {{tokenFamilia}}
 
 ### Curtir / descurtir (liga e desliga)
 POST {{api}}/artigos/1/interacoes
+Authorization: Bearer {{tokenFamilia}}
 Content-Type: application/json
 
-{ "usuarioId": 3, "tipo": "curtida" }
+{ "tipo": "curtida" }
 
-### Curtidas e salvos de um usuário
+### Curtidas e salvos da própria conta (id 3 = família)
 GET {{api}}/usuarios/3/interacoes
+Authorization: Bearer {{tokenFamilia}}
+
+### Dados de outra conta (403: só a própria pessoa ou admin)
+GET {{api}}/usuarios/2
+Authorization: Bearer {{tokenFamilia}}
+
+### Pergunta à equipe sem login (401)
+POST {{api}}/mensagens
+Content-Type: application/json
+
+{ "tipo": "pergunta", "nome": "Visitante", "email": "visitante@exemplo.com", "mensagem": "Como lidar com birras?" }
+
+### Pergunta à equipe com login (nome e e-mail vêm da conta)
+POST {{api}}/mensagens
+Authorization: Bearer {{tokenFamilia}}
+Content-Type: application/json
+
+{ "tipo": "pergunta", "mensagem": "Como lidar com birras na hora de dormir?" }
+
+### Mensagem de contato: aberta a visitantes
+POST {{api}}/mensagens
+Content-Type: application/json
+
+{
+  "tipo": "contato",
+  "nome": "Marina Souza",
+  "email": "familia@conexaopais.test",
+  "assunto": "Sugestão de pauta",
+  "mensagem": "Gostaria de ler mais sobre adolescência."
+}
+
+
+# =============================================================================
+# ADMINISTRAÇÃO (somente admin)
+# =============================================================================
+
+### Profissionais aguardando verificação (200 com admin)
+GET {{api}}/usuarios?nivel=profissional&verificacao=pendente
+Authorization: Bearer {{tokenAdmin}}
+
+### A mesma lista com a conta da família (403)
+GET {{api}}/usuarios?nivel=profissional&verificacao=pendente
+Authorization: Bearer {{tokenFamilia}}
+
+### Aprovar um cadastro profissional (troque o id; 4 = Carla Mendes)
+PATCH {{api}}/usuarios/4/verificacao
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "verificacao": "aprovado" }
+
+
+# =============================================================================
+# CONTEÚDO PÚBLICO
+# =============================================================================
 
 ### Diretório de profissionais e perfil
 GET {{api}}/profissionais?busca=pediatria
@@ -116,15 +262,3 @@ GET {{api}}/colunas/entre-geracoes
 
 ###
 GET {{api}}/revistas/edicao-03
-
-### Mensagem de contato
-POST {{api}}/mensagens
-Content-Type: application/json
-
-{
-  "tipo": "contato",
-  "nome": "Marina Souza",
-  "email": "familia@conexaopais.test",
-  "assunto": "Sugestão de pauta",
-  "mensagem": "Gostaria de ler mais sobre adolescência."
-}

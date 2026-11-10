@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useAuth } from './AuthContext';
 import {
   atualizarArtigo,
   criarArtigo,
@@ -14,6 +15,7 @@ export const categoriasPadrao = ['Desenvolvimento', 'Gerações', 'Educação', 
 // Lista de artigos (entidade principal) carregada da API e as operações de CRUD:
 // GET /api/artigos, POST /api/artigos, PUT /api/artigos/:id e DELETE /api/artigos/:id
 export function ContentProvider({ children }) {
+  const { restaurando } = useAuth();
   const [artigos, setArtigos] = useState([]);
   const [categoriasApi, setCategoriasApi] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,9 +36,10 @@ export function ContentProvider({ children }) {
   }, []);
 
   // Os conteúdos são públicos: carregam ao abrir o app, mesmo sem login
+  // (depois de ler o endereço da API guardado no aparelho)
   useEffect(() => {
-    reload();
-  }, [reload]);
+    if (!restaurando) reload();
+  }, [restaurando, reload]);
 
   const categorias = [...new Set([...categoriasPadrao, ...categoriasApi])];
 
@@ -45,8 +48,8 @@ export function ContentProvider({ children }) {
   }
 
   // Cria (POST) ou atualiza (PUT) e recarrega a lista. Devolve o id do artigo.
-  async function saveArtigo(dados, autor) {
-    const salvo = dados.id ? await atualizarArtigo(dados.id, dados) : await criarArtigo(dados, autor.id);
+  async function saveArtigo(dados) {
+    const salvo = dados.id ? await atualizarArtigo(dados.id, dados) : await criarArtigo(dados);
     await reload();
     return salvo.id;
   }

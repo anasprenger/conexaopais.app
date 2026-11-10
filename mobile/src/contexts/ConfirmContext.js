@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useCallback, useContext, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Button from '../components/Button';
 import { colors, fontSize, fonts, radius, spacing } from '../theme';
@@ -10,9 +10,16 @@ const ConfirmContext = createContext(null);
 // Opcionais: cancelLabel e tone ("danger" para excluir/recusar, "primary" para ações comuns como entrar)
 export function ConfirmProvider({ children }) {
   const [request, setRequest] = useState(null);
+  // "visible" separado de "request": ao fechar, o texto continua na caixa enquanto ela some (animação de fade)
+  const [visible, setVisible] = useState(false);
+
+  const open = useCallback((novoPedido) => {
+    setRequest(novoPedido);
+    setVisible(true);
+  }, []);
 
   function close() {
-    setRequest(null);
+    setVisible(false);
   }
 
   function handleConfirm() {
@@ -22,9 +29,9 @@ export function ConfirmProvider({ children }) {
   }
 
   return (
-    <ConfirmContext.Provider value={setRequest}>
+    <ConfirmContext.Provider value={open}>
       {children}
-      <Modal visible={!!request} transparent animationType="fade" onRequestClose={close}>
+      <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
         <Pressable style={styles.backdrop} onPress={close} accessibilityLabel="Fechar">
           <Pressable style={styles.dialog} accessibilityRole="alert">
             <Text style={styles.title}>{request?.title}</Text>
