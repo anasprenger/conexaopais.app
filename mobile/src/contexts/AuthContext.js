@@ -4,7 +4,7 @@ import { lerUrlSalva } from '../services/configuracao';
 import { apagarSessao, lerSessao, salvarSessao } from '../services/sessao';
 import { buscarPerfil, cadastrar, entrar } from '../services/usuariosService';
 
-// Níveis de usuário (coluna "nivel" da tabela usuarios)
+// Níveis de usuário (papéis da tabela user_roles do site; vale o mais alto)
 export const ROLES = {
   USUARIO: 'usuario',
   PROFISSIONAL: 'profissional',
@@ -17,19 +17,18 @@ export const roleLabels = {
   [ROLES.ADMIN]: 'Administração',
 };
 
-// Situação do cadastro profissional (verificada pela administração)
+// Situação do cadastro profissional (verificada pela administração, no app ou no site)
 export const verificacaoLabels = {
   pendente: 'Em verificação',
   aprovado: 'Aprovado',
-  ajustes_solicitados: 'Ajustes solicitados',
   recusado: 'Recusado',
 };
 
-// Contas de demonstração criadas pelo seed do banco (database/seed.sql)
+// Contas de teste do site (as mesmas no app). A senha não fica no código: o repositório é público.
 export const DEMO_ACCOUNTS = {
-  usuario: { email: 'familia@conexaopais.test', password: '123456' },
-  profissional: { email: 'profissional@conexaopais.test', password: '123456' },
-  admin: { email: 'admin@conexaopais.test', password: '123456' },
+  usuario: { email: 'familia@conexaopais.test' },
+  profissional: { email: 'profissional@conexaopais.test' },
+  admin: { email: 'admin@conexaopais.test' },
 };
 
 // Regras de permissão usadas nas telas, para mostrar só o que cada nível pode fazer.
@@ -38,14 +37,22 @@ export function canPublish(user) {
   return user?.role === ROLES.ADMIN || (user?.role === ROLES.PROFISSIONAL && user.verificacao === 'aprovado');
 }
 
+// Editar: só artigos do banco (os de exemplo do site não são editáveis), pelo autor ou pela administração
 export function canEditArticle(user, artigo) {
+  if (!artigo || artigo.exemplo) return false;
   return user?.role === ROLES.ADMIN || (canPublish(user) && artigo.autorId === user.id);
+}
+
+// Excluir: o mesmo que editar; nos artigos de exemplo, só a administração (que os esconde, como no site)
+export function canDeleteArticle(user, artigo) {
+  if (!artigo) return false;
+  return artigo.exemplo ? user?.role === ROLES.ADMIN : canEditArticle(user, artigo);
 }
 
 const AuthContext = createContext(null);
 
 // Sessão com JWT:
-// 1. signIn: a API confere e-mail e senha (bcrypt) e devolve um token JWT;
+// 1. signIn: a API confere e-mail e senha (pelo Supabase Auth, as contas do site) e devolve um token JWT da API;
 // 2. o token fica guardado no aparelho (services/sessao.js) e vai em toda requisição como Bearer Token (services/api.js);
 // 3. ao reabrir o app, a sessão guardada é recuperada e conferida na API (GET /auth/perfil);
 // 4. signOut (logout) apaga o token; se a API recusar o token (expirado), a sessão também é encerrada.
@@ -111,7 +118,8 @@ export function AuthProvider({ children }) {
     setUser(usuario);
   }
 
-  // Cadastro: conta de família é liberada na hora; conta profissional fica "pendente" até a administração aprovar
+  // Cadastro (a mesma conta vale no site): conta profissional fica "pendente" até a administração aprovar.
+  // Devolve { usuario, confirmarEmail }.
   function signUp({ name, email, tipo, profissao, registro, password }) {
     return cadastrar({ nome: name.trim(), email: email.trim().toLowerCase(), senha: password, tipo, profissao, registro });
   }
