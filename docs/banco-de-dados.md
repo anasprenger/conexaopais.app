@@ -1,174 +1,201 @@
 # Banco de dados — dicionário de dados
 
-Banco **`conexao_pais`** (MySQL 8 / MariaDB 10.6+, `utf8mb4`). Script de criação: [`database/schema.sql`](../database/schema.sql);
-dados iniciais: [`database/seed.sql`](../database/seed.sql). Este documento foi gerado a partir da estrutura real do banco.
+O app usa o **banco do site Conexão Pais**: PostgreSQL no Supabase (projeto `conexao-pais`). A estrutura é criada
+pelas migrations do site, copiadas em [`database/supabase/migrations/`](../database/supabase/migrations). Este
+documento foi gerado a partir da estrutura real (as migrations aplicadas num PostgreSQL), e as colunas conferem com o
+banco do Supabase.
 
-## `usuarios`
+Todos os ids são **UUID** (gerados pelo banco). Datas são `timestamptz` (com fuso horário).
 
-Contas do app e nível de acesso.
+## `auth.users` (Supabase Auth)
+
+Contas de login, cuidadas pelo **Supabase Auth**: a API só lê esta tabela (o cadastro e a conferência da senha passam
+pelo serviço de contas do Supabase). Campos que a API usa:
+
+| Campo | Tipo | Descrição |
+| --- | --- | --- |
+| `id` | `uuid` | Identificador da conta, usado em todas as outras tabelas (e no `sub` do JWT da API) |
+| `email` | `text` | E-mail de login (único) |
+| `encrypted_password` | `text` | **Hash bcrypt** da senha (nunca a senha em texto). A API nunca devolve este campo |
+| `email_confirmed_at` | `timestamptz` | Quando o e-mail foi confirmado (sem confirmação, o login é recusado) |
+| `banned_until` | `timestamptz` | Suspensão da conta pela administração |
+| `raw_user_meta_data` | `jsonb` | Dados enviados no cadastro (nome, tipo de conta, profissão, registro), usados pelo gatilho `handle_new_user` |
+| `created_at` | `timestamptz` | Data do cadastro |
+
+
+## `profiles`
+
+Perfil de cada conta (um por conta, criado pelo gatilho `handle_new_user` no cadastro).
 
 | Campo | Tipo | Nulo | Chave / padrão | Descrição |
 | --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `nome` | `varchar(120)` | não |  | Nome de exibição |
-| `email` | `varchar(160)` | não |  | E-mail de login (único) |
-| `senha_hash` | `varchar(100)` | não |  | Senha criptografada com bcrypt (nunca a senha em texto) |
-| `nivel` | `enum('usuario','profissional','admin')` | não | padrão `usuario` | Nível de acesso: usuario (família), profissional ou admin |
-| `profissao` | `varchar(80)` | sim |  | Profissão (contas profissionais) |
-| `registro_profissional` | `varchar(40)` | sim |  | Número do conselho de classe (CRP, CRM...) |
-| `verificacao` | `enum('pendente','aprovado','ajustes_solicitados','recusado')` | não | padrão `aprovado` | Situação do cadastro profissional |
-| `observacao_admin` | `varchar(500)` | sim |  | Orientação da administração ao pedir ajustes |
-| `criado_em` | `timestamp` | não | padrão `CURRENT_TIMESTAMP` | Data de criação |
-| `atualizado_em` | `timestamp` | não | padrão `CURRENT_TIMESTAMP` | Data da última alteração |
+| `id` | `uuid` | não | FK → auth.users; PK | Mesmo id da conta em `auth.users` |
+| `display_name` | `text` | sim |  | Nome de exibição |
+| `bio` | `text` | sim |  | Apresentação (usada pelo site) |
+| `avatar_url` | `text` | sim |  | Foto (caminho no Storage ou link) |
+| `status` | `text` | não | padrão `'ativo'` | `ativo` ou suspenso pela administração; conta não ativa perde o acesso na API |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data de criação |
+| `updated_at` | `timestamptz` | não | padrão `now()` | Data da última alteração |
+| `whatsapp` | `text` | sim |  | WhatsApp (profissionais) |
+| `especialidade` | `text` | sim |  | Especialidade (profissionais) |
+| `profissao` | `text` | sim |  | Profissão informada no cadastro profissional |
+| `registro_profissional` | `text` | sim |  | Número no conselho de classe (CRP, CRM...) |
+| `verificacao` | `text` | não | padrão `'pendente'` | Situação do cadastro profissional: `pendente`, `aprovado` ou `recusado`. Só admin altera (gatilho `protect_profile_verification_fields`) |
+| `verificado_em` | `timestamptz` | sim |  | Quando a administração decidiu |
+| `verificado_por` | `uuid` | sim |  | Quem decidiu (id do admin) |
+| `welcome_email_sent_at` | `timestamptz` | sim |  | Quando o site enviou o e-mail de boas-vindas |
 
-Valores únicos: `email`.
+## `user_roles`
 
-## `profissionais`
+Papéis (níveis) de cada conta. Uma conta pode ter mais de um; a API considera o mais alto: admin > profissional > usuario.
 
-Perfil público do diretório de profissionais (pode estar ligado a uma conta).
+Chave única composta: (`user_id`, `role`).
 
 | Campo | Tipo | Nulo | Chave / padrão | Descrição |
 | --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `usuario_id` | `int unsigned` | sim | FK → `usuarios.id` (vira nulo) | Conta ligada ao perfil (opcional) |
-| `slug` | `varchar(80)` | não |  | Identificador usado na URL/rota |
-| `nome` | `varchar(120)` | não |  | Nome exibido |
-| `especialidade` | `varchar(80)` | não |  | Área de atuação |
-| `descricao` | `varchar(500)` | não |  | Apresentação curta |
-| `cidade` | `varchar(80)` | sim |  | Cidade de atendimento |
-| `atendimento` | `varchar(60)` | sim |  | Presencial, online... |
-| `whatsapp` | `varchar(20)` | sim |  | Número para o botão de WhatsApp |
-| `criado_em` | `timestamp` | não | padrão `CURRENT_TIMESTAMP` | Data de criação |
-
-Valores únicos: `slug`, `usuario_id`.
+| `id` | `uuid` | não | PK; padrão `gen_random_uuid()` | Identificador |
+| `user_id` | `uuid` | não | FK → auth.users | Conta |
+| `role` | `app_role` | não | | `usuario` (família), `profissional` ou `admin` |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data de criação |
 
 ## `publicacoes`
 
-**Entidade principal.** Artigos publicados por profissionais aprovados e pela administração.
+**Entidade principal.** Publicações do site e do app. O app faz o CRUD do tipo `artigo` e lista `artigo` e `post`; colunas e revistas vêm do site.
 
 | Campo | Tipo | Nulo | Chave / padrão | Descrição |
 | --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `autor_id` | `int unsigned` | não | FK → `usuarios.id` (apaga junto) | Autor do artigo |
-| `tipo` | `enum('artigo','post')` | não | padrão `artigo` | Tipo de publicação (o app usa artigo) |
-| `slug` | `varchar(180)` | não |  | Identificador único gerado a partir do título |
-| `titulo` | `varchar(160)` | não |  | Título |
-| `resumo` | `varchar(400)` | não |  | Resumo exibido nos cartões |
-| `conteudo` | `text` | não |  | Texto (parágrafos separados por linha em branco) |
-| `categoria` | `varchar(60)` | não |  | Categoria (Desenvolvimento, Gerações, Educação...) |
-| `tags` | `varchar(255)` | sim |  | Etiquetas separadas por vírgula |
-| `destaque` | `tinyint(1)` | não | padrão `0` | Aparece em destaque na tela Início |
-| `status` | `enum('rascunho','publicado')` | não | padrão `publicado` | rascunho ou publicado |
-| `criado_em` | `timestamp` | não | padrão `CURRENT_TIMESTAMP` | Data de criação |
-| `atualizado_em` | `timestamp` | não | padrão `CURRENT_TIMESTAMP` | Data da última alteração |
-
-Valores únicos: `slug`.
+| `id` | `uuid` | não | PK; padrão `gen_random_uuid()` | Identificador |
+| `tipo` | `tipo_publicacao` | não |  | `artigo`, `post`, `revista` ou `coluna` |
+| `slug` | `text` | não | único | Endereço da publicação (ex.: `rotina-de-sono-mtacjwbo`); identifica o artigo no app e liga curtidas e comentários |
+| `titulo` | `text` | não |  | Título |
+| `resumo` | `text` | sim |  | Resumo |
+| `conteudo` | `text` | sim |  | Texto, com parágrafos separados por uma linha em branco |
+| `categoria` | `text` | sim |  | Categoria (ex.: Educação) |
+| `capa_url` | `text` | sim |  | Imagem de capa (usada pelo site) |
+| `pdf_url` | `text` | sim |  | PDF da edição da revista (caminho no Storage, arquivo do site ou link) |
+| `autor_id` | `uuid` | não | FK → auth.users | Quem publicou (vem do token na API) |
+| `status` | `status_publicacao` | não | padrão `'publicado'` | `rascunho` ou `publicado` (o app só mostra publicadas) |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data de publicação |
+| `updated_at` | `timestamptz` | não | padrão `now()` | Data da última alteração |
 
 ## `comentarios`
 
-Comentários dos usuários nos artigos.
+Comentários nas publicações (inclusive nos artigos de exemplo do site, por isso a ligação é pelo slug).
 
 | Campo | Tipo | Nulo | Chave / padrão | Descrição |
 | --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `publicacao_id` | `int unsigned` | não | FK → `publicacoes.id` (apaga junto) | Artigo comentado |
-| `usuario_id` | `int unsigned` | não | FK → `usuarios.id` (apaga junto) | Quem comentou |
-| `texto` | `varchar(1000)` | não |  | Texto do comentário |
-| `criado_em` | `timestamp` | não | padrão `CURRENT_TIMESTAMP` | Data de criação |
+| `id` | `uuid` | não | PK; padrão `gen_random_uuid()` | Identificador |
+| `user_id` | `uuid` | não | FK → auth.users | Quem comentou (vem do token na API) |
+| `publicacao_slug` | `text` | não |  | Slug da publicação comentada |
+| `texto` | `text` | não |  | Comentário (3 a 1000 caracteres na API) |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data |
+| `updated_at` | `timestamptz` | não | padrão `now()` | Data da última alteração |
 
 ## `interacoes`
 
-Curtidas e conteúdos salvos (um registro por usuário, artigo e tipo).
+Curtidas, conteúdos salvos e leituras. Chave única (conta + slug + tipo): ninguém curte ou salva duas vezes.
+
+Chave única composta: (`user_id`, `publicacao_slug`, `tipo`).
 
 | Campo | Tipo | Nulo | Chave / padrão | Descrição |
 | --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `usuario_id` | `int unsigned` | não | FK → `usuarios.id` (apaga junto) | Quem curtiu/salvou |
-| `publicacao_id` | `int unsigned` | não | FK → `publicacoes.id` (apaga junto) | Artigo |
-| `tipo` | `enum('curtida','salvo')` | não |  | curtida ou salvo |
-| `criado_em` | `timestamp` | não | padrão `CURRENT_TIMESTAMP` | Data de criação |
+| `id` | `uuid` | não | PK; padrão `gen_random_uuid()` | Identificador |
+| `user_id` | `uuid` | não | FK → auth.users | Conta |
+| `publicacao_slug` | `text` | não | | Slug da publicação |
+| `tipo` | `tipo_interacao` | não | | `curtida`, `salvo` ou `lido` (o app usa curtida e salvo) |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data |
 
-Valores únicos: `usuario_id + publicacao_id + tipo`.
+## `comentario_curtidas`
 
-## `colunas`
+Curtidas em comentários (recurso do site; o app ainda não usa).
 
-Colunas assinadas.
-
-| Campo | Tipo | Nulo | Chave / padrão | Descrição |
-| --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `colunista_id` | `int unsigned` | não | FK → `usuarios.id` (impede apagar) | Conta do colunista |
-| `slug` | `varchar(80)` | não |  | Identificador usado na rota |
-| `nome` | `varchar(100)` | não |  | Nome da coluna |
-| `chamada` | `varchar(255)` | não |  | Frase de apresentação |
-| `periodicidade` | `varchar(20)` | não |  | Semanal, Quinzenal, Mensal... |
-| `sobre` | `text` | não |  | Descrição da coluna |
-| `criado_em` | `timestamp` | não | padrão `CURRENT_TIMESTAMP` | Data de criação |
-
-Valores únicos: `slug`.
-
-## `coluna_posts`
-
-Publicações de cada coluna.
+Chave única composta: (`comentario_id`, `user_id`).
 
 | Campo | Tipo | Nulo | Chave / padrão | Descrição |
 | --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `coluna_id` | `int unsigned` | não | FK → `colunas.id` (apaga junto) | Coluna |
-| `slug` | `varchar(120)` | não |  | Identificador (único dentro da coluna) |
-| `titulo` | `varchar(160)` | não |  | Título |
-| `resumo` | `varchar(400)` | não |  | Resumo |
-| `texto` | `text` | não |  | Texto (parágrafos separados por linha em branco) |
-| `publicado_em` | `date` | não |  | Data de publicação |
+| `id` | `uuid` | não | PK; padrão `gen_random_uuid()` | Identificador |
+| `comentario_id` | `uuid` | não | FK → public.comentarios | Comentário curtido |
+| `user_id` | `uuid` | não | FK → auth.users | Quem curtiu |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data |
 
-Valores únicos: `coluna_id + slug`.
+## `contact_messages`
 
-## `revistas`
-
-Edições da revista digital.
+Mensagens de Contato do site e do app (no app também a "Pergunte à equipe", com o assunto "Pergunta à equipe"). Gravadas pela função `submit_contact_message`.
 
 | Campo | Tipo | Nulo | Chave / padrão | Descrição |
 | --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `slug` | `varchar(40)` | não |  | Identificador usado na rota |
-| `edicao` | `smallint unsigned` | não |  | Número da edição (único) |
-| `titulo` | `varchar(160)` | não |  | Título da capa |
-| `subtitulo` | `varchar(255)` | não |  | Subtítulo |
-| `descricao` | `varchar(500)` | não |  | Descrição da edição |
-| `categoria` | `varchar(60)` | não |  | Tema da edição |
-| `destaques` | `text` | sim |  | Destaques da edição, um por linha |
-| `pdf_url` | `varchar(255)` | sim |  | Link do PDF no site |
-| `publicada_em` | `date` | não |  | Mês de publicação |
+| `id` | `uuid` | não | PK; padrão `gen_random_uuid()` | Identificador |
+| `name` | `text` | não |  | Nome |
+| `email` | `text` | não |  | E-mail para resposta |
+| `subject` | `text` | sim |  | Assunto |
+| `message` | `text` | não |  | Mensagem (10 a 5000 caracteres) |
+| `status` | `text` | não | padrão `'novo'` | Situação (`novo`...) controlada pela administração no site |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data |
 
-Valores únicos: `edicao`, `slug`.
+## `conteudos_ocultos`
 
-## `revista_paginas`
+Conteúdos de exemplo do site escondidos pela administração (no site ou no app).
 
-Páginas de cada edição, lidas uma a uma no app.
+Chave única composta: (`tipo`, `slug`).
 
 | Campo | Tipo | Nulo | Chave / padrão | Descrição |
 | --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `revista_id` | `int unsigned` | não | FK → `revistas.id` (apaga junto) | Edição |
-| `numero` | `smallint unsigned` | não |  | Número da página |
-| `secao` | `varchar(60)` | não |  | Seção (Capa, Reportagem...) |
-| `titulo` | `varchar(160)` | não |  | Título da página |
-| `texto` | `text` | não |  | Texto da página |
+| `id` | `uuid` | não | PK; padrão `gen_random_uuid()` | Identificador |
+| `tipo` | `text` | não | | `artigo`, `coluna` ou `revista` |
+| `slug` | `text` | não | | Slug do conteúdo escondido |
+| `titulo` | `text` | não |  | Título (para a administração) |
+| `justificativa` | `text` | sim |  | Motivo |
+| `ocultado_por` | `uuid` | não | FK → auth.users | Admin que escondeu |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data |
 
-Valores únicos: `revista_id + numero`.
+## `remocoes_publicacao`
 
-## `mensagens`
-
-Mensagens do formulário de Contato e do "Pergunte à equipe".
+Aviso ao autor quando a administração remove a publicação dele. O site mostra em "Minha conta".
 
 | Campo | Tipo | Nulo | Chave / padrão | Descrição |
 | --- | --- | :---: | --- | --- |
-| `id` | `int unsigned` | não | PK; auto incremento | Identificador (chave primária) |
-| `usuario_id` | `int unsigned` | sim | FK → `usuarios.id` (vira nulo) | Conta que enviou (opcional) |
-| `tipo` | `enum('contato','pergunta')` | não |  | contato ou pergunta |
-| `nome` | `varchar(120)` | não |  | Nome informado |
-| `email` | `varchar(160)` | não |  | E-mail para resposta |
-| `assunto` | `varchar(160)` | sim |  | Assunto (contato) |
-| `mensagem` | `text` | não |  | Texto da mensagem |
-| `status` | `enum('nova','respondida')` | não | padrão `nova` | nova ou respondida |
-| `criado_em` | `timestamp` | não | padrão `CURRENT_TIMESTAMP` | Data de criação |
+| `id` | `uuid` | não | PK; padrão `gen_random_uuid()` | Identificador |
+| `publicacao_id` | `uuid` | não |  | Id da publicação removida |
+| `titulo` | `text` | não |  | Título |
+| `tipo` | `text` | não |  | Tipo |
+| `slug` | `text` | não |  | Slug |
+| `autor_id` | `uuid` | não | FK → auth.users | Autor que recebe o aviso |
+| `removido_por` | `uuid` | não | FK → auth.users | Admin que removeu |
+| `justificativa` | `text` | não |  | Motivo |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data |
+
+## `solicitacoes_profissional`
+
+Pedidos de verificação feitos pela página "Seja profissional" do site (o app usa o cadastro com profissão e registro, que fica em `profiles`).
+
+| Campo | Tipo | Nulo | Chave / padrão | Descrição |
+| --- | --- | :---: | --- | --- |
+| `id` | `uuid` | não | PK; padrão `gen_random_uuid()` | Identificador |
+| `user_id` | `uuid` | não | FK → auth.users | Conta |
+| `nome_completo` | `text` | não |  | Nome completo |
+| `telefone` | `text` | não |  | Telefone |
+| `email` | `text` | não |  | E-mail |
+| `profissao` | `text` | não |  | Profissão |
+| `registro_profissional` | `text` | não |  | Registro |
+| `endereco` | `text` | não |  | Endereço |
+| `rede_social` | `text` | sim |  | Rede social |
+| `foto_url` | `text` | sim |  | Foto |
+| `status` | `text` | não | padrão `'pendente'` | Situação do pedido |
+| `observacao_admin` | `text` | sim |  | Orientação da administração |
+| `created_at` | `timestamptz` | não | padrão `now()` | Data |
+| `updated_at` | `timestamptz` | não | padrão `now()` | Data da última alteração |
+
+## Funções e gatilhos do site usados pela API
+
+| Nome | Tipo | O que faz |
+| --- | --- | --- |
+| `handle_new_user` | gatilho em `auth.users` | No cadastro, cria o perfil e o papel (`usuario` ou `profissional` pendente) a partir dos dados enviados |
+| `protect_profile_verification_fields` | gatilho em `profiles` | Só admin muda `verificacao`, `verificado_em` e `verificado_por`. A API informa quem está agindo (`comoUsuario`) |
+| `submit_contact_message` | função | Valida e grava a mensagem de contato; limita 3 mensagens por hora por e-mail |
+| `update_updated_at_column` | gatilho | Atualiza `updated_at` nas alterações |
+
+## Regras de acesso
+
+O site acessa o banco com as políticas de segurança do Supabase (RLS). A API conecta como dona do banco, então essas
+políticas não valem para ela: quem aplica as mesmas regras na API são os middlewares `autenticacao.js` e
+`permissoes.js` (README, seção 3.5). As credenciais do banco ficam só no `api/.env`, fora do Git.
