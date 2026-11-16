@@ -12,7 +12,7 @@ import Notice from '../../components/Notice';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
 import TextField from '../../components/TextField';
-import { ROLES, canEditArticle, useAuth } from '../../contexts/AuthContext';
+import { ROLES, canDeleteArticle, canEditArticle, useAuth } from '../../contexts/AuthContext';
 import { useCommunity } from '../../contexts/CommunityContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useContent } from '../../contexts/ContentContext';
@@ -34,9 +34,9 @@ export default function ArticleScreen({ navigation, route }) {
   const [enviando, setEnviando] = useState(false);
   const id = route.params?.id;
 
-  // GET /api/artigos/:id — busca de novo ao voltar da edição
+  // GET /api/artigos/:slug — busca de novo ao voltar da edição (o "id" do artigo no app é o slug)
   const { data: artigo, loading, error, reload } = useApi(() => buscarArtigo(id), [id], { recarregarAoFocar: true });
-  // GET /api/artigos/:id/comentarios
+  // GET /api/artigos/:slug/comentarios
   const comentariosApi = useApi(() => listarComentarios(id), [id]);
 
   if (!artigo) {
@@ -55,6 +55,7 @@ export default function ArticleScreen({ navigation, route }) {
   const comentarios = comentariosApi.data ?? [];
   const relacionados = artigos.filter((item) => item.id !== artigo.id).slice(0, 2);
   const podeEditar = canEditArticle(user, artigo);
+  const podeExcluir = canDeleteArticle(user, artigo);
 
   async function alternar(tipo) {
     // visitante lê o artigo, mas precisa entrar para curtir ou salvar
@@ -71,7 +72,7 @@ export default function ArticleScreen({ navigation, route }) {
     }
   }
 
-  // POST /api/artigos/:id/comentarios
+  // POST /api/artigos/:slug/comentarios
   async function publicarComentario() {
     if (comentario.trim().length < 3) {
       setErro('Escreva seu comentário antes de publicar.');
@@ -93,12 +94,14 @@ export default function ArticleScreen({ navigation, route }) {
 
   function excluirArtigo() {
     confirm({
-      title: 'Excluir artigo',
-      message: `"${artigo.titulo}" será removido do app.`,
-      confirmLabel: 'Excluir',
+      title: artigo.exemplo ? 'Esconder artigo de exemplo' : 'Excluir artigo',
+      message: artigo.exemplo
+        ? `"${artigo.titulo}" é um conteúdo de exemplo do site. Ele deixa de aparecer no app e no site.`
+        : `"${artigo.titulo}" será removido do app e do site.`,
+      confirmLabel: artigo.exemplo ? 'Esconder' : 'Excluir',
       onConfirm: async () => {
         try {
-          await deleteArtigo(artigo.id); // DELETE /api/artigos/:id
+          await deleteArtigo(artigo.id); // DELETE /api/artigos/:slug
           navigation.goBack();
         } catch (falha) {
           setErroExclusao(falha.message);
@@ -177,20 +180,32 @@ export default function ArticleScreen({ navigation, route }) {
         </Text>
       ))}
 
-      {podeEditar && (
+      {podeExcluir && (
         <View style={styles.manage}>
           <Text style={type.small}>
-            {user?.role === ROLES.ADMIN ? 'Você administra este conteúdo.' : 'Você é o autor deste artigo.'}
+            {artigo.exemplo
+              ? 'Conteúdo de exemplo do site: não pode ser editado, mas a administração pode escondê-lo.'
+              : user?.role === ROLES.ADMIN
+                ? 'Você administra este conteúdo.'
+                : 'Você é o autor deste artigo.'}
           </Text>
           <View style={styles.manageButtons}>
+            {podeEditar && (
+              <Button
+                title="Editar"
+                icon="create-outline"
+                variant="outline"
+                small
+                onPress={() => navigation.navigate('PostForm', { id: artigo.id })}
+              />
+            )}
             <Button
-              title="Editar"
-              icon="create-outline"
-              variant="outline"
+              title={artigo.exemplo ? 'Esconder' : 'Excluir'}
+              icon={artigo.exemplo ? 'eye-off-outline' : 'trash-outline'}
+              variant="danger"
               small
-              onPress={() => navigation.navigate('PostForm', { id: artigo.id })}
+              onPress={excluirArtigo}
             />
-            <Button title="Excluir" icon="trash-outline" variant="danger" small onPress={excluirArtigo} />
           </View>
           {erroExclusao ? <Notice tone="danger" title={erroExclusao} style={styles.notice} /> : null}
         </View>

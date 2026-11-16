@@ -87,13 +87,15 @@ export default function MagazineScreen({ navigation, route }) {
         />
       </View>
 
-      <Button
-        title="Abrir o PDF no site"
-        icon="document-text-outline"
-        variant="ghost"
-        onPress={() => Linking.openURL(revista.pdf)}
-        style={styles.pdf}
-      />
+      {revista.pdf && (
+        <Button
+          title="Abrir o PDF da edição"
+          icon="document-text-outline"
+          variant="ghost"
+          onPress={() => Linking.openURL(revista.pdf)}
+          style={styles.pdf}
+        />
+      )}
     </Screen>
   );
 }

@@ -12,9 +12,10 @@ import { useApi } from '../../hooks/useApi';
 import { buscarArtigo } from '../../services/artigosService';
 import { colors, fonts, spacing } from '../../theme';
 
-const formularioVazio = { titulo: '', categoria: null, resumo: '', texto: '', tags: '' };
+const formularioVazio = { titulo: '', categoria: null, resumo: '', texto: '' };
 
-// Área de publicação: criar (POST /api/artigos) ou editar (PUT /api/artigos/:id) um artigo.
+// Área de publicação: criar (POST /api/artigos) ou editar (PUT /api/artigos/:slug) um artigo.
+// O artigo vai para a tabela de publicações do site: aparece no app e no site.
 // Só existe na navegação para admin e profissional aprovado; o autor edita os próprios artigos e o admin, todos.
 export default function PostFormScreen({ navigation, route }) {
   const { user } = useAuth();
@@ -38,7 +39,6 @@ export default function PostFormScreen({ navigation, route }) {
         categoria: editando.categoria,
         resumo: editando.resumo,
         texto: editando.texto,
-        tags: editando.tags.join(', '),
       });
     }
   }, [editando]);
@@ -89,7 +89,6 @@ export default function PostFormScreen({ navigation, route }) {
         categoria: form.categoria,
         resumo: form.resumo.trim(),
         conteudo: form.texto.trim(),
-        tags: form.tags.split(',').map((tag) => tag.trim()).filter(Boolean),
       });
       // Edição volta para a tela anterior (o artigo aberto busca de novo); publicação nova abre o artigo
       if (editando) navigation.goBack();
@@ -105,7 +104,7 @@ export default function PostFormScreen({ navigation, route }) {
   return (
     <Screen>
       <Notice tone="info">
-        Nesta versão o app publica artigos. Posts, colunas e edições da revista continuam sendo publicados pelo site.
+        O artigo publicado aqui aparece também no site. Posts, colunas e edições da revista continuam sendo publicados pelo site.
       </Notice>
 
       <TextField label="Título" placeholder="Ex.: Uma rotina que acolhe" value={form.titulo} onChangeText={(v) => update('titulo', v)} error={errors.titulo} />
@@ -135,7 +134,6 @@ export default function PostFormScreen({ navigation, route }) {
         onChangeText={(v) => update('texto', v)}
         error={errors.texto}
       />
-      <TextField label="Tags (opcional)" placeholder="Ex.: Rotina, Organização" value={form.tags} onChangeText={(v) => update('tags', v)} error={errors.tags} />
 
       {erroApi ? <Notice tone="danger" title={erroApi} /> : null}
 

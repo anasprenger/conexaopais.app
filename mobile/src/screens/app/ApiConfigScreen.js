@@ -32,7 +32,7 @@ export default function ApiConfigScreen() {
     try {
       const status = await testarConexao(url);
       if (status.banco !== 'ok') {
-        setAviso({ tone: 'warning', title: 'A API respondeu, mas o banco de dados está desligado.', message: 'Ligue o MySQL no computador.' });
+        setAviso({ tone: 'warning', title: 'A API respondeu, mas não alcançou o banco do site.', message: 'Confira a internet do computador da API e o arquivo api/.env (rode npm run db:conferir).' });
       }
       return status;
     } catch (falha) {

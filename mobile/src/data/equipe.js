@@ -1,6 +1,6 @@
 // Equipe do Conexão Pais.
 // Conteúdo de exemplo trazido do site Conexão Pais (src/data/mock.ts).
-// Na Entrega 2 estes dados passam a vir da API (fetch -> Express -> MySQL).
+// Texto institucional fixo, igual ao do site (que também guarda a equipe no próprio código, e não no banco).
 
 export const equipe = [
   {

@@ -18,7 +18,7 @@ import { useApi } from '../../hooks/useApi';
 import { listarContasProfissionais } from '../../services/usuariosService';
 import { colors, fonts, radius, shadow, spacing, type } from '../../theme';
 
-const verificacaoTone = { pendente: 'warning', aprovado: 'success', ajustes_solicitados: 'warning', recusado: 'danger' };
+const verificacaoTone = { pendente: 'warning', aprovado: 'success', recusado: 'danger' };
 
 // Aba Conta: dados da conta para quem entrou; convite para entrar ou criar conta para visitantes
 export default function AccountScreen({ navigation }) {
@@ -89,8 +89,9 @@ function ContaLogada({ navigation }) {
   const salvos = savedIds()
     .map((id) => getArtigo(id))
     .filter(Boolean);
-  // Admin gerencia todas as publicações; o profissional, apenas as próprias
-  const publicacoes = isAdmin ? artigos : artigos.filter((artigo) => artigo.autorId === user.id);
+  // Publicações do banco (as mesmas do site): admin gerencia todas; o profissional, apenas as próprias.
+  // Os artigos de exemplo do site ficam fora desta lista (a administração pode escondê-los na tela do artigo).
+  const publicacoes = artigos.filter((artigo) => !artigo.exemplo && (isAdmin || artigo.autorId === user.id));
   // GET /api/usuarios?nivel=profissional&verificacao=pendente (só para a administração)
   const { data: contasPendentes } = useApi(() => (isAdmin ? listarContasProfissionais('pendente') : Promise.resolve([])), [isAdmin], {
     recarregarAoFocar: true,
@@ -118,11 +119,11 @@ function ContaLogada({ navigation }) {
   function excluir(artigo) {
     confirm({
       title: 'Excluir artigo',
-      message: `"${artigo.titulo}" será removido do app.`,
+      message: `"${artigo.titulo}" será removido do app e do site.`,
       confirmLabel: 'Excluir',
       onConfirm: async () => {
         try {
-          await deleteArtigo(artigo.id); // DELETE /api/artigos/:id
+          await deleteArtigo(artigo.id); // DELETE /api/artigos/:slug
         } catch (falha) {
           setErroExclusao(falha.message);
         }
@@ -152,11 +153,6 @@ function ContaLogada({ navigation }) {
       {isProfissional && user.verificacao === 'pendente' && (
         <Notice tone="warning" title="Sua conta profissional ainda está em verificação." style={styles.notice}>
           Assim que a administração confirmar seu registro, você poderá publicar.
-        </Notice>
-      )}
-      {isProfissional && user.verificacao === 'ajustes_solicitados' && (
-        <Notice tone="warning" title="A administração pediu ajustes no seu cadastro." style={styles.notice}>
-          {user.observacao}
         </Notice>
       )}
       {isProfissional && user.verificacao === 'recusado' && (
