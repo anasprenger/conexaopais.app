@@ -1,28 +1,28 @@
-const db = require('../config/database');
+const conteudoSite = require('../data/conteudoSite');
+const { normalizar } = require('../utils/texto');
 
-const CAMPOS = `p.id, p.slug, p.nome, p.especialidade, p.descricao, p.cidade, p.atendimento, p.whatsapp,
-  p.usuario_id AS usuarioId`;
+// Diretório de profissionais: no site, os perfis públicos ficam no próprio código (data/conteudoSite.js),
+// então o app mostra a mesma lista. Os artigos e colunas de cada perfil são ligados pelo nome do autor.
+
+function formatar({ iniciais, ...profissional }) {
+  return profissional;
+}
 
 async function listar({ busca, especialidade } = {}) {
-  const filtros = [];
-  const valores = [];
-  if (especialidade) {
-    filtros.push('p.especialidade = ?');
-    valores.push(especialidade);
-  }
-  if (busca) {
-    filtros.push('(p.nome LIKE ? OR p.especialidade LIKE ? OR p.descricao LIKE ?)');
-    const termo = `%${busca}%`;
-    valores.push(termo, termo, termo);
-  }
-  const where = filtros.length ? `WHERE ${filtros.join(' AND ')}` : '';
-  const [linhas] = await db.execute(`SELECT ${CAMPOS} FROM profissionais p ${where} ORDER BY p.id`, valores);
-  return linhas;
+  const termo = normalizar(busca);
+  return conteudoSite.profissionais
+    .filter((profissional) => !especialidade || profissional.especialidade === especialidade)
+    .filter(
+      (profissional) =>
+        !termo ||
+        [profissional.nome, profissional.especialidade, profissional.descricao].some((campo) => normalizar(campo).includes(termo))
+    )
+    .map(formatar);
 }
 
 async function buscarPorSlug(slug) {
-  const [linhas] = await db.execute(`SELECT ${CAMPOS} FROM profissionais p WHERE p.slug = ?`, [slug]);
-  return linhas[0] ?? null;
+  const profissional = conteudoSite.profissionais.find((item) => item.slug === slug);
+  return profissional ? formatar(profissional) : null;
 }
 
 module.exports = { listar, buscarPorSlug };
