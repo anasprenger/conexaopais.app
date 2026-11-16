@@ -1,11 +1,19 @@
 # Exemplos de requisições para testar a API.
 # No VS Code, instale a extensão "REST Client" e clique em "Send Request" acima de cada bloco.
-# Antes: npm run jwt:segredo, npm run db:setup e npm run dev
+# Antes: api/.env preenchido (README, "Como rodar"), npm run jwt:segredo e npm run dev
 #
-# 1. Rode os três logins abaixo (família, profissional e admin): cada um guarda o token da conta.
-# 2. As rotas protegidas usam esses tokens no cabeçalho "Authorization: Bearer <token>".
+# ATENÇÃO: a API usa o banco REAL do site. O que for criado aqui (contas, artigos, comentários,
+# mensagens) aparece também no site. Apague depois o que for só teste.
+#
+# 1. Troque @senhaDemo pela senha das contas de teste do site (não coloque a senha real no Git).
+# 2. Rode os três logins abaixo (família, profissional e admin): cada um guarda o token da conta.
+# 3. As rotas protegidas usam esses tokens no cabeçalho "Authorization: Bearer <token>".
 
 @api = http://localhost:3333/api
+@senhaDemo = TROQUE_PELA_SENHA_DAS_CONTAS_DE_TESTE
+@artigoExemplo = conversas-dificeis
+@idFamilia = {{loginFamilia.response.body.$.usuario.id}}
+@idProfissional = {{loginProfissional.response.body.$.usuario.id}}
 @tokenFamilia = {{loginFamilia.response.body.$.token}}
 @tokenProfissional = {{loginProfissional.response.body.$.token}}
 @tokenAdmin = {{loginAdmin.response.body.$.token}}
@@ -18,14 +26,15 @@ GET {{api}}/status
 # CADASTRO E LOGIN (rotas abertas)
 # =============================================================================
 
-### Criar conta de família (a senha é salva só como hash bcrypt)
+### Criar conta de família (cria a conta no Supabase Auth, que salva só o hash bcrypt da senha).
+# Use um e-mail seu: se o projeto exigir confirmação, a mensagem chega nesse e-mail.
 POST {{api}}/usuarios
 Content-Type: application/json
 
 {
   "nome": "Joana Lima",
-  "email": "joana@exemplo.com",
-  "senha": "123456",
+  "email": "seu-email+joana@exemplo.com",
+  "senha": "senha-de-teste-123",
   "tipo": "usuario"
 }
 
@@ -35,8 +44,8 @@ Content-Type: application/json
 
 {
   "nome": "Júlia Castro",
-  "email": "julia@exemplo.com",
-  "senha": "123456",
+  "email": "seu-email+julia@exemplo.com",
+  "senha": "senha-de-teste-123",
   "tipo": "profissional",
   "profissao": "Pedagoga",
   "registro": "MEC 12345"
@@ -47,21 +56,21 @@ Content-Type: application/json
 POST {{api}}/auth/login
 Content-Type: application/json
 
-{ "email": "familia@conexaopais.test", "senha": "123456" }
+{ "email": "familia@conexaopais.test", "senha": "{{senhaDemo}}" }
 
 ### Login da profissional aprovada (Dra. Helena Prado)
 # @name loginProfissional
 POST {{api}}/auth/login
 Content-Type: application/json
 
-{ "email": "profissional@conexaopais.test", "senha": "123456" }
+{ "email": "profissional@conexaopais.test", "senha": "{{senhaDemo}}" }
 
 ### Login da administração
 # @name loginAdmin
 POST {{api}}/auth/login
 Content-Type: application/json
 
-{ "email": "admin@conexaopais.test", "senha": "123456" }
+{ "email": "admin@conexaopais.test", "senha": "{{senhaDemo}}" }
 
 ### Login com senha errada (401, sem token)
 POST {{api}}/auth/login
@@ -93,8 +102,8 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwibml2ZWwiOiJhZG1pbiJ9.
 ### Listar artigos: aberto a visitantes (busca e categoria opcionais)
 GET {{api}}/artigos?busca=rotina&categoria=Educação
 
-### Artigo completo: aberto a visitantes
-GET {{api}}/artigos/1
+### Artigo completo pelo slug: aberto a visitantes
+GET {{api}}/artigos/{{artigoExemplo}}
 
 ### Publicar sem token (401)
 POST {{api}}/artigos
@@ -129,12 +138,11 @@ Content-Type: application/json
   "titulo": "A volta às aulas sem drama",
   "categoria": "Educação",
   "resumo": "Pequenos combinados que ajudam na primeira semana de aula.",
-  "conteudo": "Comece a rotina de sono uma semana antes.\n\nVisite a escola junto com a criança e mostre os espaços que ela vai usar.",
-  "tags": ["Escola", "Rotina"]
+  "conteudo": "Comece a rotina de sono uma semana antes.\n\nVisite a escola junto com a criança e mostre os espaços que ela vai usar."
 }
 
 ### Editar o artigo criado acima com a conta da família (403: não é a autora)
-PUT {{api}}/artigos/{{novoArtigo.response.body.$.id}}
+PUT {{api}}/artigos/{{novoArtigo.response.body.$.slug}}
 Authorization: Bearer {{tokenFamilia}}
 Content-Type: application/json
 
@@ -146,7 +154,7 @@ Content-Type: application/json
 }
 
 ### Editar o artigo criado acima com a conta da autora (200)
-PUT {{api}}/artigos/{{novoArtigo.response.body.$.id}}
+PUT {{api}}/artigos/{{novoArtigo.response.body.$.slug}}
 Authorization: Bearer {{tokenProfissional}}
 Content-Type: application/json
 
@@ -154,12 +162,11 @@ Content-Type: application/json
   "titulo": "A volta às aulas sem drama (revisado)",
   "categoria": "Educação",
   "resumo": "Pequenos combinados que ajudam na primeira semana de aula.",
-  "conteudo": "Comece a rotina de sono uma semana antes.\n\nVisite a escola junto com a criança.",
-  "tags": "Escola, Rotina, Adaptação"
+  "conteudo": "Comece a rotina de sono uma semana antes.\n\nVisite a escola junto com a criança."
 }
 
 ### Excluir o artigo criado acima (204; autora ou admin)
-DELETE {{api}}/artigos/{{novoArtigo.response.body.$.id}}
+DELETE {{api}}/artigos/{{novoArtigo.response.body.$.slug}}
 Authorization: Bearer {{tokenProfissional}}
 
 
@@ -168,11 +175,11 @@ Authorization: Bearer {{tokenProfissional}}
 # =============================================================================
 
 ### Comentários de um artigo: aberto a visitantes
-GET {{api}}/artigos/1/comentarios
+GET {{api}}/artigos/{{artigoExemplo}}/comentarios
 
 ### Comentar (quem comenta é a conta do token)
 # @name novoComentario
-POST {{api}}/artigos/1/comentarios
+POST {{api}}/artigos/{{artigoExemplo}}/comentarios
 Authorization: Bearer {{tokenFamilia}}
 Content-Type: application/json
 
@@ -187,18 +194,18 @@ DELETE {{api}}/comentarios/{{novoComentario.response.body.$.id}}
 Authorization: Bearer {{tokenFamilia}}
 
 ### Curtir / descurtir (liga e desliga)
-POST {{api}}/artigos/1/interacoes
+POST {{api}}/artigos/{{artigoExemplo}}/interacoes
 Authorization: Bearer {{tokenFamilia}}
 Content-Type: application/json
 
 { "tipo": "curtida" }
 
-### Curtidas e salvos da própria conta (id 3 = família)
-GET {{api}}/usuarios/3/interacoes
+### Curtidas e salvos da própria conta
+GET {{api}}/usuarios/{{idFamilia}}/interacoes
 Authorization: Bearer {{tokenFamilia}}
 
 ### Dados de outra conta (403: só a própria pessoa ou admin)
-GET {{api}}/usuarios/2
+GET {{api}}/usuarios/{{idProfissional}}
 Authorization: Bearer {{tokenFamilia}}
 
 ### Pergunta à equipe sem login (401)
@@ -221,7 +228,7 @@ Content-Type: application/json
 {
   "tipo": "contato",
   "nome": "Marina Souza",
-  "email": "familia@conexaopais.test",
+  "email": "visitante@exemplo.com",
   "assunto": "Sugestão de pauta",
   "mensagem": "Gostaria de ler mais sobre adolescência."
 }
@@ -239,8 +246,8 @@ Authorization: Bearer {{tokenAdmin}}
 GET {{api}}/usuarios?nivel=profissional&verificacao=pendente
 Authorization: Bearer {{tokenFamilia}}
 
-### Aprovar um cadastro profissional (troque o id; 4 = Carla Mendes)
-PATCH {{api}}/usuarios/4/verificacao
+### Aprovar um cadastro profissional (troque pelo id de uma conta da lista acima)
+PATCH {{api}}/usuarios/ID_DA_CONTA_PROFISSIONAL/verificacao
 Authorization: Bearer {{tokenAdmin}}
 Content-Type: application/json
 
