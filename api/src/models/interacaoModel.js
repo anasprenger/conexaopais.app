@@ -1,30 +1,34 @@
-const db = require('../config/database');
+const { query } = require('../config/database');
 
-// Curtidas e conteúdos salvos de um usuário
+// Curtidas e conteúdos salvos (tabela public.interacoes do site, ligada ao slug da publicação).
+// O site também registra "lido"; o app usa só curtida e salvo.
+
 async function listarPorUsuario(usuarioId) {
-  const [linhas] = await db.execute(
-    'SELECT publicacao_id AS publicacaoId, tipo FROM interacoes WHERE usuario_id = ? ORDER BY criado_em DESC',
+  return query(
+    `SELECT publicacao_slug AS "publicacaoSlug", tipo FROM public.interacoes
+      WHERE user_id = $1 AND tipo IN ('curtida', 'salvo') ORDER BY created_at DESC`,
     [usuarioId]
   );
-  return linhas;
 }
 
 // Liga/desliga uma curtida ou um "salvo" e devolve a situação atualizada
-async function alternar({ usuarioId, publicacaoId, tipo }) {
-  const [remocao] = await db.execute('DELETE FROM interacoes WHERE usuario_id = ? AND publicacao_id = ? AND tipo = ?', [
-    usuarioId,
-    publicacaoId,
-    tipo,
-  ]);
-  const ativo = remocao.affectedRows === 0;
+async function alternar({ usuarioId, slug, tipo }) {
+  const removidas = await query(
+    'DELETE FROM public.interacoes WHERE user_id = $1 AND publicacao_slug = $2 AND tipo = $3 RETURNING id',
+    [usuarioId, slug, tipo]
+  );
+  const ativo = removidas.length === 0;
   if (ativo) {
-    await db.execute('INSERT INTO interacoes (usuario_id, publicacao_id, tipo) VALUES (?, ?, ?)', [usuarioId, publicacaoId, tipo]);
+    await query(
+      'INSERT INTO public.interacoes (user_id, publicacao_slug, tipo) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING',
+      [usuarioId, slug, tipo]
+    );
   }
-  const [[{ total }]] = await db.execute('SELECT COUNT(*) AS total FROM interacoes WHERE publicacao_id = ? AND tipo = ?', [
-    publicacaoId,
-    tipo,
-  ]);
-  return { publicacaoId, tipo, ativo, total: Number(total) };
+  const [{ total }] = await query(
+    'SELECT count(*) AS total FROM public.interacoes WHERE publicacao_slug = $1 AND tipo = $2',
+    [slug, tipo]
+  );
+  return { publicacaoSlug: slug, tipo, ativo, total: Number(total) };
 }
 
 module.exports = { listarPorUsuario, alternar };
