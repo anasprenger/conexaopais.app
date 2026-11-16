@@ -6,11 +6,11 @@ import { useContent } from './ContentContext';
 
 const CommunityContext = createContext(null);
 
-// Curtidas e conteúdos salvos do usuário logado (tabela "interacoes" no banco)
+// Curtidas e conteúdos salvos do usuário logado (tabela "interacoes" do banco do site, ligada ao slug do artigo)
 export function CommunityProvider({ children }) {
   const { user } = useAuth();
   const { artigos, patchArtigo } = useContent();
-  const [interacoes, setInteracoes] = useState([]); // [{ publicacaoId, tipo }]
+  const [interacoes, setInteracoes] = useState([]); // [{ publicacaoSlug, tipo }]
 
   // GET /api/usuarios/:id/interacoes depois do login
   useEffect(() => {
@@ -26,16 +26,16 @@ export function CommunityProvider({ children }) {
   }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   function isActive(tipo, artigoId) {
-    return interacoes.some((item) => item.tipo === tipo && item.publicacaoId === artigoId);
+    return interacoes.some((item) => item.tipo === tipo && item.publicacaoSlug === artigoId);
   }
 
-  // POST /api/artigos/:id/interacoes — liga/desliga e atualiza o total no artigo
+  // POST /api/artigos/:slug/interacoes — liga/desliga e atualiza o total no artigo
   async function toggle(tipo, artigoId) {
     if (!user) throw new Error('Entre na sua conta para curtir e salvar conteúdos.');
     const { ativo, total } = await alternarInteracao(artigoId, tipo);
     setInteracoes((atual) => {
-      const sem = atual.filter((item) => !(item.tipo === tipo && item.publicacaoId === artigoId));
-      return ativo ? [{ publicacaoId: artigoId, tipo }, ...sem] : sem;
+      const sem = atual.filter((item) => !(item.tipo === tipo && item.publicacaoSlug === artigoId));
+      return ativo ? [{ publicacaoSlug: artigoId, tipo }, ...sem] : sem;
     });
     patchArtigo(artigoId, { [tipo === 'curtida' ? 'curtidas' : 'salvos']: total });
     return { ativo, total };
@@ -52,7 +52,7 @@ export function CommunityProvider({ children }) {
   }
 
   function savedIds() {
-    return interacoes.filter((item) => item.tipo === 'salvo').map((item) => item.publicacaoId);
+    return interacoes.filter((item) => item.tipo === 'salvo').map((item) => item.publicacaoSlug);
   }
 
   return (

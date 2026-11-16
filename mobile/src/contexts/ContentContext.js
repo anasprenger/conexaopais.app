@@ -13,7 +13,8 @@ const ContentContext = createContext(null);
 export const categoriasPadrao = ['Desenvolvimento', 'Gerações', 'Educação', 'Convivência'];
 
 // Lista de artigos (entidade principal) carregada da API e as operações de CRUD:
-// GET /api/artigos, POST /api/artigos, PUT /api/artigos/:id e DELETE /api/artigos/:id
+// GET /api/artigos, POST /api/artigos, PUT /api/artigos/:slug e DELETE /api/artigos/:slug
+// (no app, o "id" de um artigo é o slug, como no site)
 export function ContentProvider({ children }) {
   const { restaurando } = useAuth();
   const [artigos, setArtigos] = useState([]);

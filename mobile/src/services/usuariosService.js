@@ -13,9 +13,10 @@ export async function buscarPerfil() {
 }
 
 // dados: { nome, email, senha, tipo, profissao, registro }
+// Devolve { usuario, confirmarEmail }: confirmarEmail = true quando a conta precisa confirmar o e-mail antes de entrar
 export async function cadastrar(dados) {
-  const { usuario } = await api('/usuarios', { method: 'POST', body: dados });
-  return usuarioDaApi(usuario);
+  const { usuario, confirmarEmail } = await api('/usuarios', { method: 'POST', body: dados });
+  return { usuario: usuario && usuarioDaApi(usuario), confirmarEmail: Boolean(confirmarEmail) };
 }
 
 export async function listarContasProfissionais(verificacao) {
@@ -23,11 +24,12 @@ export async function listarContasProfissionais(verificacao) {
   return usuarios.map(usuarioDaApi);
 }
 
-export async function avaliarProfissional(id, verificacao, observacao) {
-  return usuarioDaApi(await api(`/usuarios/${id}/verificacao`, { method: 'PATCH', body: { verificacao, observacao } }));
+// verificacao: "aprovado" ou "recusado" (mesma decisão do painel "Novos profissionais" do site)
+export async function avaliarProfissional(id, verificacao) {
+  return usuarioDaApi(await api(`/usuarios/${id}/verificacao`, { method: 'PATCH', body: { verificacao } }));
 }
 
-// Curtidas e salvos do usuário logado: [{ publicacaoId, tipo }] (a API só mostra os da própria conta)
+// Curtidas e salvos do usuário logado: [{ publicacaoSlug, tipo }] (a API só mostra os da própria conta)
 export function listarInteracoes(usuarioId) {
   return api(`/usuarios/${usuarioId}/interacoes`);
 }

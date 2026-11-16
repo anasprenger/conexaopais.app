@@ -39,7 +39,7 @@ export default function CommunityScreen({ navigation }) {
     if (!exigirLogin('Entre na sua conta para curtir e salvar conteúdos.')) return;
     setErroInteracao('');
     try {
-      await community.toggle(tipo, artigoId); // POST /api/artigos/:id/interacoes
+      await community.toggle(tipo, artigoId); // POST /api/artigos/:slug/interacoes
     } catch (falha) {
       setErroInteracao(falha.message);
     }
