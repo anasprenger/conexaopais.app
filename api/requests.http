@@ -253,6 +253,38 @@ Content-Type: application/json
 
 { "verificacao": "aprovado" }
 
+### Todas as contas (página "Usuários"): papéis, situação e último acesso
+GET {{api}}/usuarios
+Authorization: Bearer {{tokenAdmin}}
+
+### Tornar uma conta profissional (já fica aprovada para publicar). "ativo": false retira o papel
+PATCH {{api}}/usuarios/ID_DA_CONTA/papel
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "papel": "profissional", "ativo": true }
+
+### Suspender uma conta (não entra no site nem no app). "suspensa": false reativa
+PATCH {{api}}/usuarios/ID_DA_CONTA/suspensao
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "suspensa": true }
+
+### Excluir uma conta de vez (204). A própria pessoa também pode excluir a conta dela
+DELETE {{api}}/usuarios/ID_DA_CONTA
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "confirmacao": "EXCLUIR" }
+
+### Editar título e sinopse de uma edição da revista publicada pelo site (as de exemplo não mudam)
+PUT {{api}}/revistas/SLUG_DA_EDICAO
+Authorization: Bearer {{tokenAdmin}}
+Content-Type: application/json
+
+{ "titulo": "Novo título", "sinopse": "Texto da sinopse\n- Tópico um\n- Tópico dois" }
+
 
 # =============================================================================
 # CONTEÚDO PÚBLICO

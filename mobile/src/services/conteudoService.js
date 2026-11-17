@@ -24,3 +24,8 @@ export async function listarRevistas() {
 export async function buscarRevista(slug) {
   return revistaDaApi(await api(`/revistas/${encodeURIComponent(slug)}`));
 }
+
+// Administração: edita título e sinopse de uma edição publicada pelo site (o PDF continua sendo trocado pelo site)
+export async function atualizarRevista(slug, { titulo, sinopse }) {
+  return revistaDaApi(await api(`/revistas/${encodeURIComponent(slug)}`, { method: 'PUT', body: { titulo, sinopse } }));
+}

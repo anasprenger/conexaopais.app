@@ -187,15 +187,18 @@ Todas as telas abaixo existem no app. A seção 2.2 mostra quais rotas da API ca
 | 5 | Conteúdos | Todos | Artigos (busca e categorias), Colunas e Revista |
 | 6 | Artigo | Todos | Leitura, curtir, salvar, comentários e conteúdos relacionados |
 | 7 | Coluna | Todos | Apresentação da coluna e publicações |
-| 8 | Revista | Todos | Capa, destaques e leitor página a página |
+| 8 | Revista (sinopse) | Todos | Capa, sinopse, "Nesta edição", Começar a leitura e Baixar PDF (como "Conheça esta edição" no site). Admin: Editar edição |
+| 8.1 | Modo de leitura | Todos | Tela cheia no formato de story, como o site no celular: toque à direita avança, à esquerda volta e no meio mostra o progresso e o botão de sair |
 | 9 | Profissionais | Todos | Diretório com busca e filtro por especialidade |
 | 10 | Perfil profissional | Todos | Dados, contato por WhatsApp, conteúdos e colunas |
 | 11 | Comunidade | Todos | Recursos, conversas, destaques, pergunta à equipe e regras |
-| 12 | Minha conta | Todos | Logado: perfil, nível, salvos, publicações e administração. Visitante: Entrar / Criar conta |
+| 12 | Minha conta | Todos | Logado: perfil, nível, salvos, publicações, administração e excluir a própria conta (digitando EXCLUIR). Visitante: Entrar / Criar conta |
 | 13 | Sobre | Todos | Valores, como surgiu e equipe |
 | 14 | Contato | Todos | Formulário de mensagem para a equipe |
 | 15 | Nova postagem / Editar artigo | Profissional aprovado e admin | Formulário do artigo |
 | 16 | Novos profissionais | Somente admin | Aprovar ou recusar cadastros |
+| 16.1 | Usuários | Somente admin | Todas as contas, com busca e filtros; muda o tipo de conta (administração e profissional), suspende ou reativa e exclui, como a página "Usuários" do site |
+| 16.2 | Editar edição | Somente admin | Título e sinopse das edições publicadas pelo site (o PDF é trocado pelo site) |
 | 17 | Conexão com a API | Todos | Endereço da API usado pelo app (testa antes de salvar). Incluída na Entrega 4, para o APK |
 
 ### 1.10 Fluxo inicial de navegação
@@ -285,10 +288,12 @@ Entrega 3, as requisições de quem entrou levam o token no cabeçalho `Authoriz
 | Conteúdos | `GET /api/artigos?busca=&categoria=`, `GET /api/categorias`, `GET /api/colunas`, `GET /api/revistas` |
 | Artigo | `GET /api/artigos/:slug`, `GET` e `POST /api/artigos/:slug/comentarios`, `DELETE /api/comentarios/:id`, `POST /api/artigos/:slug/interacoes`, `DELETE /api/artigos/:slug` |
 | Coluna | `GET /api/colunas/:slug` |
-| Revista | `GET /api/revistas/:slug` |
+| Revista (sinopse e leitura) | `GET /api/revistas/:slug` |
+| Editar edição | `GET` e `PUT /api/revistas/:slug` |
+| Usuários | `GET /api/usuarios`, `PATCH /api/usuarios/:id/papel`, `PATCH /api/usuarios/:id/suspensao`, `DELETE /api/usuarios/:id` |
 | Profissionais / Perfil profissional | `GET /api/profissionais`, `GET /api/profissionais/:slug` |
 | Comunidade | `GET /api/artigos`, `POST /api/artigos/:slug/interacoes`, `POST /api/mensagens` |
-| Minha conta | `GET /api/auth/perfil`, `GET /api/usuarios/:id/interacoes`, `DELETE /api/artigos/:slug`; admin: `GET /api/usuarios?nivel=profissional&verificacao=pendente` |
+| Minha conta | `GET /api/auth/perfil`, `GET /api/usuarios/:id/interacoes`, `DELETE /api/artigos/:slug`, `DELETE /api/usuarios/:id` (excluir a conta); admin: `GET /api/usuarios?nivel=profissional&verificacao=pendente` |
 | Nova postagem / Editar artigo | `POST /api/artigos`, `GET` e `PUT /api/artigos/:slug`, `GET /api/categorias` |
 | Novos profissionais | `GET /api/usuarios?nivel=profissional`, `PATCH /api/usuarios/:id/verificacao` |
 | Contato | `POST /api/mensagens` |
@@ -455,6 +460,9 @@ Base: `http://localhost:3333/api`. Corpo e respostas em JSON. Exemplos prontos p
 | GET | `/usuarios/:id` | Dados de uma conta |
 | GET | `/usuarios/:id/interacoes` | Curtidas e salvos da conta |
 | PATCH | `/usuarios/:id/verificacao` | Aprova ou recusa um cadastro profissional |
+| PATCH | `/usuarios/:id/papel` | Liga ou desliga o papel `profissional` ou `admin` (`{ papel, ativo }`) |
+| PATCH | `/usuarios/:id/suspensao` | Suspende ou reativa a conta (`{ suspensa }`) |
+| DELETE | `/usuarios/:id` | Exclui a conta de vez (`{ "confirmacao": "EXCLUIR" }`, 204) |
 | GET | `/artigos?busca=&categoria=&autorId=&autor=` | **Lista artigos** (banco + exemplos do site, com autor e totais) |
 | GET | `/artigos/:slug` | **Artigo completo** |
 | POST | `/artigos` | **Publica artigo** (201) |
@@ -467,6 +475,7 @@ Base: `http://localhost:3333/api`. Corpo e respostas em JSON. Exemplos prontos p
 | GET | `/profissionais`, `/profissionais/:slug` | Diretório e perfil (com artigos e colunas) |
 | GET | `/colunas`, `/colunas/:slug` | Colunas e publicações |
 | GET | `/revistas`, `/revistas/:slug` | Edições, páginas e link do PDF |
+| PUT | `/revistas/:slug` | Edita título e sinopse de uma edição publicada pelo site (`{ titulo, sinopse }`) |
 | POST | `/mensagens` | Contato ou pergunta à equipe (vão para as mensagens de contato do site) |
 
 Quem pode usar cada rota está na seção 3.6.
@@ -484,11 +493,11 @@ middleware central.
 | `GET` de artigos, categorias, comentários, profissionais, colunas e revistas | Qualquer pessoa (visitante incluído) |
 | `POST /artigos/:slug/comentarios`, `POST /artigos/:slug/interacoes`, `POST /mensagens` (pergunta) | Usuário logado (o id sai do token) |
 | `POST /mensagens` (contato) | Qualquer pessoa |
-| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes` | O próprio usuário ou admin |
+| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes`, `DELETE /usuarios/:id` | O próprio usuário ou admin |
 | `POST /artigos` | Profissional aprovado ou admin |
 | `PUT /artigos/:slug`, `DELETE /artigos/:slug` | Autor do artigo ou admin |
 | `DELETE /comentarios/:id` | Autor do comentário ou admin |
-| `GET /usuarios`, `PATCH /usuarios/:id/verificacao` | Somente admin |
+| `GET /usuarios`, `PATCH /usuarios/:id/verificacao`, `/papel` e `/suspensao`, `PUT /revistas/:slug` | Somente admin |
 
 Na Entrega 2, a API já conferia a senha (bcrypt), impedia e-mail repetido e validava os campos, mas o app informava
 quem era o usuário no corpo da requisição (`autorId`, `usuarioId`). Na Entrega 3, essa identidade passou a vir do
@@ -622,11 +631,11 @@ router.delete('/:slug', autenticar, autorDoArtigoOuAdmin, artigosController.excl
 | `POST /mensagens` (pergunta) | `autenticarSeHouverToken` | 401 | ✅ | ✅ | ✅ | ✅ |
 | `GET /auth/perfil` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
 | `POST /artigos/:slug/comentarios`, `POST /artigos/:slug/interacoes` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
-| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes` | `autenticar`, `proprioUsuarioOuAdmin` | 401 | a própria | a própria | a própria | ✅ |
+| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes`, `DELETE /usuarios/:id` | `autenticar`, `proprioUsuarioOuAdmin` | 401 | a própria | a própria | a própria | ✅ |
 | `DELETE /comentarios/:id` | `autenticar`, `autorDoComentarioOuAdmin` | 401 | os próprios | os próprios | os próprios | ✅ |
 | `POST /artigos` | `autenticar`, `exigirPublicador` | 401 | 403 | 403 | ✅ | ✅ |
 | `PUT /artigos/:slug`, `DELETE /artigos/:slug` | `autenticar`, `autorDoArtigoOuAdmin` | 401 | 403 | 403 | os próprios | ✅ |
-| `GET /usuarios`, `PATCH /usuarios/:id/verificacao` | `autenticar`, `permitirNiveis('admin')` | 401 | 403 | 403 | 403 | ✅ |
+| `GET /usuarios`, `PATCH /usuarios/:id/verificacao`, `/papel` e `/suspensao`, `PUT /revistas/:slug` | `autenticar`, `permitirNiveis('admin')` | 401 | 403 | 403 | 403 | ✅ |
 
 **CRUD completo da entidade principal (`publicacoes`):**
 
@@ -651,7 +660,7 @@ cd api
 npm test
 ```
 
-São 38 testes automatizados ([`api/tests/`](api/tests), com `node:test`). Eles **não usam o banco do site**: cada
+São 47 testes automatizados ([`api/tests/`](api/tests), com `node:test`). Eles **não usam o banco do site**: cada
 arquivo de teste cria um PostgreSQL só dele, na memória, com o **PGlite** (o PostgreSQL de verdade rodando dentro do
 Node, sem instalar nada). Esse banco recebe:
 
@@ -675,6 +684,10 @@ com o hash bcrypt e cria a conta em `auth.users`, disparando o gatilho do site).
   comentários, pelo slug; aprovação e recusa valem com o mesmo token; `autorId` ou `usuarioId` no corpo são ignorados.
 - **Igual ao site:** artigos de exemplo não são editados e o admin os esconde (`conteudos_ocultos`); remoção pelo admin
   registra o aviso ao autor; contato respeita o limite de 3 mensagens por hora; colunas, revista e profissionais.
+- **Administração (página "Usuários" do site):** só o admin lista contas, muda papéis e suspende; o admin não tira a
+  própria permissão nem suspende a própria conta; conta suspensa perde o acesso na hora e volta ao ser reativada;
+  a pessoa exclui a própria conta confirmando com EXCLUIR (e os dados dela somem junto); a única conta de
+  administração não pode ser excluída; o admin edita título e sinopse das edições do banco, e as de exemplo não mudam.
 
 Exemplos para testar à mão (com o token) estão em [`api/requests.http`](api/requests.http). Atenção: esses usam a
 API ligada ao banco real.
@@ -686,8 +699,8 @@ API ligada ao banco real.
 
 ### 4.1 Testes realizados
 
-**API (automáticos):** `cd api && npm test` roda 38 testes contra a API, com um banco igual ao do site (detalhes na
-seção 3.7). Resultado atual: **38 de 38 passando**.
+**API (automáticos):** `cd api && npm test` roda 47 testes contra a API, com um banco igual ao do site (detalhes na
+seção 3.7). Resultado atual: **47 de 47 passando**.
 
 **App (roteiro por nível):** cada cenário abaixo foi executado no app ligado à API real (versão com MySQL; ⏳ repetir
 com o banco do site depois de configurar o `api/.env`), com o navegador controlado

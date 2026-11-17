@@ -33,3 +33,25 @@ export async function avaliarProfissional(id, verificacao) {
 export function listarInteracoes(usuarioId) {
   return api(`/usuarios/${usuarioId}/interacoes`);
 }
+
+// ---- Administração: página "Usuários" do site ----
+
+// Todas as contas (site e app), com papéis, situação e último acesso
+export async function listarUsuarios() {
+  return (await api('/usuarios')).map(usuarioDaApi);
+}
+
+// papel: "profissional" ou "admin"; ativo: liga ou desliga o papel
+export async function definirPapel(id, papel, ativo) {
+  return usuarioDaApi(await api(`/usuarios/${id}/papel`, { method: 'PATCH', body: { papel, ativo } }));
+}
+
+// Conta suspensa não entra no site nem no app até ser reativada
+export async function definirSuspensao(id, suspensa) {
+  return usuarioDaApi(await api(`/usuarios/${id}/suspensao`, { method: 'PATCH', body: { suspensa } }));
+}
+
+// Exclui a conta de vez (a própria, em Minha conta, ou a de outra pessoa, pela administração)
+export function excluirConta(id) {
+  return api(`/usuarios/${id}`, { method: 'DELETE', body: { confirmacao: 'EXCLUIR' } });
+}

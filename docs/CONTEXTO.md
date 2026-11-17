@@ -21,12 +21,17 @@ Aplicação Mobile com JWT", com 4 entregas. O projeto é avaliado pelo reposit�
 - Conteúdos de exemplo do site (artigos, profissionais, colunas, revistas) ficam no código do site (`mock.ts`): a API
   tem uma cópia em `api/src/data/conteudoSite.js` e junta com o banco. Exemplo não é editável; o admin o esconde
   (`conteudos_ocultos`). Remoção de artigo alheio pelo admin grava `remocoes_publicacao`.
+- Recursos que o site ganhou depois (commits 50937cf e 16f2c88 do site, 12 e 15/11) já estão no app: página
+  "Usuários" do admin (papéis, suspender via `auth.users.banned_until` + `profiles.status`, excluir), excluir a
+  própria conta (DELETE em `auth.users`, o banco apaga o resto em cascata; arquivos do Storage ficam, porque o
+  Supabase não deixa apagá-los pelo banco), revista com sinopse, modo de leitura (story) e "Editar edição" (título
+  e sinopse; o PDF é trocado pelo site).
 - Contato e "Pergunte à equipe" vão para `contact_messages` pela função `submit_contact_message` (limite 3/h).
 - A senha das contas de teste do site **não** fica no repositório (público). O modo demonstração preenche só o e-mail.
 
 ## Situação
 - Entregas 1 a 3 ✅; Entrega 4 quase pronta. Integração com o Supabase feita na branch `integracao-supabase`
-  (API, app, testes e documentação). 38 testes em `api/tests` (`npm test`), com **PGlite** (Postgres em memória) +
+  (API, app, testes e documentação). 47 testes em `api/tests` (`npm test`), com **PGlite** (Postgres em memória) +
   `database/teste/supabase-simulado.sql` + migrations do site + `database/teste/dados-teste.sql`. Os testes não
   usam o banco real nem o `.env`.
 - **Falta (com a Ana):** preencher `api/.env` (DATABASE_URL do Session pooler, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY,

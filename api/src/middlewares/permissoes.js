@@ -37,10 +37,10 @@ function exigirPublicador(req, res, next) {
   next();
 }
 
-// GET /usuarios/:id e /usuarios/:id/interacoes: a própria pessoa ou admin
+// GET e DELETE /usuarios/:id e GET /usuarios/:id/interacoes: a própria pessoa ou admin
 function proprioUsuarioOuAdmin(req, res, next) {
   if (!ehAdmin(req.usuario) && req.usuario?.id !== req.params.id) {
-    throw new HttpError(403, 'Você só pode ver os dados da sua própria conta.');
+    throw new HttpError(403, 'Você só pode acessar a sua própria conta.');
   }
   next();
 }

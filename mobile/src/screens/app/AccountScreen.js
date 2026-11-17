@@ -15,7 +15,8 @@ import { useCommunity } from '../../contexts/CommunityContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useContent } from '../../contexts/ContentContext';
 import { useApi } from '../../hooks/useApi';
-import { listarContasProfissionais } from '../../services/usuariosService';
+import TextField from '../../components/TextField';
+import { excluirConta, listarContasProfissionais } from '../../services/usuariosService';
 import { colors, fonts, radius, shadow, spacing, type } from '../../theme';
 
 const verificacaoTone = { pendente: 'warning', aprovado: 'success', recusado: 'danger' };
@@ -174,6 +175,11 @@ function ContaLogada({ navigation }) {
             {pendentes > 0 && <Badge label={`${pendentes} pendentes`} tone="warning" />}
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
           </Pressable>
+          <Pressable style={styles.row} onPress={() => navigation.navigate('Users')} accessibilityRole="button">
+            <Ionicons name="id-card-outline" size={22} color={colors.primary} />
+            <Text style={styles.rowText}>Usuários</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+          </Pressable>
         </>
       )}
 
@@ -234,12 +240,100 @@ function ContaLogada({ navigation }) {
       <LinksInstitucionais navigation={navigation} />
 
       <Button title="Sair" icon="log-out-outline" variant="danger" onPress={sair} style={styles.logout} />
+
+      <ExcluirMinhaConta user={user} signOut={signOut} />
       <Text style={[type.small, styles.version]}>Versão 1.0.0 · Entrega 3</Text>
     </Screen>
   );
 }
 
+// Excluir a própria conta, como em "Minha conta" no site: pede para digitar EXCLUIR antes de liberar o botão.
+// A conta é a mesma do site, então some dos dois.
+function ExcluirMinhaConta({ user, signOut }) {
+  const [aberto, setAberto] = useState(false);
+  const [confirmacao, setConfirmacao] = useState('');
+  const [excluindo, setExcluindo] = useState(false);
+  const [erro, setErro] = useState('');
+
+  // DELETE /api/usuarios/:id
+  async function excluir() {
+    setExcluindo(true);
+    setErro('');
+    try {
+      await excluirConta(user.id);
+      await signOut();
+    } catch (falha) {
+      setErro(falha.message);
+      setExcluindo(false);
+    }
+  }
+
+  return (
+    <View style={styles.danger}>
+      <Text style={type.h3}>Excluir conta</Text>
+      <Text style={[type.small, styles.dangerText]}>
+        Apaga de vez a sua conta no app e no site, com publicações, comentários e salvos. Não dá para desfazer.
+      </Text>
+      {!aberto ? (
+        <Button title="Quero excluir minha conta" variant="ghost" small onPress={() => setAberto(true)} />
+      ) : (
+        <>
+          <TextField
+            label="Digite EXCLUIR para confirmar"
+            placeholder="EXCLUIR"
+            value={confirmacao}
+            onChangeText={setConfirmacao}
+            autoCapitalize="characters"
+            autoCorrect={false}
+          />
+          {erro ? <Notice tone="danger" title={erro} /> : null}
+          <View style={styles.dangerActions}>
+            <Button
+              title="Cancelar"
+              variant="ghost"
+              small
+              disabled={excluindo}
+              onPress={() => {
+                setAberto(false);
+                setConfirmacao('');
+                setErro('');
+              }}
+            />
+            <Button
+              title="Excluir minha conta"
+              icon="trash-outline"
+              variant="danger"
+              small
+              loading={excluindo}
+              disabled={confirmacao.trim() !== 'EXCLUIR' || excluindo}
+              onPress={excluir}
+            />
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  danger: {
+    marginTop: spacing.xl,
+    padding: spacing.lg,
+    borderRadius: radius.xl,
+    borderWidth: 1,
+    borderColor: colors.dangerSoft,
+    backgroundColor: colors.card,
+  },
+  dangerText: {
+    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  dangerActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
   guest: {
     alignItems: 'center',
     marginTop: spacing.md,

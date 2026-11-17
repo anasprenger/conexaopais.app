@@ -19,6 +19,10 @@ export function usuarioDaApi(usuario) {
     profissao: usuario.profissao,
     registro: usuario.registroProfissional,
     verificacao: usuario.verificacao,
+    papeis: usuario.papeis ?? [],
+    suspensa: Boolean(usuario.suspensa),
+    criadoEm: usuario.criadoEm ?? null,
+    ultimoAcesso: usuario.ultimoAcesso ?? null,
   };
 }
 
@@ -79,6 +83,9 @@ export function colunaDaApi(coluna) {
 export function revistaDaApi(revista) {
   const publicada = dataDoBanco(revista.publicadaEm);
   return {
+    // id só existe nas edições publicadas pelo site (no banco): são as que a administração pode editar
+    id: revista.id ?? null,
+    editavel: Boolean(revista.id),
     slug: revista.slug,
     edicao: revista.edicao,
     titulo: revista.titulo,

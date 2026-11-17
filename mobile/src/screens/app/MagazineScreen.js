@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from 'react';
+import { useLayoutEffect } from 'react';
 import { Linking, StyleSheet, Text, View } from 'react-native';
 import AsyncState from '../../components/AsyncState';
 import Button from '../../components/Button';
@@ -6,15 +6,48 @@ import EmptyState from '../../components/EmptyState';
 import MagazineCover from '../../components/MagazineCover';
 import Screen from '../../components/Screen';
 import SectionHeader from '../../components/SectionHeader';
+import { useAuth } from '../../contexts/AuthContext';
 import { useApi } from '../../hooks/useApi';
 import { buscarRevista } from '../../services/conteudoService';
-import { colors, fonts, radius, shadow, spacing, type } from '../../theme';
+import { colors, fonts, radius, spacing, type } from '../../theme';
 
-// Leitor da revista digital: uma página por vez, como o leitor do site
+// Separa a sinopse em texto corrido e tópicos, como o site: linhas que começam com "-" ou "•" viram tópicos
+// ("- A - B" na mesma linha vira dois tópicos).
+export function separarSinopse(sinopse) {
+  const texto = [];
+  const topicos = [];
+  for (const bruta of (sinopse ?? '').split(/\n/)) {
+    const linha = bruta.trim();
+    if (!linha) continue;
+    const topico = linha.match(/^[-•–]\s*(.+)$/);
+    if (topico) {
+      topicos.push(
+        ...topico[1]
+          .split(/\s+[-–]\s+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      );
+    } else {
+      texto.push(linha);
+    }
+  }
+  return { texto, topicos };
+}
+
+// Edição com páginas de texto (as de exemplo do site) abre no modo de leitura do app.
+// Edição publicada pelo site só tem o PDF: "Começar a leitura" abre o PDF.
+export function temPaginas(revista) {
+  return !revista.editavel && revista.conteudo.length > 0;
+}
+
+// Sinopse da edição, como a página "Conheça esta edição" do site: capa, sinopse, destaques e os botões
+// Começar a leitura e Baixar PDF. A administração edita título e sinopse das edições publicadas pelo site.
 export default function MagazineScreen({ navigation, route }) {
-  // GET /api/revistas/:slug (edição com as páginas)
-  const { data: revista, loading, error, reload } = useApi(() => buscarRevista(route.params?.slug), [route.params?.slug]);
-  const [pagina, setPagina] = useState(0);
+  const { isAdmin } = useAuth();
+  // GET /api/revistas/:slug
+  const { data: revista, loading, error, reload } = useApi(() => buscarRevista(route.params?.slug), [route.params?.slug], {
+    recarregarAoFocar: true,
+  });
 
   useLayoutEffect(() => {
     if (revista) navigation.setOptions({ title: `Edição ${String(revista.edicao).padStart(2, '0')}` });
@@ -30,67 +63,68 @@ export default function MagazineScreen({ navigation, route }) {
     );
   }
 
-  const atual = revista.conteudo[pagina];
-  const total = revista.conteudo.length;
+  const { texto, topicos } = separarSinopse(revista.descricao);
+  const destaques = revista.destaques?.length > 0 ? revista.destaques : topicos;
+  const leituraNoApp = temPaginas(revista);
+
+  function comecarLeitura() {
+    if (leituraNoApp) navigation.navigate('MagazineReader', { slug: revista.slug });
+    else if (revista.pdf) Linking.openURL(revista.pdf);
+  }
 
   return (
     <Screen>
       <View style={styles.top}>
-        <MagazineCover revista={revista} width={120} />
+        <MagazineCover revista={revista} width={130} />
         <View style={styles.topText}>
-          <Text style={type.eyebrow}>{revista.categoria}</Text>
-          <Text style={[type.h3, styles.subtitle]}>{revista.subtitulo}</Text>
-          <Text style={[type.small, styles.meta]}>
-            {revista.data} · {revista.paginas} páginas
+          <Text style={type.eyebrow}>
+            Edição {String(revista.edicao).padStart(2, '0')} · {revista.data}
           </Text>
+          <Text style={[type.h2, styles.title]}>{revista.titulo}</Text>
+          {revista.subtitulo && revista.subtitulo !== revista.descricao ? (
+            <Text style={[type.muted, styles.subtitle]}>{revista.subtitulo}</Text>
+          ) : null}
         </View>
       </View>
 
-      <Text style={[type.muted, styles.description]}>{revista.descricao}</Text>
-
-      <SectionHeader title="Leitura" />
-      <View style={styles.page}>
-        <Text style={type.eyebrow}>
-          Página {atual.numero} de {total} · {atual.secao}
-        </Text>
-        <Text style={[type.h2, styles.pageTitle]}>{atual.titulo}</Text>
-        {atual.texto.map((paragrafo, index) => (
-          <Text key={index} style={[type.body, styles.paragraph]}>
-            {paragrafo}
-          </Text>
-        ))}
-      </View>
-
-      <View style={styles.dots}>
-        {revista.conteudo.map((item, index) => (
-          <View key={item.numero} style={[styles.dot, index === pagina && styles.dotActive]} />
-        ))}
-      </View>
-
-      <View style={styles.nav}>
+      {isAdmin && revista.editavel && (
         <Button
-          title="Anterior"
-          icon="chevron-back"
+          title="Editar edição"
+          icon="create-outline"
           variant="outline"
           small
-          disabled={pagina === 0}
-          onPress={() => setPagina(pagina - 1)}
-          style={styles.navButton}
+          onPress={() => navigation.navigate('MagazineEdit', { slug: revista.slug })}
+          style={styles.edit}
         />
-        <Button
-          title="Próxima"
-          variant="primary"
-          small
-          disabled={pagina === total - 1}
-          onPress={() => setPagina(pagina + 1)}
-          style={styles.navButton}
-        />
-      </View>
+      )}
 
+      <SectionHeader title="Sinopse" />
+      {texto.length === 0 && destaques.length === 0 && <Text style={type.muted}>Edição digital do Conexão Pais.</Text>}
+      {texto.map((paragrafo, index) => (
+        <Text key={index} style={[type.body, styles.paragraph]}>
+          {paragrafo}
+        </Text>
+      ))}
+
+      {destaques.length > 0 && (
+        <View style={styles.highlights}>
+          <Text style={type.eyebrow}>Nesta edição</Text>
+          {destaques.map((item) => (
+            <View key={item} style={styles.highlight}>
+              <View style={styles.bullet} />
+              <Text style={[type.body, styles.highlightText]}>{item}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {(leituraNoApp || revista.pdf) && (
+        <Button title="Começar a leitura" icon="book-outline" onPress={comecarLeitura} style={styles.read} />
+      )}
       {revista.pdf && (
         <Button
-          title="Abrir o PDF da edição"
-          icon="document-text-outline"
+          title="Baixar PDF"
+          icon="download-outline"
           variant="ghost"
           onPress={() => Linking.openURL(revista.pdf)}
           style={styles.pdf}
@@ -109,56 +143,45 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
   },
+  title: {
+    marginTop: spacing.xs,
+  },
   subtitle: {
     marginTop: spacing.xs,
   },
-  meta: {
-    marginTop: spacing.sm,
-  },
-  description: {
-    marginTop: spacing.lg,
-  },
-  page: {
-    minHeight: 260,
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.card,
-    ...shadow,
-  },
-  pageTitle: {
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
+  edit: {
+    alignSelf: 'flex-start',
+    marginTop: spacing.md,
   },
   paragraph: {
-    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
     fontFamily: fonts.body,
     lineHeight: 26,
   },
-  dots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
+  highlights: {
     marginTop: spacing.md,
+    padding: spacing.lg,
+    borderRadius: radius.lg,
+    backgroundColor: colors.primarySoft,
   },
-  dot: {
+  highlight: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginTop: spacing.sm,
+  },
+  bullet: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: colors.border,
-  },
-  dotActive: {
-    width: 22,
+    marginTop: 8,
+    marginRight: spacing.sm,
     backgroundColor: colors.accent,
   },
-  nav: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.md,
-  },
-  navButton: {
+  highlightText: {
     flex: 1,
+  },
+  read: {
+    marginTop: spacing.xl,
   },
   pdf: {
     marginTop: spacing.sm,

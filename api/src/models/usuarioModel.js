@@ -19,7 +19,9 @@ const SELECT_USUARIO = `
          p.profissao, p.registro_profissional AS "registroProfissional",
          coalesce(p.verificacao, 'aprovado') AS verificacao,
          (u.banned_until IS NOT NULL AND u.banned_until > now()) OR coalesce(p.status, 'ativo') <> 'ativo' AS suspensa,
-         ${NIVEL} AS nivel
+         ${NIVEL} AS nivel,
+         coalesce(array_agg(r.role::text ORDER BY r.role) FILTER (WHERE r.role IS NOT NULL), '{}') AS papeis,
+         u.last_sign_in_at AS "ultimoAcesso"
     FROM auth.users u
     LEFT JOIN public.profiles p ON p.id = u.id
     LEFT JOIN public.user_roles r ON r.user_id = u.id`;
@@ -42,7 +44,9 @@ function formatar(linha) {
     registroProfissional: linha.registroProfissional,
     verificacao: linha.verificacao,
     suspensa: linha.suspensa,
+    papeis: linha.papeis,
     criadoEm: linha.criadoEm,
+    ultimoAcesso: linha.ultimoAcesso ?? null,
   };
 }
 
@@ -82,4 +86,61 @@ async function atualizarVerificacao({ id, verificacao, adminId }) {
   return buscarPorId(id);
 }
 
-module.exports = { buscarPorId, listar, atualizarVerificacao, ehUuid };
+// Quantas contas de administração existem (para ninguém deixar o site e o app sem administração)
+async function totalDeAdmins() {
+  const [linha] = await query("SELECT count(DISTINCT user_id)::int AS total FROM public.user_roles WHERE role = 'admin'");
+  return linha.total;
+}
+
+// Liga ou desliga um papel (profissional ou admin), como a página "Usuários" do site.
+// Profissional liberado pela administração já fica aprovado para publicar.
+async function definirPapel({ id, papel, ativo, adminId }) {
+  await comoUsuario(adminId, async (consultar) => {
+    if (ativo) {
+      await consultar(
+        'INSERT INTO public.user_roles (user_id, role) VALUES ($1, $2) ON CONFLICT (user_id, role) DO NOTHING',
+        [id, papel]
+      );
+      if (papel === 'profissional') {
+        await consultar(
+          "UPDATE public.profiles SET verificacao = 'aprovado', verificado_em = now(), verificado_por = $2 WHERE id = $1",
+          [id, adminId]
+        );
+      }
+    } else {
+      await consultar('DELETE FROM public.user_roles WHERE user_id = $1 AND role = $2', [id, papel]);
+    }
+  });
+  return buscarPorId(id);
+}
+
+// Suspende ou reativa a conta, como o site: bloqueia o login no Supabase Auth (banned_until, sem prazo)
+// e marca o perfil como "suspenso", o que tira a pessoa das listas públicas (profissionais, autores).
+async function definirSuspensao({ id, suspensa, adminId }) {
+  await comoUsuario(adminId, async (consultar) => {
+    await consultar(
+      "UPDATE auth.users SET banned_until = CASE WHEN $2 THEN now() + interval '876000 hours' ELSE NULL END WHERE id = $1",
+      [id, suspensa]
+    );
+    await consultar('UPDATE public.profiles SET status = $2 WHERE id = $1', [id, suspensa ? 'suspenso' : 'ativo']);
+  });
+  return buscarPorId(id);
+}
+
+// Exclui a conta de vez. O banco apaga junto (ON DELETE CASCADE) perfil, papéis, publicações, comentários,
+// curtidas e salvos. Os arquivos no Storage (foto de perfil, PDFs) ficam: o Supabase não deixa apagá-los
+// pelo banco; o site apaga ao excluir pela página dele.
+async function excluir(id) {
+  await query('DELETE FROM auth.users WHERE id = $1', [id]);
+}
+
+module.exports = {
+  buscarPorId,
+  listar,
+  atualizarVerificacao,
+  totalDeAdmins,
+  definirPapel,
+  definirSuspensao,
+  excluir,
+  ehUuid,
+};

@@ -9,6 +9,7 @@ const { ocultos } = require('./artigoModel');
 
 function doExemplo(revista) {
   return {
+    id: null, // edição de exemplo: fica no código do site, não no banco (não é editável)
     slug: revista.slug,
     edicao: revista.edicao,
     titulo: revista.titulo,
@@ -26,6 +27,7 @@ function doExemplo(revista) {
 function doBanco(linha, edicao) {
   const resumo = linha.resumo || 'Edição digital do Conexão Pais.';
   return {
+    id: linha.id,
     slug: linha.slug,
     edicao,
     titulo: linha.titulo,
@@ -49,7 +51,7 @@ function doBanco(linha, edicao) {
 async function todas() {
   const [linhas, escondidos] = await Promise.all([
     query(
-      "SELECT slug, titulo, resumo, conteudo, categoria, pdf_url, created_at FROM public.publicacoes WHERE tipo = 'revista' AND status = 'publicado' ORDER BY created_at"
+      "SELECT id, slug, titulo, resumo, conteudo, categoria, pdf_url, created_at FROM public.publicacoes WHERE tipo = 'revista' AND status = 'publicado' ORDER BY created_at"
     ),
     ocultos(),
   ]);
@@ -75,4 +77,13 @@ async function buscarPorSlug(slug) {
   return { ...resumo(revista), pdfUrl: await linkDoPdf(revista.pdf), paginas: revista.paginas };
 }
 
-module.exports = { listar, buscarPorSlug };
+// Edita título e sinopse de uma edição publicada pelo site (botão "Editar edição" do site).
+// O endereço (slug) não muda, para os links já compartilhados continuarem funcionando.
+async function atualizar(id, { titulo, sinopse }) {
+  await query(
+    "UPDATE public.publicacoes SET titulo = $2, resumo = $3 WHERE id = $1 AND tipo = 'revista'",
+    [id, titulo, sinopse || null]
+  );
+}
+
+module.exports = { listar, buscarPorSlug, atualizar };

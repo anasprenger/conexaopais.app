@@ -135,7 +135,7 @@ SELECT slug, titulo, autor_id, created_at FROM public.publicacoes ORDER BY creat
 
 - Mostre o histórico de commits no GitHub: uma etapa por commit (`feat`, `fix`, `test`, `docs`), organizada por
   entrega.
-- No terminal, `cd api` → `npm test`: **38 testes** passando (cadastro, hash, JWT, níveis, CRUD e conteúdos). Eles
+- No terminal, `cd api` → `npm test`: **47 testes** passando (cadastro, hash, JWT, níveis, CRUD e conteúdos). Eles
   rodam num PostgreSQL em memória com as mesmas migrations do site, sem mexer nos dados reais.
 - O README documenta cada entrega (seções 1 a 4).
 

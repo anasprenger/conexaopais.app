@@ -69,4 +69,64 @@ async function atualizarVerificacao(req, res) {
   res.json(await usuarioModel.atualizarVerificacao({ id, verificacao, adminId: req.usuario.id }));
 }
 
-module.exports = { cadastrar, listar, buscar, listarInteracoes, atualizarVerificacao };
+// Busca a conta da rota ou responde 404
+async function contaDaRota(req) {
+  const usuario = await usuarioModel.buscarPorId(idDaRota(req.params.id, 'Usuário'));
+  if (!usuario) throw new HttpError(404, 'Usuário não encontrado.');
+  return usuario;
+}
+
+// PATCH /api/usuarios/:id/papel — { papel: "profissional" | "admin", ativo: true | false }
+// Muda o tipo de conta, como a página "Usuários" do site. Só a administração.
+async function definirPapel(req, res) {
+  const papel = req.body?.papel;
+  const ativo = req.body?.ativo;
+  verificarCampos({
+    papel: !['profissional', 'admin'].includes(papel) && 'Use "profissional" ou "admin".',
+    ativo: typeof ativo !== 'boolean' && 'Informe ativo: true ou false.',
+  });
+  const usuario = await contaDaRota(req);
+
+  if (!ativo && papel === 'admin') {
+    if (usuario.id === req.usuario.id) throw new HttpError(400, 'Você não pode tirar a sua própria permissão de administração.');
+  }
+  res.json(await usuarioModel.definirPapel({ id: usuario.id, papel, ativo, adminId: req.usuario.id }));
+}
+
+// PATCH /api/usuarios/:id/suspensao — { suspensa: true | false }
+// Suspensa, a conta não entra no site nem no app até ser reativada. Só a administração.
+async function definirSuspensao(req, res) {
+  const suspensa = req.body?.suspensa;
+  verificarCampos({ suspensa: typeof suspensa !== 'boolean' && 'Informe suspensa: true ou false.' });
+  const usuario = await contaDaRota(req);
+  if (usuario.id === req.usuario.id) throw new HttpError(400, 'Você não pode suspender a sua própria conta.');
+  res.json(await usuarioModel.definirSuspensao({ id: usuario.id, suspensa, adminId: req.usuario.id }));
+}
+
+// DELETE /api/usuarios/:id — { confirmacao: "EXCLUIR" }
+// A própria pessoa exclui a conta (Minha conta) ou a administração exclui a conta de outra pessoa.
+// Não dá para desfazer: por isso o corpo precisa confirmar com a palavra EXCLUIR, como no site.
+async function excluir(req, res) {
+  if (req.body?.confirmacao !== 'EXCLUIR') {
+    throw new HttpError(400, 'Para confirmar, envie { "confirmacao": "EXCLUIR" }.', {
+      confirmacao: 'Digite EXCLUIR para confirmar.',
+    });
+  }
+  const usuario = await contaDaRota(req);
+  if (usuario.nivel === 'admin' && (await usuarioModel.totalDeAdmins()) <= 1) {
+    throw new HttpError(400, 'Esta é a única conta de administração. Dê a permissão a outra conta antes de excluir.');
+  }
+  await usuarioModel.excluir(usuario.id);
+  res.status(204).end();
+}
+
+module.exports = {
+  cadastrar,
+  listar,
+  buscar,
+  listarInteracoes,
+  atualizarVerificacao,
+  definirPapel,
+  definirSuspensao,
+  excluir,
+};

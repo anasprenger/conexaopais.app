@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS auth.users (
   encrypted_password text,
   email_confirmed_at timestamptz DEFAULT now(),
   banned_until       timestamptz,
+  last_sign_in_at    timestamptz,
   raw_user_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb,
   created_at         timestamptz NOT NULL DEFAULT now(),
   updated_at         timestamptz NOT NULL DEFAULT now()
