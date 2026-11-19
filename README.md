@@ -797,7 +797,8 @@ use o roteador do celular (o notebook se conecta no Wi-Fi do celular).
 ### 4.5 Apresentação
 
 O roteiro da apresentação, com a demonstração passo a passo e as explicações de JWT, hash, Bearer Token e
-middleware, está em [`docs/apresentacao.md`](docs/apresentacao.md).
+middleware, está em [`docs/apresentacao.md`](docs/apresentacao.md). Os slides (15, na mesma ordem do roteiro) estão em
+[`docs/apresentacao.pdf`](docs/apresentacao.pdf).
 
 ---
 
@@ -899,6 +900,7 @@ conexaopais.app/
 │       └── utils/            # token.js (gera e confere o JWT), validação e texto
 ├── docs/
 │   ├── apresentacao.md       # roteiro da apresentação e defesa
+│   ├── apresentacao.pdf      # slides da apresentação
 │   ├── banco-de-dados.md     # dicionário de dados (todos os campos)
 │   └── telas/                # imagens das telas usadas neste README
 └── mobile/                   # aplicativo React Native (Expo)
@@ -1012,7 +1014,7 @@ Checklist das entregas obrigatórias do PDF:
 | README atualizado | este arquivo | ✅ |
 | Script SQL / estrutura do banco | `database/supabase/migrations/` (banco do site), `docs/banco-de-dados.md` | ✅ |
 | APK final | gerado pelo EAS (seção 4.3); link a incluir aqui | ⏳ |
-| Material da apresentação | `docs/apresentacao.md` | ✅ |
+| Material da apresentação | `docs/apresentacao.md` e `docs/apresentacao.pdf` | ✅ |
 
 Antes de entregar: o APK precisa ser gerado a partir da mesma versão que está no repositório (faça o build depois do
 último commit e push).

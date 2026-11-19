@@ -2,6 +2,8 @@
 
 Roteiro para cerca de 12 minutos, na ordem dos itens de *Apresentação e defesa* do PDF. Os tempos são sugestões.
 
+Slides: [`apresentacao.pdf`](apresentacao.pdf) (15 slides, na ordem deste roteiro).
+
 ## Antes de começar (checklist)
 
 - [ ] Notebook com internet (o banco é o do site, no Supabase) e `cd api` → `npm run db:conferir` com tudo ✔
