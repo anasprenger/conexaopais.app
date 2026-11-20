@@ -30,14 +30,22 @@ Aplicação Mobile com JWT", com 4 entregas. O projeto é avaliado pelo reposit�
 - A senha das contas de teste do site **não** fica no repositório (público). O modo demonstração preenche só o e-mail.
 
 ## Situação
-- Entregas 1 a 3 ✅; Entrega 4 quase pronta. Integração com o Supabase feita na branch `integracao-supabase`
-  (API, app, testes e documentação). 47 testes em `api/tests` (`npm test`), com **PGlite** (Postgres em memória) +
-  `database/teste/supabase-simulado.sql` + migrations do site + `database/teste/dados-teste.sql`. Os testes não
-  usam o banco real nem o `.env`.
-- **Falta (com a Ana):** preencher `api/.env` (DATABASE_URL do Session pooler, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY,
-  SITE_URL, JWT_SECRET) e rodar `npm run db:conferir`; testar o app com o banco real (roteiro do README 4.1);
-  conferir se o projeto exige confirmação de e-mail no cadastro; gerar o APK; colocar a branch como principal.
-- Branch padrão do GitHub ainda é `claude/conexao-pais-app-entrega-1-dkbo5f`.
+- Entregas 1 a 3 ✅; Entrega 4 quase pronta. Integração com o Supabase mesclada na branch principal (PR #2, 20/11).
+  48 testes em `api/tests` (`npm test`), com **PGlite** (Postgres em memória) + `database/teste/supabase-simulado.sql`
+  + migrations do site + `database/teste/dados-teste.sql`. Os testes não usam o banco real nem o `.env`.
+- `api/.env` da Ana já está preenchido no notebook (fora do Git). O app já abriu no iPhone dela pelo Expo Go com a
+  API ligada ao banco real (o problema era o Wi-Fi: a casa tem duas redes).
+- Ajustes do site de 18/11 (commit 37583ba do site, branch `migracao-supabase`) levados ao app: revista com título do
+  campo título e sinopse só embaixo; colunas sem comentários, com curtir e salvar por publicação
+  (`POST /colunas/:slug/posts/:postSlug/interacoes`); "Editar" das edições da revista em Minha conta (admin). O
+  painel de interações fica só no site; a migration `20261118230000_painel_interacoes.sql` foi copiada. O código do
+  site mais recente está na branch `migracao-supabase` do repositório `anasprenger/conexaopais` (a `main` é antiga).
+- **APK gerado** (EAS Build, conta Expo `anasprenger`, 20/11): link no README (seções 4.3 e 9).
+- **Falta (com a Ana):** commit do `projectId` que o EAS gravou no `mobile/app.json`; instalar o APK e repetir o
+  roteiro do README 4.1 no celular com a API ligada ao banco real; conferir se o projeto exige confirmação de e-mail
+  no cadastro; marcar a Entrega 4 como concluída. Os arquivos de build da Expo podem expirar: guardar o `.apk` também
+  num Release do GitHub.
+- Branch padrão do GitHub continua `claude/conexao-pais-app-entrega-1-dkbo5f` (renomear para `main` é opcional).
 
 ## Estrutura
 - `database/supabase/migrations/`: cópia das migrations do site (estrutura oficial do banco).

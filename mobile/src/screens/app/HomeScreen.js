@@ -21,7 +21,10 @@ export default function HomeScreen({ navigation }) {
   const { artigos, loading, error, reload } = useContent();
 
   // GET /api/revistas, /api/profissionais e /api/colunas ao mesmo tempo
-  const vitrine = useApi(() => Promise.all([listarRevistas(), listarProfissionais(), listarColunas()]), []);
+  // Recarrega ao voltar para a tela: um título editado (ex.: "Editar edição") aparece sem reabrir o app
+  const vitrine = useApi(() => Promise.all([listarRevistas(), listarProfissionais(), listarColunas()]), [], {
+    recarregarAoFocar: true,
+  });
   const [revistas = [], profissionais = [], colunas = []] = vitrine.data ?? [];
 
   const destaque = artigos.find((artigo) => artigo.destaque) ?? artigos[0];

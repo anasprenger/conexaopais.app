@@ -24,7 +24,7 @@ export default function MagazineEditScreen({ navigation, route }) {
   useEffect(() => {
     if (revista) {
       setTitulo(revista.titulo);
-      setSinopse(revista.descricao ?? '');
+      setSinopse(revista.sinopse ?? '');
     }
   }, [revista]);
 

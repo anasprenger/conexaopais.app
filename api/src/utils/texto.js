@@ -34,4 +34,27 @@ function dataDoTexto(texto) {
   return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
 }
 
-module.exports = { normalizar, slugify, minutosDeLeitura, dataDoTexto };
+// Mesmo critério do site (separarResumo): linhas que começam com "-" ou "•" viram tópicos; o resto é texto corrido.
+// "- A - B" na mesma linha vira dois tópicos.
+function separarSinopse(sinopse) {
+  const texto = [];
+  const topicos = [];
+  for (const bruta of String(sinopse ?? '').split(/\n/)) {
+    const linha = bruta.trim();
+    if (!linha) continue;
+    const topico = linha.match(/^[-•–]\s*(.+)$/);
+    if (topico) {
+      topicos.push(
+        ...topico[1]
+          .split(/\s+[-–]\s+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+      );
+    } else {
+      texto.push(linha);
+    }
+  }
+  return { texto, topicos };
+}
+
+module.exports = { normalizar, slugify, minutosDeLeitura, dataDoTexto, separarSinopse };

@@ -63,7 +63,7 @@ export default function MagazineScreen({ navigation, route }) {
     );
   }
 
-  const { texto, topicos } = separarSinopse(revista.descricao);
+  const { texto, topicos } = separarSinopse(revista.sinopse);
   const destaques = revista.destaques?.length > 0 ? revista.destaques : topicos;
   const leituraNoApp = temPaginas(revista);
 
@@ -81,7 +81,7 @@ export default function MagazineScreen({ navigation, route }) {
             Edição {String(revista.edicao).padStart(2, '0')} · {revista.data}
           </Text>
           <Text style={[type.h2, styles.title]}>{revista.titulo}</Text>
-          {revista.subtitulo && revista.subtitulo !== revista.descricao ? (
+          {revista.subtitulo && revista.subtitulo !== revista.titulo && revista.subtitulo !== revista.descricao ? (
             <Text style={[type.muted, styles.subtitle]}>{revista.subtitulo}</Text>
           ) : null}
         </View>

@@ -14,7 +14,7 @@ banco do site", logo abaixo).
 | **1** | Problema, proposta, projeto Expo, telas, navegação e repositório | ✅ Entregue |
 | **2** | Modelagem, MySQL, API Express, integração com `fetch()` | ✅ Entregue |
 | **3** | JWT, Bearer Token, middleware, níveis no back-end, rotas protegidas e logout | ✅ Concluída |
-| **4** | Testes, correções, README final, APK e apresentação | 🔧 Em andamento: falta gerar o APK e testar no celular (seção 4) |
+| **4** | Testes, correções, README final, APK e apresentação | 🔧 APK gerado ([baixar](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9)); falta testar no celular (seção 4) |
 | **+** | Integração com o banco do site (Supabase), autorizada pelo professor | ✅ Branch `integracao-supabase` |
 
 ---
@@ -287,7 +287,7 @@ Entrega 3, as requisições de quem entrou levam o token no cabeçalho `Authoriz
 | Início | `GET /api/artigos`, `GET /api/revistas`, `GET /api/profissionais`, `GET /api/colunas` |
 | Conteúdos | `GET /api/artigos?busca=&categoria=`, `GET /api/categorias`, `GET /api/colunas`, `GET /api/revistas` |
 | Artigo | `GET /api/artigos/:slug`, `GET` e `POST /api/artigos/:slug/comentarios`, `DELETE /api/comentarios/:id`, `POST /api/artigos/:slug/interacoes`, `DELETE /api/artigos/:slug` |
-| Coluna | `GET /api/colunas/:slug` |
+| Coluna | `GET /api/colunas/:slug`, `POST /api/colunas/:slug/posts/:postSlug/interacoes` (curtir e salvar; sem comentários) |
 | Revista (sinopse e leitura) | `GET /api/revistas/:slug` |
 | Editar edição | `GET` e `PUT /api/revistas/:slug` |
 | Usuários | `GET /api/usuarios`, `PATCH /api/usuarios/:id/papel`, `PATCH /api/usuarios/:id/suspensao`, `DELETE /api/usuarios/:id` |
@@ -474,6 +474,7 @@ Base: `http://localhost:3333/api`. Corpo e respostas em JSON. Exemplos prontos p
 | POST | `/artigos/:slug/interacoes` | Liga/desliga curtida ou salvo e devolve o total |
 | GET | `/profissionais`, `/profissionais/:slug` | Diretório e perfil (com artigos e colunas) |
 | GET | `/colunas`, `/colunas/:slug` | Colunas e publicações |
+| POST | `/colunas/:slug/posts/:postSlug/interacoes` | Liga/desliga curtida ou salvo numa publicação da coluna |
 | GET | `/revistas`, `/revistas/:slug` | Edições, páginas e link do PDF |
 | PUT | `/revistas/:slug` | Edita título e sinopse de uma edição publicada pelo site (`{ titulo, sinopse }`) |
 | POST | `/mensagens` | Contato ou pergunta à equipe (vão para as mensagens de contato do site) |
@@ -630,7 +631,7 @@ router.delete('/:slug', autenticar, autorDoArtigoOuAdmin, artigosController.excl
 | `POST /mensagens` (contato) | `autenticarSeHouverToken` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `POST /mensagens` (pergunta) | `autenticarSeHouverToken` | 401 | ✅ | ✅ | ✅ | ✅ |
 | `GET /auth/perfil` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
-| `POST /artigos/:slug/comentarios`, `POST /artigos/:slug/interacoes` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
+| `POST /artigos/:slug/comentarios`, `POST /artigos/:slug/interacoes`, `POST /colunas/:slug/posts/:postSlug/interacoes` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
 | `GET /usuarios/:id`, `GET /usuarios/:id/interacoes`, `DELETE /usuarios/:id` | `autenticar`, `proprioUsuarioOuAdmin` | 401 | a própria | a própria | a própria | ✅ |
 | `DELETE /comentarios/:id` | `autenticar`, `autorDoComentarioOuAdmin` | 401 | os próprios | os próprios | os próprios | ✅ |
 | `POST /artigos` | `autenticar`, `exigirPublicador` | 401 | 403 | 403 | ✅ | ✅ |
@@ -660,7 +661,7 @@ cd api
 npm test
 ```
 
-São 47 testes automatizados ([`api/tests/`](api/tests), com `node:test`). Eles **não usam o banco do site**: cada
+São 48 testes automatizados ([`api/tests/`](api/tests), com `node:test`). Eles **não usam o banco do site**: cada
 arquivo de teste cria um PostgreSQL só dele, na memória, com o **PGlite** (o PostgreSQL de verdade rodando dentro do
 Node, sem instalar nada). Esse banco recebe:
 
@@ -699,8 +700,8 @@ API ligada ao banco real.
 
 ### 4.1 Testes realizados
 
-**API (automáticos):** `cd api && npm test` roda 47 testes contra a API, com um banco igual ao do site (detalhes na
-seção 3.7). Resultado atual: **47 de 47 passando**.
+**API (automáticos):** `cd api && npm test` roda 48 testes contra a API, com um banco igual ao do site (detalhes na
+seção 3.7). Resultado atual: **48 de 48 passando**.
 
 **App (roteiro por nível):** cada cenário abaixo foi executado no app ligado à API real (versão com MySQL; ⏳ repetir
 com o banco do site depois de configurar o `api/.env`), com o navegador controlado
@@ -724,7 +725,7 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
 | Administração | *Novos profissionais*: lista e filtros (a analisar, aprovados, recusados) | Admin | ✅ |
 | Conexão | Endereço errado não é salvo; endereço certo é salvo e vale ao reabrir; voltar ao padrão | Todos | ✅ |
 
-**No celular:** ⏳ falta repetir o roteiro no APK instalado (seção 4.3), com a API rodando no notebook.
+**No celular:** ⏳ falta repetir o roteiro no [APK instalado](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9), com a API rodando no notebook (seção 4.4).
 
 ### 4.2 O que mudou nesta etapa
 
@@ -736,12 +737,25 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
   tela **Conexão com a API** (ícone no canto da tela de Boas-vindas ou em *Minha conta*), basta digitar o IP; o app
   testa a conexão e só salva se a API responder. Não precisa gerar outro APK.
 - **A API mostra o endereço para o celular** ao subir (`npm run dev`).
+- **Ajustes iguais aos do site (18/11):**
+  - **Revista:** o título vem sempre do campo título, e a sinopse aparece só embaixo, separada em texto e tópicos.
+    Antes, a sinopse aparecia no lugar do título e se repetia. Início e Conteúdos recarregam ao voltar para a tela,
+    então um título editado aparece em todas as telas.
+  - **Colunas:** sem comentários (só os artigos têm). Cada publicação da coluna pode ser curtida e salva. As salvas
+    aparecem em *Minha conta*, junto com os artigos.
+  - **Minha conta:** além dos artigos, a administração vê as edições da revista com o botão **Editar**.
+  - **Senha:** o botão de mostrar e ocultar a senha já existia no app, no login e no cadastro.
+  - O **painel de interações** é só do site. A migration dele foi copiada para `database/supabase/migrations/`, para a
+    estrutura do banco continuar igual à do site.
 
 | Conexão com a API |
 | --- |
 | ![Conexão com a API](docs/telas/conexao-api.png) |
 
 ### 4.3 Como gerar o APK
+
+**APK da versão final:** [baixar no Expo](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9) (abra o link no celular Android ou leia o QR Code da
+página). Gerado com `npm run build:apk` a partir da versão atual do repositório.
 
 O APK é compilado nos servidores da Expo (EAS Build, gratuito). Precisa de uma conta em
 [expo.dev](https://expo.dev/signup).
@@ -1013,7 +1027,7 @@ Checklist das entregas obrigatórias do PDF:
 | API e scripts necessários | `api/` (`npm run jwt:segredo`, `db:conferir`, `dev`, `test`) | ✅ |
 | README atualizado | este arquivo | ✅ |
 | Script SQL / estrutura do banco | `database/supabase/migrations/` (banco do site), `docs/banco-de-dados.md` | ✅ |
-| APK final | gerado pelo EAS (seção 4.3); link a incluir aqui | ⏳ |
+| APK final | [baixar no Expo](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9) (EAS Build, perfil `preview`; seção 4.3) | ✅ |
 | Material da apresentação | `docs/apresentacao.md` e `docs/apresentacao.pdf` | ✅ |
 
 Antes de entregar: o APK precisa ser gerado a partir da mesma versão que está no repositório (faça o build depois do

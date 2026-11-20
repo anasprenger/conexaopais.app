@@ -91,6 +91,7 @@ export function revistaDaApi(revista) {
     titulo: revista.titulo,
     subtitulo: revista.subtitulo,
     descricao: revista.descricao,
+    sinopse: revista.sinopse ?? revista.descricao ?? '', // texto original da sinopse, com os tópicos
     categoria: revista.categoria,
     destaques: revista.destaques,
     pdf: revista.pdfUrl ?? null,

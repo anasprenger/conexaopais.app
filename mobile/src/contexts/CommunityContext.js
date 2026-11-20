@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { alternarInteracao } from '../services/artigosService';
+import { alternarInteracaoColuna } from '../services/conteudoService';
 import { listarInteracoes } from '../services/usuariosService';
 import { useAuth } from './AuthContext';
 import { useContent } from './ContentContext';
@@ -10,7 +11,8 @@ const CommunityContext = createContext(null);
 export function CommunityProvider({ children }) {
   const { user } = useAuth();
   const { artigos, patchArtigo } = useContent();
-  const [interacoes, setInteracoes] = useState([]); // [{ publicacaoSlug, tipo }]
+  // [{ publicacaoSlug, tipo }]; nas publicações de colunas, também { coluna: { slug, nome }, titulo }
+  const [interacoes, setInteracoes] = useState([]);
 
   // GET /api/usuarios/:id/interacoes depois do login
   useEffect(() => {
@@ -41,6 +43,23 @@ export function CommunityProvider({ children }) {
     return { ativo, total };
   }
 
+  // POST /api/colunas/:slug/posts/:postSlug/interacoes — curtir ou salvar uma publicação da coluna
+  async function toggleColuna(tipo, coluna, post) {
+    if (!user) throw new Error('Entre na sua conta para curtir e salvar conteúdos.');
+    const { ativo } = await alternarInteracaoColuna(coluna.slug, post.slug, tipo);
+    setInteracoes((atual) => {
+      const sem = atual.filter((item) => !(item.tipo === tipo && item.publicacaoSlug === post.slug));
+      const item = { publicacaoSlug: post.slug, tipo, coluna: { slug: coluna.slug, nome: coluna.nome }, titulo: post.titulo };
+      return ativo ? [item, ...sem] : sem;
+    });
+    return { ativo };
+  }
+
+  // Publicações de colunas salvas (aparecem em "Minha conta" junto com os artigos salvos)
+  function salvosDeColunas() {
+    return interacoes.filter((item) => item.tipo === 'salvo' && item.coluna);
+  }
+
   // Artigos mais curtidos ou mais salvos (como o ranking da página Comunidade do site)
   function ranking(tipo, limite = 3) {
     const campo = tipo === 'curtida' ? 'curtidas' : 'salvos';
@@ -56,7 +75,7 @@ export function CommunityProvider({ children }) {
   }
 
   return (
-    <CommunityContext.Provider value={{ isActive, toggle, ranking, savedIds }}>{children}</CommunityContext.Provider>
+    <CommunityContext.Provider value={{ isActive, toggle, toggleColuna, ranking, savedIds, salvosDeColunas }}>{children}</CommunityContext.Provider>
   );
 }
 

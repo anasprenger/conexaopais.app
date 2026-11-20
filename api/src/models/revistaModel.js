@@ -1,7 +1,7 @@
 const { query } = require('../config/database');
 const conteudoSite = require('../data/conteudoSite');
 const { linkDoPdf } = require('../services/armazenamento');
-const { dataDoTexto } = require('../utils/texto');
+const { dataDoTexto, separarSinopse } = require('../utils/texto');
 const { ocultos } = require('./artigoModel');
 
 // Revista digital, igual ao site: edições de exemplo do site (data/conteudoSite.js) mais as edições que a
@@ -15,6 +15,7 @@ function doExemplo(revista) {
     titulo: revista.titulo,
     subtitulo: revista.subtitulo,
     descricao: revista.descricao,
+    sinopse: revista.descricao,
     categoria: revista.categoria,
     destaques: revista.destaques,
     pdf: revista.pdf,
@@ -23,18 +24,22 @@ function doExemplo(revista) {
   };
 }
 
-// As edições do banco não têm páginas de texto, só o PDF: o app mostra uma página de apresentação
+// As edições do banco não têm páginas de texto, só o PDF: o app mostra uma página de apresentação.
+// Como no site (cardDaEdicao): o título vem sempre do campo título (o editado em "Editar edição") e a sinopse
+// é separada em texto corrido e tópicos, para não aparecer repetida nem no lugar do título.
 function doBanco(linha, edicao) {
   const resumo = linha.resumo || 'Edição digital do Conexão Pais.';
+  const { texto, topicos } = separarSinopse(resumo);
   return {
     id: linha.id,
     slug: linha.slug,
     edicao,
     titulo: linha.titulo,
-    subtitulo: resumo,
-    descricao: resumo,
+    subtitulo: linha.titulo,
+    descricao: texto.join(' '),
+    sinopse: linha.resumo ?? '', // texto original, com os tópicos (usado em "Editar edição")
     categoria: linha.categoria || 'Revista',
-    destaques: [],
+    destaques: topicos,
     pdf: linha.pdf_url,
     publicadaEm: linha.created_at.toISOString().slice(0, 10),
     paginas: [
