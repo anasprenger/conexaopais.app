@@ -9,17 +9,15 @@ async function listar(req, res) {
   res.json(await profissionalModel.listar({ busca: texto(req.query.busca), especialidade: texto(req.query.especialidade) }));
 }
 
-// GET /api/profissionais/:slug — perfil com artigos e colunas da pessoa
+// GET /api/profissionais/:slug — perfil com os artigos e as colunas da pessoa (ligados pelo nome, como no site)
 async function buscar(req, res) {
   const profissional = await profissionalModel.buscarPorSlug(req.params.slug);
   if (!profissional) throw new HttpError(404, 'Perfil não encontrado.');
 
-  const [artigos, colunas] = profissional.usuarioId
-    ? await Promise.all([
-        artigoModel.listar({ autorId: profissional.usuarioId }),
-        colunaModel.listar({ colunistaId: profissional.usuarioId }),
-      ])
-    : [[], []];
+  const [artigos, colunas] = await Promise.all([
+    artigoModel.listar({ autorNome: profissional.nome }),
+    colunaModel.listar({ colunistaNome: profissional.nome }),
+  ]);
   res.json({ ...profissional, artigos, colunas });
 }
 

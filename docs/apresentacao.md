@@ -2,17 +2,22 @@
 
 Roteiro para cerca de 12 minutos, na ordem dos itens de *Apresentação e defesa* do PDF. Os tempos são sugestões.
 
+Slides: [`apresentacao.pdf`](apresentacao.pdf) (15 slides, na ordem deste roteiro).
+
 ## Antes de começar (checklist)
 
-- [ ] MySQL ligado e banco recriado com os dados de exemplo: `cd api` → `npm run db:setup`
+- [ ] Notebook com internet (o banco é o do site, no Supabase) e `cd api` → `npm run db:conferir` com tudo ✔
 - [ ] API rodando: `npm run dev` (anote o endereço *"No celular… http://192.168.x.x:3333/api"*)
 - [ ] Celular e notebook no mesmo Wi-Fi; APK instalado; em **Conexão com a API**, **Testar** dá "Conexão funcionando"
 - [ ] App aberto **sem conta** (se estiver logado, *Minha conta* → *Sair*)
-- [ ] Abertos no notebook: o repositório no GitHub, o VS Code com o projeto e o MySQL Workbench
+- [ ] Abertos no notebook: o repositório no GitHub, o VS Code com o projeto, o painel do Supabase (Table Editor) e o
+      site conexaopais.com (para mostrar que o artigo do app aparece lá)
+- [ ] Apague antes os artigos e contas de ensaios anteriores (o banco é o real, compartilhado com o site)
 - [ ] Plano B: se a rede da sala bloquear o celular, ligue o roteador do celular e conecte o notebook nele
 
-Contas de demonstração (senha `123456`): `familia@`, `profissional@` e `admin@conexaopais.test`. Na tela *Entrar*,
-os botões do *Modo demonstração* preenchem e-mail e senha.
+Contas de demonstração: as contas de teste do site, `familia@`, `profissional@` e `admin@conexaopais.test` (a senha
+é a das contas de teste do site e não está no repositório). Na tela *Entrar*, os botões do *Modo demonstração*
+preenchem o e-mail. Para criar conta na demonstração, use um e-mail seu (pode chegar o e-mail de confirmação).
 
 ---
 
@@ -31,7 +36,9 @@ os botões do *Modo demonstração* preenchem e-mail e senha.
 - Comunidade: curtir, salvar, comentar e perguntar à equipe.
 - Quatro tipos de usuário: **visitante** (lê sem conta), **família**, **profissional** (só publica depois de aprovado) e
   **administração**.
-- Arquitetura: App React Native (Expo) → `fetch()` com Bearer Token → API Node.js + Express → MySQL.
+- Arquitetura: App React Native (Expo) → `fetch()` com Bearer Token → API Node.js + Express → **banco do site**
+  (PostgreSQL no Supabase). Com autorização do professor, o app usa o mesmo banco e as mesmas contas do site no
+  lugar de um MySQL separado: site e app são um produto só.
 
 ## 3. Cadastro e login (2 min): demonstração
 
@@ -44,18 +51,20 @@ os botões do *Modo demonstração* preenchem e-mail e senha.
 
 O que dizer sobre a **senha**:
 
-> A senha nunca é guardada. A API gera um **hash com bcrypt** e salva só o hash. No login, o bcrypt compara a senha
-> digitada com o hash. Se a senha estiver errada ou o e-mail não existir, a resposta é a mesma (401), para não revelar
-> quem tem conta.
+> A senha nunca é guardada. As contas são as do site, criadas no **Supabase Auth**, que salva só o **hash bcrypt** da
+> senha. No cadastro, a API pede ao Supabase para criar a conta; no login, pede para conferir a senha com o hash. Com
+> a senha conferida, **quem gera o token JWT é a nossa API**. Se a senha estiver errada ou o e-mail não existir, a
+> resposta é a mesma (401), para não revelar quem tem conta.
 
-Código: `api/src/controllers/usuariosController.js` (cadastro) e `api/src/controllers/authController.js` (login).
+Código: `api/src/controllers/usuariosController.js` (cadastro), `api/src/controllers/authController.js` (login) e
+`api/src/services/supabaseAuth.js` (chamadas ao Supabase Auth).
 
 ## 4. JWT, token, middleware e permissões (3 min): explicação
 
 **Token JWT.** No login, a API devolve um token assinado:
 
 ```json
-{ "nivel": "profissional", "iat": 1794222455, "exp": 1794827255, "sub": "9" }
+{ "nivel": "profissional", "iat": 1794222455, "exp": 1794827255, "sub": "6b1f0c2e-6a4d-4b8e-9d55-1f2a3b4c5d6e" }
 ```
 
 - `sub` é o id do usuário; `exp`, a validade (7 dias).
@@ -108,24 +117,28 @@ Com a conta profissional aprovada:
 Rotas: `POST`, `GET`, `PUT` e `DELETE` em `/api/artigos`, com os middlewares `exigirPublicador` e
 `autorDoArtigoOuAdmin`.
 
-## 7. O banco de dados (1 min): MySQL Workbench
+## 7. O banco de dados (1 min): painel do Supabase
+
+No painel do Supabase, abra o **SQL Editor** (ou o *Table Editor*):
 
 ```sql
-USE conexao_pais;
-SHOW TABLES;                                                  -- as 10 tabelas
-SELECT id, nome, email, nivel, verificacao, senha_hash FROM usuarios;  -- senha só como hash ($2b$10$...)
-SELECT id, autor_id, titulo, criado_em FROM publicacoes ORDER BY id DESC;  -- o artigo da demonstração
+SELECT email, left(encrypted_password, 7) AS inicio_do_hash FROM auth.users;   -- senha só como hash ($2a$10$...)
+SELECT user_id, role FROM public.user_roles;                                    -- os níveis
+SELECT slug, titulo, autor_id, created_at FROM public.publicacoes ORDER BY created_at DESC;  -- o artigo da demonstração
 ```
 
-- `publicacoes` é a entidade principal, ligada ao autor (`autor_id`).
-- Ao excluir um artigo, comentários e curtidas dele saem junto (`ON DELETE CASCADE`).
-- Diagrama e dicionário de dados: README, seção 2.3, e `docs/banco-de-dados.md`.
+- `publicacoes` é a entidade principal, ligada ao autor (`autor_id`). É a mesma tabela que o site usa: abra
+  conexaopais.com/artigos e mostre o artigo publicado pelo app.
+- Contas em `auth.users` (Supabase Auth), perfil em `profiles` e níveis em `user_roles`.
+- Estrutura do banco: `database/supabase/migrations/` (as migrations do site). Diagrama e dicionário de dados:
+  README, seção 2.3, e `docs/banco-de-dados.md`.
 
 ## 8. Repositório e testes (1 min)
 
 - Mostre o histórico de commits no GitHub: uma etapa por commit (`feat`, `fix`, `test`, `docs`), organizada por
   entrega.
-- No terminal, `cd api` → `npm test`: **28 testes** passando (cadastro, hash, JWT, níveis e CRUD).
+- No terminal, `cd api` → `npm test`: **47 testes** passando (cadastro, hash, JWT, níveis, CRUD e conteúdos). Eles
+  rodam num PostgreSQL em memória com as mesmas migrations do site, sem mexer nos dados reais.
 - O README documenta cada entrega (seções 1 a 4).
 
 ## 9. O APK (30 s)
@@ -163,3 +176,13 @@ app recebe 401 ou 403.
 
 **O que é o hash? Dá para voltar à senha?**
 É uma transformação de mão única com "sal" aleatório (bcrypt, custo 10). Não dá para voltar; só comparar.
+
+**O PDF pedia MySQL. Por que PostgreSQL?**
+Com autorização do professor, o app usa o banco do site, que já está no Supabase (PostgreSQL), para que contas,
+níveis e publicações sejam os mesmos no site e no app. O resto continua como o PDF pede: API Express, JWT da própria
+API, Bearer Token, middlewares e CRUD.
+
+**Se o hash fica com o Supabase, o que a API faz na autenticação?**
+Valida os campos, pede ao Supabase Auth para criar a conta ou conferir a senha, lê o nível no banco, **gera e assina
+o JWT** com o `JWT_SECRET` e, em cada rota protegida, o middleware confere o token e o nível. O token do Supabase não
+é usado pelo app.

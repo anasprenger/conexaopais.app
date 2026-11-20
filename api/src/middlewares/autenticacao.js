@@ -26,9 +26,13 @@ async function usuarioDoToken(token) {
   }
 
   // O nível e a situação do cadastro vêm do banco, não só do token: se a administração aprovar ou recusar
-  // um profissional, a mudança vale na hora, sem novo login. Conta que não existe mais perde o acesso.
-  const usuario = await usuarioModel.buscarPorId(Number(conteudo.sub));
+  // um profissional (no app ou no site), a mudança vale na hora, sem novo login. Conta que não existe mais
+  // perde o acesso.
+  // O "sub" do token é o id da conta no Supabase (o mesmo do site).
+  const usuario = await usuarioModel.buscarPorId(conteudo.sub);
   if (!usuario) throw new HttpError(401, 'Conta não encontrada. Entre novamente.');
+  // Conta suspensa pela administração do site perde o acesso na hora, mesmo com token válido
+  if (usuario.suspensa) throw new HttpError(401, 'Esta conta está suspensa. Fale com a administração pela página Contato.');
   return usuario;
 }
 

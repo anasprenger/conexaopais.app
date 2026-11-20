@@ -16,11 +16,12 @@ function emailValido(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-// Converte o parâmetro :id da rota em número (ou 404 se não for um id válido)
+// No banco do site os ids são UUID (ex.: "3f1c2a9e-..."). Um :id da rota fora desse formato vira 404.
 function idDaRota(valor, recurso = 'Registro') {
-  const id = Number(valor);
-  if (!Number.isInteger(id) || id <= 0) throw new HttpError(404, `${recurso} não encontrado.`);
-  return id;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(valor ?? ''))) {
+    throw new HttpError(404, `${recurso} não encontrado.`);
+  }
+  return valor;
 }
 
 module.exports = { verificarCampos, texto, emailValido, idDaRota };

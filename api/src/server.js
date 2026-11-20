@@ -11,6 +11,13 @@ if (problema) {
   process.exit(1);
 }
 
+// Sem os dados do Supabase a API não tem banco nem contas: avisa e não sobe
+const faltando = ['DATABASE_URL', 'SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY'].filter((nome) => !process.env[nome]);
+if (faltando.length) {
+  console.error(`Faltam no arquivo api/.env: ${faltando.join(', ')}.\nVeja o passo a passo no README (seção "Como rodar").`);
+  process.exit(1);
+}
+
 const app = require('./app');
 
 const PORT = Number(process.env.PORT || 3333);
@@ -25,7 +32,7 @@ function enderecosNaRede() {
 
 // 0.0.0.0 permite que o celular (Expo Go ou APK) acesse a API pela rede local
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`API do Conexão Pais rodando em http://localhost:${PORT}/api`);
+  console.log(`API do Conexão Pais rodando em http://localhost:${PORT}/api (banco: Supabase do site)`);
   const ips = enderecosNaRede();
   if (ips.length) {
     console.log('No celular (mesmo Wi-Fi), use em "Conexão com a API":');

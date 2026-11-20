@@ -1,11 +1,14 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../contexts/AuthContext';
 import ProfessionalRequestsScreen from '../screens/admin/ProfessionalRequestsScreen';
+import UsersScreen from '../screens/admin/UsersScreen';
 import AboutScreen from '../screens/app/AboutScreen';
 import ApiConfigScreen from '../screens/app/ApiConfigScreen';
 import ArticleScreen from '../screens/app/ArticleScreen';
 import ColumnScreen from '../screens/app/ColumnScreen';
 import ContactScreen from '../screens/app/ContactScreen';
+import MagazineEditScreen from '../screens/admin/MagazineEditScreen';
+import MagazineReaderScreen from '../screens/app/MagazineReaderScreen';
 import MagazineScreen from '../screens/app/MagazineScreen';
 import ProfessionalScreen from '../screens/app/ProfessionalScreen';
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -21,7 +24,8 @@ const Stack = createNativeStackNavigator();
 // - Leitura (abas, artigo, coluna, revista, profissionais, sobre e contato) e a conexão com a API: abertas a todos.
 // - Boas-vindas, Entrar e Criar conta: só para quem ainda não entrou. Ao entrar, essas telas saem
 //   da pilha e a pessoa volta para onde estava.
-// - Área de publicação: profissional aprovado e admin. Verificação de novos profissionais: só admin.
+// - Área de publicação: profissional aprovado e admin. Verificação de novos profissionais, usuários e
+//   edição da revista: só admin.
 export default function RootNavigator() {
   const { user, isAdmin, canPublish } = useAuth();
 
@@ -34,6 +38,11 @@ export default function RootNavigator() {
         <Stack.Screen name="Article" component={ArticleScreen} options={{ title: 'Artigo' }} />
         <Stack.Screen name="Column" component={ColumnScreen} options={{ title: 'Coluna' }} />
         <Stack.Screen name="Magazine" component={MagazineScreen} options={{ title: 'Revista' }} />
+        <Stack.Screen
+          name="MagazineReader"
+          component={MagazineReaderScreen}
+          options={{ headerShown: false, presentation: 'fullScreenModal', animation: 'fade' }}
+        />
         <Stack.Screen name="Professional" component={ProfessionalScreen} options={{ title: 'Perfil profissional' }} />
         <Stack.Screen name="About" component={AboutScreen} options={{ title: 'Sobre' }} />
         <Stack.Screen name="Contact" component={ContactScreen} options={{ title: 'Contato' }} />
@@ -44,11 +53,15 @@ export default function RootNavigator() {
         <Stack.Group>
           {canPublish && <Stack.Screen name="PostForm" component={PostFormScreen} options={{ title: 'Nova postagem' }} />}
           {isAdmin && (
-            <Stack.Screen
-              name="ProfessionalRequests"
-              component={ProfessionalRequestsScreen}
-              options={{ title: 'Novos profissionais' }}
-            />
+            <>
+              <Stack.Screen
+                name="ProfessionalRequests"
+                component={ProfessionalRequestsScreen}
+                options={{ title: 'Novos profissionais' }}
+              />
+              <Stack.Screen name="Users" component={UsersScreen} options={{ title: 'Usuários' }} />
+              <Stack.Screen name="MagazineEdit" component={MagazineEditScreen} options={{ title: 'Editar edição' }} />
+            </>
           )}
         </Stack.Group>
       ) : (

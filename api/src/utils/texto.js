@@ -1,21 +1,18 @@
 // Funções de texto usadas pelos models
 
-function slugify(valor) {
-  return valor
+// Sem acentos e em minúsculas: usado nos slugs e nas buscas
+function normalizar(valor) {
+  return String(valor ?? '')
     .normalize('NFD')
     .replace(/[̀-ͯ]/g, '')
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 150);
+    .toLowerCase();
 }
 
-// "Emoções, Diálogo" -> ['Emoções', 'Diálogo']
-function listaDeTags(valor) {
-  return (valor || '')
-    .split(',')
-    .map((tag) => tag.trim())
-    .filter(Boolean);
+// Mesmo formato do site: "Avós e netos!" -> "avos-e-netos"
+function slugify(valor) {
+  return normalizar(valor)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
 }
 
 // Mesmo cálculo do site: 200 palavras por minuto, mínimo de 1 minuto
@@ -24,4 +21,17 @@ function minutosDeLeitura(...textos) {
   return Math.max(1, Math.round(palavras / 200));
 }
 
-module.exports = { slugify, listaDeTags, minutosDeLeitura };
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+
+// Datas escritas nos conteúdos de exemplo do site -> "AAAA-MM-DD"
+// "12 ago 2026" -> "2026-08-12" | "Agosto de 2026" -> "2026-08-01"
+function dataDoTexto(texto) {
+  const partes = normalizar(texto).replace(/\bde\b/g, ' ').split(/\s+/).filter(Boolean);
+  const dia = partes.length === 3 ? Number(partes[0]) : 1;
+  const mes = MESES.indexOf(partes[partes.length - 2]?.slice(0, 3)) + 1;
+  const ano = Number(partes[partes.length - 1]);
+  if (!mes || !ano || !dia) return null;
+  return `${ano}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+}
+
+module.exports = { normalizar, slugify, minutosDeLeitura, dataDoTexto };

@@ -4,7 +4,7 @@ import { dataCurta, paragrafos } from '../utils/text';
 
 const meses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
-// "2026-08-14" (coluna DATE) -> Date no fuso local, sem trocar o dia
+// "2026-08-14" (só a data) -> Date no fuso local, sem trocar o dia
 function dataDoBanco(valor) {
   const [ano, mes, dia] = valor.slice(0, 10).split('-').map(Number);
   return new Date(ano, mes - 1, dia);
@@ -19,14 +19,20 @@ export function usuarioDaApi(usuario) {
     profissao: usuario.profissao,
     registro: usuario.registroProfissional,
     verificacao: usuario.verificacao,
-    observacao: usuario.observacaoAdmin,
+    papeis: usuario.papeis ?? [],
+    suspensa: Boolean(usuario.suspensa),
+    criadoEm: usuario.criadoEm ?? null,
+    ultimoAcesso: usuario.ultimoAcesso ?? null,
   };
 }
 
+// O app identifica cada artigo pelo SLUG, como o site: as rotas da API (/artigos/:slug), as curtidas e os
+// comentários usam o slug. "exemplo" marca os artigos de exemplo do site (não ficam no banco e não são editados).
 export function artigoDaApi(artigo) {
   return {
-    id: artigo.id,
+    id: artigo.slug,
     slug: artigo.slug,
+    exemplo: Boolean(artigo.exemplo),
     titulo: artigo.titulo,
     resumo: artigo.resumo,
     categoria: artigo.categoria,
@@ -62,7 +68,7 @@ export function colunaDaApi(coluna) {
     periodicidade: coluna.periodicidade,
     sobre: coluna.sobre,
     colunista: coluna.colunista.nome,
-    colunistaSlug: coluna.colunista.slug,
+    colunistaSlug: coluna.colunista.slug ?? null,
     totalPosts: coluna.totalPosts,
     posts: (coluna.posts ?? []).map((post) => ({
       slug: post.slug,
@@ -77,6 +83,9 @@ export function colunaDaApi(coluna) {
 export function revistaDaApi(revista) {
   const publicada = dataDoBanco(revista.publicadaEm);
   return {
+    // id só existe nas edições publicadas pelo site (no banco): são as que a administração pode editar
+    id: revista.id ?? null,
+    editavel: Boolean(revista.id),
     slug: revista.slug,
     edicao: revista.edicao,
     titulo: revista.titulo,
@@ -84,7 +93,7 @@ export function revistaDaApi(revista) {
     descricao: revista.descricao,
     categoria: revista.categoria,
     destaques: revista.destaques,
-    pdf: revista.pdfUrl,
+    pdf: revista.pdfUrl ?? null,
     data: `${meses[publicada.getMonth()]} de ${publicada.getFullYear()}`,
     paginas: revista.totalPaginas,
     conteudo: (revista.paginas ?? []).map((pagina) => ({ ...pagina, texto: paragrafos(pagina.texto) })),

@@ -51,7 +51,7 @@ export default function LoginScreen({ navigation, route }) {
 
   function fillDemo(profile) {
     setEmail(DEMO_ACCOUNTS[profile].email);
-    setPassword(DEMO_ACCOUNTS[profile].password);
+    setPassword('');
     setErrors({});
     setErroApi('');
   }
@@ -68,8 +68,14 @@ export default function LoginScreen({ navigation, route }) {
           Por segurança, o acesso vale por um tempo limitado. Entre de novo para continuar.
         </Notice>
       )}
-      {registered === 'usuario' && <Notice tone="success" title="Conta criada! Agora é só entrar." />}
-      {registered === 'profissional' && (
+      {registered && route.params?.confirmarEmail && (
+        <Notice tone="success" title="Conta criada! Confirme seu e-mail.">
+          Enviamos uma mensagem para {route.params.email}. Abra o link dela e depois entre aqui.
+          {registered === 'profissional' ? ' Nossa equipe também vai conferir seu registro profissional.' : ''}
+        </Notice>
+      )}
+      {registered === 'usuario' && !route.params?.confirmarEmail && <Notice tone="success" title="Conta criada! Agora é só entrar." />}
+      {registered === 'profissional' && !route.params?.confirmarEmail && (
         <Notice tone="success" title="Conta criada!">
           Nossa equipe vai conferir seu registro profissional antes de liberar as publicações.
         </Notice>
@@ -110,7 +116,7 @@ export default function LoginScreen({ navigation, route }) {
           <Text style={styles.demoTitle}>Modo demonstração</Text>
         </View>
         <Text style={type.small}>
-          Contas criadas pelo banco de dados de exemplo (senha 123456). Escolha um perfil para preencher:
+          As contas são as mesmas do site. Escolha uma conta de teste para preencher o e-mail e digite a senha dela:
         </Text>
         <View style={styles.demoButtons}>
           {demoProfiles.map((profile) => (

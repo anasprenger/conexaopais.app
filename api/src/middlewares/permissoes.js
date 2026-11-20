@@ -5,6 +5,7 @@ const { idDaRota } = require('../utils/validacao');
 
 // Controle de acesso por nível. Estes middlewares vêm sempre depois de "autenticar",
 // que confere o token e preenche req.usuario com os dados atuais do banco.
+// As regras são as mesmas do site (políticas do banco no Supabase).
 
 function ehAdmin(usuario) {
   return usuario?.nivel === 'admin';
@@ -36,18 +37,18 @@ function exigirPublicador(req, res, next) {
   next();
 }
 
-// GET /usuarios/:id e /usuarios/:id/interacoes: a própria pessoa ou admin
+// GET e DELETE /usuarios/:id e GET /usuarios/:id/interacoes: a própria pessoa ou admin
 function proprioUsuarioOuAdmin(req, res, next) {
-  if (!ehAdmin(req.usuario) && req.usuario?.id !== Number(req.params.id)) {
-    throw new HttpError(403, 'Você só pode ver os dados da sua própria conta.');
+  if (!ehAdmin(req.usuario) && req.usuario?.id !== req.params.id) {
+    throw new HttpError(403, 'Você só pode acessar a sua própria conta.');
   }
   next();
 }
 
-// PUT e DELETE /artigos/:id: admin altera qualquer artigo; o autor, só os próprios
-// (e enquanto puder publicar, como no app). Deixa o artigo em req.artigo para o controller.
+// PUT e DELETE /artigos/:slug: admin altera qualquer artigo; o autor, só os próprios
+// (e enquanto puder publicar). Deixa o artigo em req.artigo para o controller.
 async function autorDoArtigoOuAdmin(req, res, next) {
-  const artigo = await artigoModel.buscarPorId(idDaRota(req.params.id, 'Artigo'));
+  const artigo = await artigoModel.buscarPorSlug(req.params.slug);
   if (!artigo) throw new HttpError(404, 'Artigo não encontrado.');
 
   if (!ehAdmin(req.usuario)) {

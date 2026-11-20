@@ -1,14 +1,13 @@
-const bcrypt = require('bcryptjs');
 const usuarioModel = require('../models/usuarioModel');
+const supabaseAuth = require('../services/supabaseAuth');
 const HttpError = require('../utils/HttpError');
 const { gerarToken } = require('../utils/token');
 const { emailValido, texto, verificarCampos } = require('../utils/validacao');
 
-// Hash de uma senha qualquer, usado quando o e-mail não existe: a comparação leva o mesmo tempo
-// nos dois casos, e quem tenta adivinhar não descobre quais e-mails têm conta pela demora da resposta.
-const HASH_SEM_CONTA = bcrypt.hashSync('conta-inexistente', 10);
-
-// POST /api/auth/login — confere e-mail e senha (hash bcrypt) e devolve o token JWT e os dados do usuário.
+// POST /api/auth/login — confere e-mail e senha e devolve o token JWT e os dados do usuário.
+// 1. o Supabase Auth confere a senha com o hash bcrypt guardado (a conta é a mesma do site);
+// 2. a API lê no banco o nível e a situação da conta;
+// 3. a API gera o próprio token JWT, assinado com o JWT_SECRET.
 // O app guarda o token e o envia nas próximas requisições no cabeçalho "Authorization: Bearer <token>".
 async function login(req, res) {
   const email = texto(req.body?.email).toLowerCase();
@@ -18,12 +17,12 @@ async function login(req, res) {
     senha: !senha && 'Informe a senha.',
   });
 
-  const usuario = await usuarioModel.buscarPorEmailComSenha(email);
-  const senhaConfere = await bcrypt.compare(senha, usuario?.senhaHash ?? HASH_SEM_CONTA);
-  if (!usuario || !senhaConfere) throw new HttpError(401, 'E-mail ou senha incorretos.');
+  const { id } = await supabaseAuth.entrar(email, senha);
+  const usuario = await usuarioModel.buscarPorId(id);
+  if (!usuario) throw new HttpError(401, 'E-mail ou senha incorretos.');
+  if (usuario.suspensa) throw new HttpError(403, 'Esta conta está suspensa. Fale com a administração pela página Contato.');
 
-  const { senhaHash, ...dados } = usuario;
-  res.json({ token: gerarToken(dados), usuario: dados });
+  res.json({ token: gerarToken(usuario), usuario });
 }
 
 // GET /api/auth/perfil — dados de quem está logado (o middleware autenticar já conferiu o token).

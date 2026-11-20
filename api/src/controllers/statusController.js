@@ -1,13 +1,13 @@
-const db = require('../config/database');
-const { mensagemErroMysql } = require('../utils/erroMysql');
+const { query } = require('../config/database');
+const { mensagemErroBanco } = require('../utils/erroBanco');
 
-// GET /api/status — confere se a API e o banco estão respondendo
+// GET /api/status — confere se a API e o banco (Supabase) estão respondendo
 async function status(req, res) {
   try {
-    await db.query('SELECT 1');
+    await query('SELECT 1 FROM public.publicacoes LIMIT 1');
     res.json({ api: 'ok', banco: 'ok' });
   } catch (erro) {
-    console.error('MySQL indisponível:', mensagemErroMysql(erro));
+    console.error('Banco indisponível:', mensagemErroBanco(erro));
     res.status(503).json({ api: 'ok', banco: 'indisponível' });
   }
 }

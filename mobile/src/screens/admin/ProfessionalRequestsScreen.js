@@ -8,68 +8,51 @@ import EmptyState from '../../components/EmptyState';
 import Notice from '../../components/Notice';
 import Screen from '../../components/Screen';
 import SegmentedControl from '../../components/SegmentedControl';
-import TextField from '../../components/TextField';
 import { verificacaoLabels } from '../../contexts/AuthContext';
 import { useConfirm } from '../../contexts/ConfirmContext';
 import { useApi } from '../../hooks/useApi';
 import { avaliarProfissional, listarContasProfissionais } from '../../services/usuariosService';
 import { colors, radius, spacing, type } from '../../theme';
 
-const tone = { pendente: 'warning', aprovado: 'success', ajustes_solicitados: 'warning', recusado: 'danger' };
+const tone = { pendente: 'warning', aprovado: 'success', recusado: 'danger' };
 
-// Somente administração: verificação das contas profissionais (como "Novos profissionais" no site)
+// Somente administração: verificação das contas profissionais. É a mesma lista e a mesma decisão do
+// painel "Novos profissionais" do site: o que for aprovado aqui vale no site, e vice-versa.
 export default function ProfessionalRequestsScreen() {
   const confirm = useConfirm();
   const { data: profissionais, loading, error, reload } = useApi(() => listarContasProfissionais(), []);
   const [filtro, setFiltro] = useState('pendente');
-  const [ajusteDe, setAjusteDe] = useState(null);
-  const [observacao, setObservacao] = useState('');
-  const [erro, setErro] = useState('');
   const [aviso, setAviso] = useState(null);
   const [salvandoId, setSalvandoId] = useState(null);
 
   const lista = profissionais ?? [];
   const contagem = (status) => lista.filter((item) => item.verificacao === status).length;
-  const visiveis = lista.filter((item) =>
-    filtro === 'pendente' ? ['pendente', 'ajustes_solicitados'].includes(item.verificacao) : item.verificacao === filtro
-  );
+  const visiveis = lista.filter((item) => item.verificacao === filtro);
 
   // PATCH /api/usuarios/:id/verificacao
-  async function decidir(pessoa, verificacao, mensagem, texto = '') {
+  async function decidir(pessoa, verificacao, mensagem) {
     setSalvandoId(pessoa.id);
     setAviso(null);
     try {
-      await avaliarProfissional(pessoa.id, verificacao, texto);
+      await avaliarProfissional(pessoa.id, verificacao);
       await reload();
       setAviso({ tone: 'success', title: mensagem });
-      setAjusteDe(null);
-      setObservacao('');
-      setErro('');
     } catch (falha) {
-      if (falha.campos.observacao) setErro(falha.campos.observacao);
-      else setAviso({ tone: 'danger', title: falha.message });
+      setAviso({ tone: 'danger', title: falha.message });
     } finally {
       setSalvandoId(null);
     }
   }
 
-  function enviarAjustes(pessoa) {
-    if (observacao.trim().length < 10) {
-      setErro('Escreva uma orientação com pelo menos 10 caracteres.');
-      return;
-    }
-    decidir(pessoa, 'ajustes_solicitados', 'Orientações enviadas.', observacao.trim());
-  }
-
   return (
     <Screen>
       <Text style={[type.muted, styles.intro]}>
-        Confira profissão e número de registro antes de liberar a publicação de artigos.
+        Confira profissão e número de registro antes de liberar a publicação de artigos. A decisão vale também no site.
       </Text>
 
       <SegmentedControl
         options={[
-          { id: 'pendente', label: `A analisar (${contagem('pendente') + contagem('ajustes_solicitados')})` },
+          { id: 'pendente', label: `A analisar (${contagem('pendente')})` },
           { id: 'aprovado', label: 'Aprovados' },
           { id: 'recusado', label: 'Recusados' },
         ]}
@@ -97,67 +80,36 @@ export default function ProfessionalRequestsScreen() {
             <Text style={[type.body, styles.line]}>{pessoa.profissao || 'Profissão não informada'}</Text>
             <Text style={type.small}>Registro: {pessoa.registro || 'não informado'}</Text>
             <View style={styles.badge}>
-              <Badge label={verificacaoLabels[pessoa.verificacao]} tone={tone[pessoa.verificacao]} />
+              <Badge label={verificacaoLabels[pessoa.verificacao] ?? pessoa.verificacao} tone={tone[pessoa.verificacao]} />
             </View>
-            {pessoa.observacao ? <Text style={[type.small, styles.line]}>Orientação enviada: {pessoa.observacao}</Text> : null}
 
-            {['pendente', 'ajustes_solicitados'].includes(pessoa.verificacao) && (
-              <>
-                {ajusteDe === pessoa.id && (
-                  <View style={styles.adjust}>
-                    <TextField
-                      label="O que precisa ser corrigido?"
-                      placeholder="Explique quais dados precisam ser corrigidos"
-                      multiline
-                      value={observacao}
-                      onChangeText={setObservacao}
-                      error={erro}
-                    />
-                    <Button
-                      title="Enviar orientações"
-                      variant="outline"
-                      small
-                      loading={salvandoId === pessoa.id}
-                      onPress={() => enviarAjustes(pessoa)}
-                    />
-                  </View>
-                )}
-                <View style={styles.actions}>
-                  <Button
-                    title="Aprovar"
-                    icon="checkmark"
-                    small
-                    disabled={salvandoId === pessoa.id}
-                    onPress={() => decidir(pessoa, 'aprovado', `${pessoa.name}: profissional aprovado.`)}
-                  />
-                  {ajusteDe !== pessoa.id && (
-                    <Button
-                      title="Pedir ajustes"
-                      variant="outline"
-                      small
-                      onPress={() => {
-                        setAjusteDe(pessoa.id);
-                        setErro('');
-                      }}
-                    />
-                  )}
-                  <Button
-                    title="Recusar"
-                    variant="danger"
-                    small
-                    disabled={salvandoId === pessoa.id}
-                    onPress={() =>
-                      confirm({
-                        title: 'Recusar cadastro',
-                        message: `Recusar o cadastro profissional de ${pessoa.name}?`,
-                        confirmLabel: 'Recusar',
-                        onConfirm: () => decidir(pessoa, 'recusado', 'Cadastro recusado.'),
-                      })
-                    }
-                  />
-                </View>
-              </>
-            )}
+            <View style={styles.actions}>
+              {pessoa.verificacao !== 'aprovado' && (
+                <Button
+                  title="Aprovar"
+                  icon="checkmark"
+                  small
+                  disabled={salvandoId === pessoa.id}
+                  onPress={() => decidir(pessoa, 'aprovado', `${pessoa.name}: profissional aprovado.`)}
+                />
+              )}
+              {pessoa.verificacao !== 'recusado' && (
+                <Button
+                  title="Recusar"
+                  variant="danger"
+                  small
+                  disabled={salvandoId === pessoa.id}
+                  onPress={() =>
+                    confirm({
+                      title: 'Recusar cadastro',
+                      message: `Recusar o cadastro profissional de ${pessoa.name}? A pessoa deixa de poder publicar.`,
+                      confirmLabel: 'Recusar',
+                      onConfirm: () => decidir(pessoa, 'recusado', 'Cadastro recusado.'),
+                    })
+                  }
+                />
+              )}
+            </View>
           </View>
         ))}
       </AsyncState>
@@ -190,9 +142,6 @@ const styles = StyleSheet.create({
   },
   badge: {
     marginTop: spacing.sm,
-  },
-  adjust: {
-    marginTop: spacing.md,
   },
   actions: {
     flexDirection: 'row',

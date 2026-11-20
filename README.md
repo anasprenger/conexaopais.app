@@ -2,11 +2,12 @@
 
 > **Ajudando a unir famílias e gerações.**
 
-Versão mobile do portal **Conexão Pais** ([conexaopais.com.br](https://conexaopais.com.br)): artigos, colunas, revista
+Versão mobile do portal **Conexão Pais** ([conexaopais.com](https://conexaopais.com)): artigos, colunas, revista
 digital, profissionais parceiros e comunidade para quem cuida, educa e acompanha crianças e adolescentes.
 
-Projeto avaliativo da disciplina de Aplicações Mobile (React Native + API REST + MySQL + JWT), desenvolvido em
-4 entregas incrementais.
+Projeto avaliativo da disciplina de Aplicações Mobile (React Native + API REST + banco de dados + JWT), desenvolvido
+em 4 entregas incrementais. **O app usa o mesmo banco de dados e as mesmas contas do site** (seção "Integração com o
+banco do site", logo abaixo).
 
 | Entrega | Conteúdo | Situação |
 | --- | --- | --- |
@@ -14,8 +15,50 @@ Projeto avaliativo da disciplina de Aplicações Mobile (React Native + API REST
 | **2** | Modelagem, MySQL, API Express, integração com `fetch()` | ✅ Entregue |
 | **3** | JWT, Bearer Token, middleware, níveis no back-end, rotas protegidas e logout | ✅ Concluída |
 | **4** | Testes, correções, README final, APK e apresentação | 🔧 Em andamento: falta gerar o APK e testar no celular (seção 4) |
+| **+** | Integração com o banco do site (Supabase), autorizada pelo professor | ✅ Branch `integracao-supabase` |
 
 ---
+
+## Integração com o banco do site
+
+O PDF da disciplina pede MySQL. Com **autorização do professor**, o app passou a usar o **banco do site Conexão Pais**
+(PostgreSQL no Supabase) no lugar de um MySQL separado. Assim, site e app são um produto só:
+
+- **as mesmas contas**: quem tem conta no site entra no app com o mesmo e-mail e senha, e vice-versa;
+- **os mesmos níveis**: `usuario` (família), `profissional` (com verificação da administração) e `admin`, guardados
+  na tabela `user_roles` do site;
+- **as mesmas publicações**: um artigo publicado no app aparece no site, e o contrário também; curtidas, salvos e
+  comentários são compartilhados;
+- **a mesma moderação**: aprovar um profissional no app vale no site; um artigo de exemplo escondido no app some do site.
+
+**O que não mudou** (requisitos do PDF): o app continua falando só com a **API REST em Node.js + Express**, com
+`fetch()`; a API continua **gerando o próprio JWT**, que o app envia como **Bearer Token**; os **middlewares** da API
+continuam conferindo o token e o nível em cada rota protegida; o CRUD da entidade principal (`publicacoes`) continua
+na API.
+
+```mermaid
+flowchart LR
+    APP["App React Native (Expo)"] -->|"fetch() + Bearer Token (JWT da API)"| API["API REST<br/>Node.js + Express"]
+    SITE["Site Conexão Pais<br/>conexaopais.com"] --> SB
+    API -->|"middlewares: JWT e nível"| API
+    API -->|"SQL (driver pg)"| DB
+    API -->|"confere a senha e cria contas"| AUTH["Supabase Auth<br/>(contas do site)"]
+    subgraph SB["Supabase (projeto do site)"]
+        AUTH
+        DB[("PostgreSQL<br/>publicacoes, profiles, user_roles,<br/>interacoes, comentarios...")]
+    end
+```
+
+| Antes (Entregas 2 a 4) | Agora |
+| --- | --- |
+| MySQL no notebook, só do app | PostgreSQL do Supabase, o mesmo do site |
+| Tabela `usuarios` com `senha_hash` (bcrypt feito pela API) | Contas no Supabase Auth (`auth.users`, hash bcrypt), perfil em `profiles` e níveis em `user_roles` |
+| Ids numéricos; artigo em `/artigos/:id` | Ids UUID; artigo identificado pelo **slug**, como no site (`/artigos/:slug`) |
+| Colunas, revista e profissionais em tabelas próprias | Iguais ao site: exemplos do site + o que a administração publica no banco |
+| Login: a API comparava a senha com `bcrypt.compare` | Login: o Supabase Auth confere a senha; a API lê o nível e **gera o JWT dela** |
+| Testes usavam o MySQL do `.env` | Testes usam um PostgreSQL em memória com as migrations do site (não tocam no banco real) |
+
+A versão com MySQL (Entregas 2 a 4) continua no histórico do Git, no commit `72e0a4f`.
 
 ## 1. Proposta do projeto (Entrega 1)
 
@@ -60,10 +103,10 @@ O **app Conexão Pais** reúne, no celular, as seções do portal:
 2. **Profissionais:** diretório com especialidade, cidade, forma de atendimento e contato por WhatsApp.
 3. **Comunidade:** curtidas, conteúdos salvos, comentários nos artigos, perguntas à equipe e regras de convivência.
 4. **Área de publicação:** profissionais aprovados e a administração publicam, editam e excluem artigos.
-5. **Administração:** verificação de novos profissionais (aprovar, pedir ajustes ou recusar) e moderação.
+5. **Administração:** verificação de novos profissionais (aprovar ou recusar) e moderação.
 
-A **entidade principal** é a **Publicação (artigo)**. É ela que terá CRUD completo integrado à API e ao MySQL nas
-próximas entregas, assim como a tabela `publicacoes` do site.
+A **entidade principal** é a **Publicação (artigo)**, com CRUD completo integrado à API e ao banco: é a tabela
+`publicacoes` do site.
 
 **Arquitetura da solução** (construída ao longo das 4 entregas):
 
@@ -71,11 +114,12 @@ próximas entregas, assim como a tabela `publicacoes` do site.
 flowchart LR
     APP["App React Native (Expo)<br/>telas por nível de usuário"] -->|"fetch() + Bearer Token (JWT)"| API["API REST<br/>Node.js + Express"]
     API -->|"middleware: valida o JWT<br/>e o nível do usuário"| API
-    API --> DB[("MySQL<br/>usuários, publicações,<br/>interações, comentários")]
+    API --> DB[("Banco do site (Supabase)<br/>usuários, publicações,<br/>interações, comentários")]
 ```
 
-Situação atual: telas, navegação e regras de acesso por nível (Entrega 1); API Express + MySQL integrados ao app
-com `fetch()` (Entrega 2); login com JWT, Bearer Token e rotas protegidas por nível no back-end (Entrega 3).
+Situação atual: telas, navegação e regras de acesso por nível (Entrega 1); API Express e banco integrados ao app
+com `fetch()` (Entrega 2); login com JWT, Bearer Token e rotas protegidas por nível no back-end (Entrega 3); banco
+e contas compartilhados com o site (integração com o Supabase).
 
 ### 1.5 Nome da aplicação
 
@@ -92,7 +136,7 @@ Os níveis são os mesmos do site (`app_role`):
 | **Profissional** | `profissional` | Profissional parceiro. Começa **em verificação** e só publica depois de **aprovado** pela administração |
 | **Administração** | `admin` | Equipe do Conexão Pais (curadoria, moderação e verificação) |
 
-Situações do cadastro profissional: `pendente` → `aprovado`, `ajustes_solicitados` ou `recusado`.
+Situações do cadastro profissional: `pendente` → `aprovado` ou `recusado` (as mesmas do painel do site).
 
 ### 1.7 Permissões iniciais
 
@@ -107,7 +151,7 @@ Situações do cadastro profissional: `pendente` → `aprovado`, `ajustes_solici
 | Publicar artigo | ❌ | ❌ | ❌ | ✅ | ✅ |
 | Editar e excluir artigo | ❌ | ❌ | ❌ | só os próprios | todos |
 | Excluir comentário de outra pessoa | ❌ | ❌ | ❌ | ❌ | ✅ |
-| Aprovar, pedir ajustes ou recusar profissionais | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Aprovar ou recusar profissionais | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 **Mudança na Entrega 2:** a leitura passou a ser aberta a visitantes, como no site. A conta é pedida só para
 interagir: ao tocar em Curtir ou Salvar sem conta, o app oferece Entrar; os campos de comentário e de pergunta dão
@@ -143,15 +187,18 @@ Todas as telas abaixo existem no app. A seção 2.2 mostra quais rotas da API ca
 | 5 | Conteúdos | Todos | Artigos (busca e categorias), Colunas e Revista |
 | 6 | Artigo | Todos | Leitura, curtir, salvar, comentários e conteúdos relacionados |
 | 7 | Coluna | Todos | Apresentação da coluna e publicações |
-| 8 | Revista | Todos | Capa, destaques e leitor página a página |
+| 8 | Revista (sinopse) | Todos | Capa, sinopse, "Nesta edição", Começar a leitura e Baixar PDF (como "Conheça esta edição" no site). Admin: Editar edição |
+| 8.1 | Modo de leitura | Todos | Tela cheia no formato de story, como o site no celular: toque à direita avança, à esquerda volta e no meio mostra o progresso e o botão de sair |
 | 9 | Profissionais | Todos | Diretório com busca e filtro por especialidade |
 | 10 | Perfil profissional | Todos | Dados, contato por WhatsApp, conteúdos e colunas |
 | 11 | Comunidade | Todos | Recursos, conversas, destaques, pergunta à equipe e regras |
-| 12 | Minha conta | Todos | Logado: perfil, nível, salvos, publicações e administração. Visitante: Entrar / Criar conta |
+| 12 | Minha conta | Todos | Logado: perfil, nível, salvos, publicações, administração e excluir a própria conta (digitando EXCLUIR). Visitante: Entrar / Criar conta |
 | 13 | Sobre | Todos | Valores, como surgiu e equipe |
 | 14 | Contato | Todos | Formulário de mensagem para a equipe |
 | 15 | Nova postagem / Editar artigo | Profissional aprovado e admin | Formulário do artigo |
-| 16 | Novos profissionais | Somente admin | Aprovar, pedir ajustes ou recusar cadastros |
+| 16 | Novos profissionais | Somente admin | Aprovar ou recusar cadastros |
+| 16.1 | Usuários | Somente admin | Todas as contas, com busca e filtros; muda o tipo de conta (administração e profissional), suspende ou reativa e exclui, como a página "Usuários" do site |
+| 16.2 | Editar edição | Somente admin | Título e sinopse das edições publicadas pelo site (o PDF é trocado pelo site) |
 | 17 | Conexão com a API | Todos | Endereço da API usado pelo app (testa antes de salvar). Incluída na Entrega 4, para o APK |
 
 ### 1.10 Fluxo inicial de navegação
@@ -216,13 +263,13 @@ flowchart TD
 | RF11 | Ler a revista digital página a página | ✅ API + banco |
 | RF12 | Buscar profissionais e ver o perfil com artigos e colunas | ✅ API + banco |
 | RF13 | Enviar mensagem de contato e pergunta à equipe | ✅ API + banco |
-| RF14 | Aprovar, pedir ajustes ou recusar cadastros profissionais (admin) | ✅ API + banco · só admin (Entrega 3) |
+| RF14 | Aprovar ou recusar cadastros profissionais (admin), como no painel do site | ✅ API + banco · só admin (Entrega 3) |
 | RF15 | Proteger as rotas com token JWT e nível de usuário | ✅ Entrega 3 (seção 3) |
 | RF16 | Ler conteúdos sem conta; para interagir, o app pede login e volta para a mesma tela depois | ✅ |
 | RF17 | Continuar logado ao reabrir o app e sair sozinho quando o token vence, com aviso | ✅ Entrega 3 |
 
-**Requisitos não funcionais já atendidos:** senha nunca é salva em texto (bcrypt); validação dos dados no app **e**
-na API; consultas SQL com parâmetros (`?`), que evitam SQL injection; respostas de erro padronizadas
+**Requisitos não funcionais já atendidos:** senha nunca é salva em texto (hash bcrypt, guardado pelo Supabase Auth);
+validação dos dados no app **e** na API; consultas SQL com parâmetros (`$1`, `$2`...), que evitam SQL injection; respostas de erro padronizadas
 (`{ erro, campos }`) exibidas nas telas; credenciais do banco fora do repositório (`.env`). Na Entrega 3: token
 JWT assinado (HS256) e com validade, segredo `JWT_SECRET` fora do repositório, token guardado criptografado no
 aparelho e permissões conferidas no back-end em toda requisição protegida.
@@ -239,13 +286,15 @@ Entrega 3, as requisições de quem entrou levam o token no cabeçalho `Authoriz
 | Criar conta | `POST /api/usuarios` |
 | Início | `GET /api/artigos`, `GET /api/revistas`, `GET /api/profissionais`, `GET /api/colunas` |
 | Conteúdos | `GET /api/artigos?busca=&categoria=`, `GET /api/categorias`, `GET /api/colunas`, `GET /api/revistas` |
-| Artigo | `GET /api/artigos/:id`, `GET` e `POST /api/artigos/:id/comentarios`, `DELETE /api/comentarios/:id`, `POST /api/artigos/:id/interacoes`, `DELETE /api/artigos/:id` |
+| Artigo | `GET /api/artigos/:slug`, `GET` e `POST /api/artigos/:slug/comentarios`, `DELETE /api/comentarios/:id`, `POST /api/artigos/:slug/interacoes`, `DELETE /api/artigos/:slug` |
 | Coluna | `GET /api/colunas/:slug` |
-| Revista | `GET /api/revistas/:slug` |
+| Revista (sinopse e leitura) | `GET /api/revistas/:slug` |
+| Editar edição | `GET` e `PUT /api/revistas/:slug` |
+| Usuários | `GET /api/usuarios`, `PATCH /api/usuarios/:id/papel`, `PATCH /api/usuarios/:id/suspensao`, `DELETE /api/usuarios/:id` |
 | Profissionais / Perfil profissional | `GET /api/profissionais`, `GET /api/profissionais/:slug` |
-| Comunidade | `GET /api/artigos`, `POST /api/artigos/:id/interacoes`, `POST /api/mensagens` |
-| Minha conta | `GET /api/auth/perfil`, `GET /api/usuarios/:id/interacoes`, `DELETE /api/artigos/:id`; admin: `GET /api/usuarios?nivel=profissional&verificacao=pendente` |
-| Nova postagem / Editar artigo | `POST /api/artigos`, `GET` e `PUT /api/artigos/:id`, `GET /api/categorias` |
+| Comunidade | `GET /api/artigos`, `POST /api/artigos/:slug/interacoes`, `POST /api/mensagens` |
+| Minha conta | `GET /api/auth/perfil`, `GET /api/usuarios/:id/interacoes`, `DELETE /api/artigos/:slug`, `DELETE /api/usuarios/:id` (excluir a conta); admin: `GET /api/usuarios?nivel=profissional&verificacao=pendente` |
+| Nova postagem / Editar artigo | `POST /api/artigos`, `GET` e `PUT /api/artigos/:slug`, `GET /api/categorias` |
 | Novos profissionais | `GET /api/usuarios?nivel=profissional`, `PATCH /api/usuarios/:id/verificacao` |
 | Contato | `POST /api/mensagens` |
 
@@ -258,15 +307,15 @@ sequenceDiagram
     participant R as Rota POST /api/artigos
     participant C as artigosController
     participant M as artigoModel
-    participant DB as MySQL
+    participant DB as Banco do site (Supabase)
     T->>S: criarArtigo(dados)
     S->>R: fetch() com JSON + Bearer Token
     R->>R: middlewares autenticar e exigirPublicador (seção 3.5)
     R->>C: criar(req, res)
     C->>C: valida os campos (autor = req.usuario)
     C->>M: criar(...)
-    M->>DB: INSERT INTO publicacoes
-    DB-->>M: id do novo artigo
+    M->>DB: INSERT INTO public.publicacoes
+    DB-->>M: slug do novo artigo
     M-->>C: artigo com autor e totais
     C-->>S: 201 Created + JSON
     S-->>T: artigo formatado (a tela abre o artigo publicado)
@@ -277,146 +326,123 @@ essa mensagem e, nos formulários, o erro aparece embaixo do campo correspondent
 
 ### 2.3 Estrutura do banco de dados
 
-Banco **`conexao_pais`** no MySQL, com 10 tabelas. Scripts: [`database/schema.sql`](database/schema.sql) (estrutura)
-e [`database/seed.sql`](database/seed.sql) (conteúdo do site, contas de demonstração e interações iniciais).
+O app usa o **banco do site** (PostgreSQL no Supabase, projeto `conexao-pais`). A estrutura é criada pelas
+migrations do site, copiadas em [`database/supabase/migrations/`](database/supabase/migrations) (a fonte oficial
+fica no repositório do site). O app não criou tabelas novas: usa as do site, com as mesmas regras.
 
 ```mermaid
 erDiagram
-    usuarios ||--o{ publicacoes : "escreve"
-    usuarios ||--o{ comentarios : "comenta"
-    usuarios ||--o{ interacoes : "curte e salva"
-    publicacoes ||--o{ comentarios : "recebe"
-    publicacoes ||--o{ interacoes : "recebe"
-    usuarios |o--o| profissionais : "tem perfil público"
-    usuarios ||--o{ colunas : "assina"
-    colunas ||--o{ coluna_posts : "publica"
-    revistas ||--o{ revista_paginas : "contém"
-    usuarios |o--o{ mensagens : "envia"
+    auth_users ||--|| profiles : "tem perfil"
+    auth_users ||--o{ user_roles : "tem papéis"
+    auth_users ||--o{ publicacoes : "escreve"
+    auth_users ||--o{ comentarios : "comenta"
+    auth_users ||--o{ interacoes : "curte, salva, lê"
+    comentarios ||--o{ comentario_curtidas : "recebe"
+    auth_users ||--o{ solicitacoes_profissional : "pede verificação"
+    auth_users ||--o{ remocoes_publicacao : "recebe aviso"
+    auth_users ||--o{ conteudos_ocultos : "esconde (admin)"
 
-    usuarios {
-        int id PK
-        varchar nome
-        varchar email UK
-        varchar senha_hash
-        enum nivel
-        varchar profissao
-        varchar registro_profissional
-        enum verificacao
-        varchar observacao_admin
+    auth_users {
+        uuid id PK
+        text email UK
+        text encrypted_password "hash bcrypt"
+        timestamptz email_confirmed_at
+        timestamptz banned_until
+    }
+    profiles {
+        uuid id PK "= auth.users.id"
+        text display_name
+        text profissao
+        text registro_profissional
+        text verificacao "pendente, aprovado, recusado"
+        uuid verificado_por
+        text status "ativo ou suspenso"
+    }
+    user_roles {
+        uuid id PK
+        uuid user_id FK
+        app_role role "usuario, profissional, admin"
     }
     publicacoes {
-        int id PK
-        int autor_id FK
-        enum tipo
-        varchar slug UK
-        varchar titulo
-        varchar resumo
+        uuid id PK
+        tipo_publicacao tipo "artigo, post, revista, coluna"
+        text slug UK
+        text titulo
+        text resumo
         text conteudo
-        varchar categoria
-        varchar tags
-        tinyint destaque
-        enum status
+        text categoria
+        text pdf_url
+        uuid autor_id FK
+        status_publicacao status
     }
     comentarios {
-        int id PK
-        int publicacao_id FK
-        int usuario_id FK
-        varchar texto
+        uuid id PK
+        uuid user_id FK
+        text publicacao_slug
+        text texto
     }
     interacoes {
-        int id PK
-        int usuario_id FK
-        int publicacao_id FK
-        enum tipo
+        uuid id PK
+        uuid user_id FK
+        text publicacao_slug
+        tipo_interacao tipo "curtida, salvo, lido"
     }
-    profissionais {
-        int id PK
-        int usuario_id FK
-        varchar slug UK
-        varchar nome
-        varchar especialidade
-        varchar descricao
-        varchar cidade
-        varchar atendimento
-        varchar whatsapp
+    contact_messages {
+        uuid id PK
+        text name
+        text email
+        text subject
+        text message
     }
-    colunas {
-        int id PK
-        int colunista_id FK
-        varchar slug UK
-        varchar nome
-        varchar chamada
-        varchar periodicidade
-        text sobre
+    conteudos_ocultos {
+        uuid id PK
+        text tipo
+        text slug
+        uuid ocultado_por FK
     }
-    coluna_posts {
-        int id PK
-        int coluna_id FK
-        varchar slug
-        varchar titulo
-        varchar resumo
-        text texto
-        date publicado_em
-    }
-    revistas {
-        int id PK
-        varchar slug UK
-        smallint edicao UK
-        varchar titulo
-        varchar subtitulo
-        varchar descricao
-        varchar categoria
-        text destaques
-        varchar pdf_url
-        date publicada_em
-    }
-    revista_paginas {
-        int id PK
-        int revista_id FK
-        smallint numero
-        varchar secao
-        varchar titulo
-        text texto
-    }
-    mensagens {
-        int id PK
-        int usuario_id FK
-        enum tipo
-        varchar nome
-        varchar email
-        varchar assunto
-        text mensagem
-        enum status
+    remocoes_publicacao {
+        uuid id PK
+        text slug
+        uuid autor_id FK
+        uuid removido_por FK
+        text justificativa
     }
 ```
 
-Decisões de modelagem:
+Como a API usa cada parte:
 
-- **`publicacoes` é a entidade principal**, com o mesmo nome e os mesmos campos da tabela do site. O campo `tipo`
-  deixa espaço para os posts curtos da comunidade.
-- **Um único `usuarios` para os três níveis** (`nivel`). A situação do cadastro profissional fica em `verificacao`,
-  e só `profissional` aprovado ou `admin` pode publicar (regra conferida pela API).
-- **`profissionais` é separado de `usuarios`**: o diretório mostra o perfil público, e a conta guarda o login.
-  O vínculo (`usuario_id`) liga o perfil aos artigos e colunas da pessoa.
-- **`interacoes` tem chave única (usuário + artigo + tipo)**: ninguém curte ou salva o mesmo artigo duas vezes.
-- **Exclusões em cascata**: ao excluir um artigo, os comentários e as interações dele também saem.
+- **Contas e níveis:** `auth.users` (e-mail e hash, cuidados pelo Supabase Auth), `profiles` (nome, profissão,
+  verificação) e `user_roles` (papéis). Uma conta pode ter mais de um papel; vale o mais alto
+  (admin > profissional > usuario). A API junta as três tabelas em `usuarioModel.js`.
+- **`publicacoes` é a entidade principal.** O app cria e edita o tipo `artigo` e lista `artigo` e `post`, como a
+  página de artigos do site. Colunas (`coluna`) e edições da revista (`revista`, com PDF no Supabase Storage) são
+  publicadas pelo site e aparecem no app.
+- **Comentários e interações ficam ligados ao `slug`**, e não ao id. Assim valem também para os conteúdos de exemplo,
+  que o site guarda no próprio código (copiados na API em `api/src/data/conteudoSite.js`). Por isso o app identifica
+  os artigos pelo slug.
+- **`interacoes` tem chave única (usuário + slug + tipo):** ninguém curte ou salva o mesmo artigo duas vezes.
+- **Moderação:** `conteudos_ocultos` (exemplos escondidos pela administração) e `remocoes_publicacao` (aviso ao autor
+  quando a administração remove a publicação dele).
+- **Contato:** `contact_messages`, gravada pela função `submit_contact_message` do site, que valida e limita a
+  3 mensagens por hora por e-mail.
+- **Gatilhos do site que a API aproveita:** `handle_new_user` (cria perfil e nível no cadastro) e
+  `protect_profile_verification_fields` (só admin muda a verificação profissional).
 
 ### 2.4 Entidades e campos
 
 | Entidade (tabela) | Campos principais | Relacionamentos |
 | --- | --- | --- |
-| Usuário (`usuarios`) | nome, e-mail (único), senha_hash, nível, profissão, registro, verificação | escreve publicações, comenta, curte/salva, assina colunas |
-| **Publicação (`publicacoes`)** | autor, título, slug (único), resumo, conteúdo, categoria, tags, destaque, status | pertence a um usuário; tem comentários e interações |
-| Comentário (`comentarios`) | publicação, usuário, texto, data | pertence a uma publicação e a um usuário |
-| Interação (`interacoes`) | usuário, publicação, tipo (curtida/salvo) | une usuário e publicação |
-| Profissional (`profissionais`) | slug, nome, especialidade, descrição, cidade, atendimento, WhatsApp | ligado (opcionalmente) a um usuário |
-| Coluna (`colunas`) | colunista, slug, nome, chamada, periodicidade, sobre | tem várias publicações da coluna |
-| Publicação da coluna (`coluna_posts`) | coluna, slug, título, resumo, texto, data | pertence a uma coluna |
-| Revista (`revistas`) | edição (única), título, subtítulo, descrição, categoria, destaques, PDF, data | tem várias páginas |
-| Página da revista (`revista_paginas`) | revista, número, seção, título, texto | pertence a uma edição |
-| Mensagem (`mensagens`) | tipo (contato/pergunta), nome, e-mail, assunto, mensagem, status | enviada (opcionalmente) por um usuário |
+| Conta (`auth.users`) | e-mail (único), hash da senha, confirmação de e-mail, suspensão | tem um perfil e papéis |
+| Perfil (`profiles`) | nome, profissão, registro, verificação, quem verificou, situação | um por conta |
+| Papel (`user_roles`) | conta, papel (`usuario`, `profissional`, `admin`) | vários por conta |
+| **Publicação (`publicacoes`)** | tipo, slug (único), título, resumo, conteúdo, categoria, PDF, autor, status | pertence a uma conta |
+| Comentário (`comentarios`) | conta, slug da publicação, texto | pertence a uma conta |
+| Interação (`interacoes`) | conta, slug da publicação, tipo (curtida/salvo/lido) | une conta e publicação |
+| Mensagem de contato (`contact_messages`) | nome, e-mail, assunto, mensagem, status | lida pela administração no site |
+| Conteúdo oculto (`conteudos_ocultos`) | tipo, slug, título, justificativa, quem escondeu | escondido por um admin |
+| Remoção (`remocoes_publicacao`) | publicação, autor, quem removeu, justificativa | aviso para o autor |
 
-O tipo, o tamanho, as chaves e a regra de exclusão de **cada campo** estão no dicionário de dados:
+O tipo, as chaves e as regras de **cada campo** usado pelo app estão no dicionário de dados:
 [`docs/banco-de-dados.md`](docs/banco-de-dados.md).
 
 ### 2.5 Principais rotas da API
@@ -429,30 +455,35 @@ Base: `http://localhost:3333/api`. Corpo e respostas em JSON. Exemplos prontos p
 | GET | `/status` | Confere se a API e o banco estão respondendo |
 | POST | `/auth/login` | Confere e-mail e senha e devolve o **token JWT** e o usuário |
 | GET | `/auth/perfil` | Dados de quem está logado (pelo token) |
-| POST | `/usuarios` | Cria conta (família ou profissional) |
+| POST | `/usuarios` | Cria conta (família ou profissional) no Supabase Auth: a mesma conta vale no site |
 | GET | `/usuarios?nivel=&verificacao=` | Lista contas (ex.: profissionais pendentes) |
 | GET | `/usuarios/:id` | Dados de uma conta |
 | GET | `/usuarios/:id/interacoes` | Curtidas e salvos da conta |
-| PATCH | `/usuarios/:id/verificacao` | Aprova, pede ajustes ou recusa um cadastro profissional |
-| GET | `/artigos?busca=&categoria=&autorId=` | **Lista artigos** (com autor e totais) |
-| GET | `/artigos/:id` | **Artigo completo** |
+| PATCH | `/usuarios/:id/verificacao` | Aprova ou recusa um cadastro profissional |
+| PATCH | `/usuarios/:id/papel` | Liga ou desliga o papel `profissional` ou `admin` (`{ papel, ativo }`) |
+| PATCH | `/usuarios/:id/suspensao` | Suspende ou reativa a conta (`{ suspensa }`) |
+| DELETE | `/usuarios/:id` | Exclui a conta de vez (`{ "confirmacao": "EXCLUIR" }`, 204) |
+| GET | `/artigos?busca=&categoria=&autorId=&autor=` | **Lista artigos** (banco + exemplos do site, com autor e totais) |
+| GET | `/artigos/:slug` | **Artigo completo** |
 | POST | `/artigos` | **Publica artigo** (201) |
-| PUT | `/artigos/:id` | **Edita artigo** |
-| DELETE | `/artigos/:id` | **Exclui artigo** (204) |
+| PUT | `/artigos/:slug` | **Edita artigo** (só artigos do banco) |
+| DELETE | `/artigos/:slug` | **Exclui artigo** (204); num exemplo do site, o admin o esconde |
 | GET | `/categorias` | Categorias com artigos publicados |
-| GET / POST | `/artigos/:id/comentarios` | Lista / cria comentários |
+| GET / POST | `/artigos/:slug/comentarios` | Lista / cria comentários |
 | DELETE | `/comentarios/:id` | Exclui comentário |
-| POST | `/artigos/:id/interacoes` | Liga/desliga curtida ou salvo e devolve o total |
+| POST | `/artigos/:slug/interacoes` | Liga/desliga curtida ou salvo e devolve o total |
 | GET | `/profissionais`, `/profissionais/:slug` | Diretório e perfil (com artigos e colunas) |
 | GET | `/colunas`, `/colunas/:slug` | Colunas e publicações |
-| GET | `/revistas`, `/revistas/:slug` | Edições e páginas |
-| POST | `/mensagens` | Contato ou pergunta à equipe |
+| GET | `/revistas`, `/revistas/:slug` | Edições, páginas e link do PDF |
+| PUT | `/revistas/:slug` | Edita título e sinopse de uma edição publicada pelo site (`{ titulo, sinopse }`) |
+| POST | `/mensagens` | Contato ou pergunta à equipe (vão para as mensagens de contato do site) |
 
 Quem pode usar cada rota está na seção 3.6.
 
 Organização do código da API (`api/src`): **routes** (endereços) → **middlewares** (token e nível, Entrega 3) →
 **controllers** (validação, regras e resposta HTTP) → **models** (SQL) → **config/database.js** (pool de conexões com
-o MySQL). Erros passam por um middleware central.
+o PostgreSQL do Supabase). O login e o cadastro passam por **services/supabaseAuth.js**. Erros passam por um
+middleware central.
 
 ### 2.6 Níveis de usuário e permissões previstas na API
 
@@ -460,13 +491,13 @@ o MySQL). Erros passam por um middleware central.
 | --- | --- |
 | `GET /status`, `POST /auth/login`, `POST /usuarios` | Qualquer pessoa |
 | `GET` de artigos, categorias, comentários, profissionais, colunas e revistas | Qualquer pessoa (visitante incluído) |
-| `POST /artigos/:id/comentarios`, `POST /artigos/:id/interacoes`, `POST /mensagens` (pergunta) | Usuário logado (o id sai do token) |
+| `POST /artigos/:slug/comentarios`, `POST /artigos/:slug/interacoes`, `POST /mensagens` (pergunta) | Usuário logado (o id sai do token) |
 | `POST /mensagens` (contato) | Qualquer pessoa |
-| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes` | O próprio usuário ou admin |
+| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes`, `DELETE /usuarios/:id` | O próprio usuário ou admin |
 | `POST /artigos` | Profissional aprovado ou admin |
-| `PUT /artigos/:id`, `DELETE /artigos/:id` | Autor do artigo ou admin |
+| `PUT /artigos/:slug`, `DELETE /artigos/:slug` | Autor do artigo ou admin |
 | `DELETE /comentarios/:id` | Autor do comentário ou admin |
-| `GET /usuarios`, `PATCH /usuarios/:id/verificacao` | Somente admin |
+| `GET /usuarios`, `PATCH /usuarios/:id/verificacao`, `/papel` e `/suspensao`, `PUT /revistas/:slug` | Somente admin |
 
 Na Entrega 2, a API já conferia a senha (bcrypt), impedia e-mail repetido e validava os campos, mas o app informava
 quem era o usuário no corpo da requisição (`autorId`, `usuarioId`). Na Entrega 3, essa identidade passou a vir do
@@ -493,10 +524,13 @@ sequenceDiagram
     participant App as App (AuthContext + api.js)
     participant API as API Express
     participant MW as Middlewares
-    participant DB as MySQL
+    participant AU as Supabase Auth
+    participant DB as Banco do site
     App->>API: POST /auth/login { email, senha }
-    API->>DB: busca a conta pelo e-mail
-    API->>API: bcrypt.compare(senha, senha_hash)
+    API->>AU: confere e-mail e senha (hash bcrypt)
+    AU-->>API: id da conta
+    API->>DB: nível (user_roles) e situação (profiles)
+    API->>API: jwt.sign: gera o token da API
     API-->>App: 200 { token, usuario }
     App->>App: guarda o token no aparelho (expo-secure-store)
     App->>API: POST /artigos com Authorization: Bearer + token
@@ -505,7 +539,7 @@ sequenceDiagram
     MW->>DB: busca a conta do token (nível atual)
     MW->>MW: exigirPublicador: admin ou profissional aprovado?
     MW->>API: req.usuario
-    API->>DB: INSERT INTO publicacoes (autor = req.usuario.id)
+    API->>DB: INSERT INTO public.publicacoes (autor = req.usuario.id)
     API-->>App: 201 Created + artigo
 ```
 
@@ -516,9 +550,13 @@ sequenceDiagram
 
 | Etapa | Onde | Como |
 | --- | --- | --- |
-| Cadastro | `POST /usuarios` → `usuariosController.cadastrar` | Valida os campos, impede e-mail repetido (409) e salva só o hash `bcrypt.hash(senha, 10)`. Ninguém se cadastra como admin; conta profissional nasce `pendente` |
-| Login | `POST /auth/login` → `authController.login` | `bcrypt.compare` com o hash do banco. Senha errada e e-mail inexistente recebem a mesma resposta (401) no mesmo tempo, para não revelar quais e-mails têm conta |
-| Respostas | `usuarioModel` | O hash nunca sai da API: só o login lê a coluna `senha_hash` |
+| Cadastro | `POST /usuarios` → `usuariosController.cadastrar` → `services/supabaseAuth.js` | Valida os campos e cria a conta no **Supabase Auth**, que salva só o hash **bcrypt** da senha (coluna `auth.users.encrypted_password`). O gatilho `handle_new_user` do banco do site cria o perfil e o nível. E-mail repetido recebe 409; ninguém se cadastra como admin; conta profissional nasce `pendente`. Se o projeto exigir, o Supabase envia o e-mail de confirmação |
+| Login | `POST /auth/login` → `authController.login` | O Supabase Auth compara a senha com o hash. Senha errada e e-mail inexistente recebem a mesma resposta (401), para não revelar quais e-mails têm conta. Conta suspensa no site recebe 403 |
+| Token | `authController.login` → `utils/token.js` | Com a senha conferida, a **API** lê o nível e **gera o próprio JWT** (não usa o token do Supabase) |
+| Respostas | `usuarioModel` | O hash nunca sai da API: as consultas não leem `encrypted_password` |
+
+Por que o hash fica com o Supabase: as contas são as do site, e o site cria e confere senhas pelo Supabase Auth. Se
+a API guardasse outra cópia da senha, as duas sairiam de sincronia (ex.: troca de senha pelo site).
 
 ### 3.3 O token JWT
 
@@ -526,10 +564,10 @@ Gerado em [`api/src/utils/token.js`](api/src/utils/token.js) com a biblioteca `j
 (a parte do meio, decodificada):
 
 ```json
-{ "nivel": "usuario", "iat": 1794222455, "exp": 1794827255, "sub": "3" }
+{ "nivel": "usuario", "iat": 1794222455, "exp": 1794827255, "sub": "6b1f0c2e-6a4d-4b8e-9d55-1f2a3b4c5d6e" }
 ```
 
-- `sub` é o id da conta, `nivel` é o nível na hora do login e `exp` é a validade (`JWT_EXPIRES_IN`, padrão **7 dias**).
+- `sub` é o id da conta (o UUID do Supabase, o mesmo em todas as tabelas do site), `nivel` é o nível na hora do login e `exp` é a validade (`JWT_EXPIRES_IN`, padrão **7 dias**).
 - O token é assinado com **HS256** e o segredo `JWT_SECRET`, que fica só no `api/.env` (fora do Git). Quem altera o
   conteúdo invalida a assinatura; sem o segredo, ninguém gera um token que a API aceite.
 - A API não sobe sem um `JWT_SECRET` de pelo menos 32 caracteres. `npm run jwt:segredo` gera um aleatório e grava no `.env`.
@@ -563,8 +601,13 @@ Em [`api/src/middlewares/`](api/src/middlewares):
 | `autorDoComentarioOuAdmin` | Admin, ou quem escreveu o comentário | 404 / 403 |
 
 **O nível vem do banco, não só do token.** A cada requisição protegida, `autenticar` busca a conta pelo `sub` do
-token. Assim, quando a administração aprova ou recusa um profissional, a mudança vale na hora, sem novo login, e
-uma conta apagada perde o acesso mesmo com um token ainda dentro da validade.
+token. Assim, quando a administração aprova ou recusa um profissional (no app ou no site), a mudança vale na hora,
+sem novo login, e uma conta apagada ou suspensa perde o acesso mesmo com um token ainda dentro da validade.
+
+**A API conecta ao banco como dona dele**, então as regras de acesso do Supabase (RLS, usadas pelo site) não se
+aplicam às consultas da API: quem aplica as mesmas regras são estes middlewares. Quando um gatilho do banco precisa
+saber quem está agindo (ex.: só admin muda a verificação profissional), a API informa o id de quem está logado
+(`comoUsuario`, em `config/database.js`).
 
 **A identidade vem do token.** O app não envia mais `autorId` nem `usuarioId`; se alguém enviar, a API ignora.
 
@@ -574,10 +617,10 @@ Como fica no código ([`api/src/routes/artigos.routes.js`](api/src/routes/artigo
 
 ```js
 router.get('/', artigosController.listar); // aberta
-router.get('/:id', artigosController.buscar); // aberta
+router.get('/:slug', artigosController.buscar); // aberta
 router.post('/', autenticar, exigirPublicador, artigosController.criar);
-router.put('/:id', autenticar, autorDoArtigoOuAdmin, artigosController.atualizar);
-router.delete('/:id', autenticar, autorDoArtigoOuAdmin, artigosController.excluir);
+router.put('/:slug', autenticar, autorDoArtigoOuAdmin, artigosController.atualizar);
+router.delete('/:slug', autenticar, autorDoArtigoOuAdmin, artigosController.excluir);
 ```
 
 | Rota | Middlewares | Visitante | Família | Prof. em verificação | Prof. aprovado | Admin |
@@ -587,21 +630,25 @@ router.delete('/:id', autenticar, autorDoArtigoOuAdmin, artigosController.exclui
 | `POST /mensagens` (contato) | `autenticarSeHouverToken` | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `POST /mensagens` (pergunta) | `autenticarSeHouverToken` | 401 | ✅ | ✅ | ✅ | ✅ |
 | `GET /auth/perfil` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
-| `POST /artigos/:id/comentarios`, `POST /artigos/:id/interacoes` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
-| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes` | `autenticar`, `proprioUsuarioOuAdmin` | 401 | a própria | a própria | a própria | ✅ |
+| `POST /artigos/:slug/comentarios`, `POST /artigos/:slug/interacoes` | `autenticar` | 401 | ✅ | ✅ | ✅ | ✅ |
+| `GET /usuarios/:id`, `GET /usuarios/:id/interacoes`, `DELETE /usuarios/:id` | `autenticar`, `proprioUsuarioOuAdmin` | 401 | a própria | a própria | a própria | ✅ |
 | `DELETE /comentarios/:id` | `autenticar`, `autorDoComentarioOuAdmin` | 401 | os próprios | os próprios | os próprios | ✅ |
 | `POST /artigos` | `autenticar`, `exigirPublicador` | 401 | 403 | 403 | ✅ | ✅ |
-| `PUT /artigos/:id`, `DELETE /artigos/:id` | `autenticar`, `autorDoArtigoOuAdmin` | 401 | 403 | 403 | os próprios | ✅ |
-| `GET /usuarios`, `PATCH /usuarios/:id/verificacao` | `autenticar`, `permitirNiveis('admin')` | 401 | 403 | 403 | 403 | ✅ |
+| `PUT /artigos/:slug`, `DELETE /artigos/:slug` | `autenticar`, `autorDoArtigoOuAdmin` | 401 | 403 | 403 | os próprios | ✅ |
+| `GET /usuarios`, `PATCH /usuarios/:id/verificacao`, `/papel` e `/suspensao`, `PUT /revistas/:slug` | `autenticar`, `permitirNiveis('admin')` | 401 | 403 | 403 | 403 | ✅ |
 
 **CRUD completo da entidade principal (`publicacoes`):**
 
 | Operação | Rota | Tela do app | Quem pode |
 | --- | --- | --- | --- |
 | Criar | `POST /artigos` | Nova postagem | Profissional aprovado e admin |
-| Ler | `GET /artigos`, `GET /artigos/:id` | Início, Conteúdos, Artigo | Todos, inclusive visitantes |
-| Atualizar | `PUT /artigos/:id` | Editar artigo | Autor ou admin |
-| Excluir | `DELETE /artigos/:id` | Artigo e Minha conta | Autor ou admin |
+| Ler | `GET /artigos`, `GET /artigos/:slug` | Início, Conteúdos, Artigo | Todos, inclusive visitantes |
+| Atualizar | `PUT /artigos/:slug` | Editar artigo | Autor ou admin |
+| Excluir | `DELETE /artigos/:slug` | Artigo e Minha conta | Autor ou admin |
+
+Os **artigos de exemplo do site** (que o site guarda no próprio código, e não no banco) aparecem na lista, mas não
+são editados. Excluir um deles (só admin) o registra em `conteudos_ocultos`, e ele some do app e do site. Quando o
+admin exclui o artigo de outra pessoa, o motivo vai para `remocoes_publicacao`, e o site mostra o aviso ao autor.
 
 No app, as telas continuam escondendo o que cada nível não pode fazer (seção 1.7), mas quem garante as regras é a
 API: uma requisição feita fora do app, sem token ou com o nível errado, recebe 401 ou 403.
@@ -613,20 +660,38 @@ cd api
 npm test
 ```
 
-São 28 testes automatizados ([`api/tests/`](api/tests), com `node:test`, sem dependências extras). Eles sobem a API
-numa porta livre e usam o banco do `.env` (rode `npm run db:setup` antes):
+São 47 testes automatizados ([`api/tests/`](api/tests), com `node:test`). Eles **não usam o banco do site**: cada
+arquivo de teste cria um PostgreSQL só dele, na memória, com o **PGlite** (o PostgreSQL de verdade rodando dentro do
+Node, sem instalar nada). Esse banco recebe:
 
-- **Cadastro e senha:** a resposta não traz a senha nem o hash; o banco guarda um hash bcrypt; e-mail repetido
-  recebe 409; ninguém vira admin pelo cadastro.
-- **Login e JWT:** 401 igual para senha errada e para e-mail inexistente; o token traz id, nível e validade.
+1. [`database/teste/supabase-simulado.sql`](database/teste/supabase-simulado.sql): as peças do Supabase que um
+   PostgreSQL comum não tem (esquema `auth`, papéis, função `auth.uid()`);
+2. as **migrations do site**, sem alteração: mesmas tabelas, gatilhos e funções do banco real;
+3. [`database/teste/dados-teste.sql`](database/teste/dados-teste.sql): contas de teste (senha `123456`, só nesse
+   banco temporário).
+
+Como não há Supabase Auth nos testes, um substituto faz o mesmo trabalho direto no banco de teste (confere a senha
+com o hash bcrypt e cria a conta em `auth.users`, disparando o gatilho do site). O que é testado:
+
+- **Cadastro e senha:** a resposta não traz a senha nem o hash; `auth.users` guarda um hash bcrypt; o gatilho do site
+  cria perfil e nível; conta profissional nasce pendente; e-mail repetido recebe 409; ninguém vira admin pelo cadastro.
+- **Login e JWT:** 401 igual para senha errada e para e-mail inexistente; o token da API traz o id (UUID), o nível e
+  a validade; admin entra com nível admin; conta suspensa não entra.
 - **Validação do token:** sem token, fora do formato `Bearer`, adulterado (nível trocado para admin), assinado com
   outro segredo, vencido ou de conta apagada: sempre 401.
 - **Níveis e CRUD:** visitante, família, profissional pendente, aprovado e recusado e admin, cada um recebendo
-  200/201/204, 401 ou 403 conforme a tabela da seção 3.6. Aprovação e recusa valem com o mesmo token, e `autorId` ou
-  `usuarioId` enviados no corpo são ignorados.
+  200/201/204, 401 ou 403 conforme a tabela da seção 3.6. O artigo é gravado em `publicacoes`; curtidas e
+  comentários, pelo slug; aprovação e recusa valem com o mesmo token; `autorId` ou `usuarioId` no corpo são ignorados.
+- **Igual ao site:** artigos de exemplo não são editados e o admin os esconde (`conteudos_ocultos`); remoção pelo admin
+  registra o aviso ao autor; contato respeita o limite de 3 mensagens por hora; colunas, revista e profissionais.
+- **Administração (página "Usuários" do site):** só o admin lista contas, muda papéis e suspende; o admin não tira a
+  própria permissão nem suspende a própria conta; conta suspensa perde o acesso na hora e volta ao ser reativada;
+  a pessoa exclui a própria conta confirmando com EXCLUIR (e os dados dela somem junto); a única conta de
+  administração não pode ser excluída; o admin edita título e sinopse das edições do banco, e as de exemplo não mudam.
 
-Os testes apagam as contas e as mensagens que criam. Exemplos para testar à mão (com o token) estão em
-[`api/requests.http`](api/requests.http).
+Exemplos para testar à mão (com o token) estão em [`api/requests.http`](api/requests.http). Atenção: esses usam a
+API ligada ao banco real.
+
 
 ---
 
@@ -634,10 +699,11 @@ Os testes apagam as contas e as mensagens que criam. Exemplos para testar à mã
 
 ### 4.1 Testes realizados
 
-**API (automáticos):** `cd api && npm test` roda 28 testes contra a API e o MySQL de verdade (detalhes na seção 3.7).
-Resultado atual: **28 de 28 passando**.
+**API (automáticos):** `cd api && npm test` roda 47 testes contra a API, com um banco igual ao do site (detalhes na
+seção 3.7). Resultado atual: **47 de 47 passando**.
 
-**App (roteiro por nível):** cada cenário abaixo foi executado no app ligado à API real, com o navegador controlado
+**App (roteiro por nível):** cada cenário abaixo foi executado no app ligado à API real (versão com MySQL; ⏳ repetir
+com o banco do site depois de configurar o `api/.env`), com o navegador controlado
 pelo Playwright (versão web do Expo) e checagem de erros de página, de console e de respostas da API.
 
 | Área | Cenário | Nível | Resultado |
@@ -709,7 +775,7 @@ O APK é compilado nos servidores da Expo (EAS Build, gratuito). Precisa de uma 
 
 ### 4.4 Usando o APK com a API no notebook
 
-1. No notebook, ligue o MySQL e suba a API:
+1. No notebook (com internet: o banco fica no Supabase), suba a API:
 
    ```bash
    cd api
@@ -731,7 +797,8 @@ use o roteador do celular (o notebook se conecta no Wi-Fi do celular).
 ### 4.5 Apresentação
 
 O roteiro da apresentação, com a demonstração passo a passo e as explicações de JWT, hash, Bearer Token e
-middleware, está em [`docs/apresentacao.md`](docs/apresentacao.md).
+middleware, está em [`docs/apresentacao.md`](docs/apresentacao.md). Os slides (15, na mesma ordem do roteiro) estão em
+[`docs/apresentacao.pdf`](docs/apresentacao.pdf).
 
 ---
 
@@ -760,8 +827,9 @@ Entrega 3 (sessão com JWT):
 - 17 telas com React Navigation 7 (stack raiz + abas inferiores) e a identidade visual do site;
 - telas e ações diferentes para cada nível (família, profissional em verificação, profissional aprovado e admin);
 - visitantes leem tudo sem conta; para curtir, salvar, comentar ou perguntar, o app pede login;
-- **todos os dados vêm do MySQL pela API**, com `fetch()`: cadastro, login, artigos (CRUD completo), comentários,
-  curtidas, salvos, colunas, revista, profissionais, mensagens e verificação de profissionais;
+- **todos os dados vêm do banco do site pela API**, com `fetch()`: cadastro, login, artigos (CRUD completo),
+  comentários, curtidas, salvos, colunas, revista, profissionais, mensagens e verificação de profissionais;
+- **mesmas contas e publicações do site**: o que é feito no app aparece no site, e vice-versa;
 - estados de carregamento e de erro em todas as telas, com opção de tentar de novo;
 - validação nos formulários e na API, com os erros da API mostrados no campo certo;
 - **login com JWT**: o token fica guardado no aparelho, vai em toda requisição como Bearer Token e mantém a pessoa
@@ -771,20 +839,19 @@ Entrega 3 (sessão com JWT):
 
 ### Contas de demonstração
 
-Criadas pelo `database/seed.sql`. Na tela **Entrar**, os botões do *Modo demonstração* preenchem estas contas:
+São as **contas de teste do site** (as mesmas no app). Na tela **Entrar**, os botões do *Modo demonstração*
+preenchem o e-mail; a senha é a das contas de teste do site e **não fica no repositório**, que é público.
 
-| Perfil | E-mail | Senha |
-| --- | --- | --- |
-| Família | `familia@conexaopais.test` | `123456` |
-| Profissional aprovado (Dra. Helena Prado) | `profissional@conexaopais.test` | `123456` |
-| Administração | `admin@conexaopais.test` | `123456` |
+| Perfil | E-mail |
+| --- | --- |
+| Família | `familia@conexaopais.test` |
+| Profissional aprovado (Dra. Helena Prado) | `profissional@conexaopais.test` |
+| Administração | `admin@conexaopais.test` |
 
-Os autores dos outros artigos e colunas também têm conta (`marcos@`, `bianca@` e `rafael@conexaopais.test`, mesma
-senha), e há dois cadastros profissionais de exemplo aguardando a análise da administração.
-
-Para ver o fluxo completo de níveis: crie uma conta **Profissional**, entre com ela (fica em verificação), entre
-como **Administração** e aprove o cadastro em *Minha conta → Novos profissionais*, depois entre de novo com a conta
-profissional e publique um artigo.
+Para ver o fluxo completo de níveis: crie uma conta **Profissional** (com um e-mail seu, se o projeto pedir
+confirmação), entre com ela (fica em verificação), entre como **Administração** e aprove o cadastro em
+*Minha conta → Novos profissionais*, depois volte à conta profissional e publique um artigo. O artigo aparece também
+no site.
 
 ---
 
@@ -800,10 +867,10 @@ profissional e publique um artigo.
 | Visual | `@expo/vector-icons` (Ionicons), `expo-font` com Fraunces e DM Sans (`@expo-google-fonts`) |
 | Estado | React Context (autenticação, artigos, comunidade, confirmação) e hook `useApi` |
 | API | Node.js 20+ e Express 5 (`cors`, `dotenv`) |
-| Banco | MySQL 8 (ou MariaDB 10.6+) com `mysql2` (pool de conexões e consultas parametrizadas) |
-| Senhas | `bcryptjs` (hash) |
-| Autenticação | JWT com `jsonwebtoken` (HS256), enviado como Bearer Token |
-| Testes da API | `node:test` (embutido no Node.js) |
+| Banco | PostgreSQL do Supabase (o mesmo do site) com `pg` (pool de conexões e consultas parametrizadas) |
+| Contas e senhas | Supabase Auth (contas do site; hash bcrypt), chamado pela API com `fetch()` |
+| Autenticação do app | JWT com `jsonwebtoken` (HS256), gerado pela API e enviado como Bearer Token |
+| Testes da API | `node:test` (embutido no Node.js) e PGlite (PostgreSQL em memória, só para os testes) |
 
 ## 7. Estrutura do repositório
 
@@ -811,26 +878,29 @@ profissional e publique um artigo.
 conexaopais.app/
 ├── README.md
 ├── database/
-│   ├── schema.sql            # cria o banco conexao_pais e as 10 tabelas
-│   └── seed.sql              # conteúdo do site, contas de demonstração e interações
+│   ├── supabase/migrations/  # estrutura do banco do site (cópia das migrations do repositório do site)
+│   └── teste/                # Supabase simulado e contas de teste (só para npm test)
 ├── api/                      # API REST (Node.js + Express)
 │   ├── .env.example          # modelo de configuração (o .env real não vai para o Git)
 │   ├── requests.http         # exemplos de requisições (login e rotas com Bearer Token)
 │   ├── scripts/
-│   │   ├── setup-db.js       # npm run db:setup: executa schema.sql + seed.sql
+│   │   ├── conferir-banco.js # npm run db:conferir: confere o .env, o banco e o Supabase Auth
 │   │   └── gerar-segredo.js  # npm run jwt:segredo: grava um JWT_SECRET aleatório no .env
-│   ├── tests/                # npm test: cadastro, JWT, níveis e CRUD
+│   ├── tests/                # npm test: cadastro, JWT, níveis, CRUD e conteúdos (banco em memória)
 │   └── src/
-│       ├── server.js         # confere o JWT_SECRET e sobe o servidor na porta 3333
+│       ├── server.js         # confere o .env e sobe o servidor na porta 3333
 │       ├── app.js            # Express, CORS, JSON, rotas e tratamento de erros
-│       ├── config/           # conexão com o MySQL (pool)
+│       ├── config/           # conexão com o PostgreSQL do Supabase (pool)
+│       ├── data/             # conteúdos de exemplo do site (cópia do mock.ts do site)
+│       ├── services/         # supabaseAuth.js (login e cadastro) e armazenamento.js (PDFs da revista)
 │       ├── routes/           # endereços da API e os middlewares de cada rota
 │       ├── middlewares/      # autenticacao.js (JWT), permissoes.js (níveis) e erros
 │       ├── controllers/      # validação, regras e respostas HTTP
-│       ├── models/           # consultas SQL
+│       ├── models/           # consultas SQL nas tabelas do site
 │       └── utils/            # token.js (gera e confere o JWT), validação e texto
 ├── docs/
 │   ├── apresentacao.md       # roteiro da apresentação e defesa
+│   ├── apresentacao.pdf      # slides da apresentação
 │   ├── banco-de-dados.md     # dicionário de dados (todos os campos)
 │   └── telas/                # imagens das telas usadas neste README
 └── mobile/                   # aplicativo React Native (Expo)
@@ -853,38 +923,45 @@ conexaopais.app/
 
 ## 8. Como executar
 
-Pré-requisitos: [Node.js](https://nodejs.org) 20 ou superior, **MySQL 8** (ou MariaDB 10.6+, como no XAMPP) e o app
-**Expo Go** no celular. O celular e o computador precisam estar **na mesma rede Wi-Fi**.
+Pré-requisitos: [Node.js](https://nodejs.org) 20 ou superior, acesso ao projeto **conexao-pais** no
+[Supabase](https://supabase.com/dashboard) (o banco do site), internet no computador da API e o app **Expo Go** no
+celular. O celular e o computador precisam estar **na mesma rede Wi-Fi**. Não é preciso instalar banco de dados.
 
-### 8.1 Banco de dados e API
+### 8.1 API (ligada ao banco do site)
 
 ```bash
 cd api
 npm install
 ```
 
-Copie `api/.env.example` para `api/.env` e coloque o usuário e a senha do seu MySQL. Depois gere o segredo que
-assina os tokens JWT (ele é gravado no `.env`, que não vai para o Git):
+Copie `api/.env.example` para `api/.env` e preencha com os dados do projeto no Supabase:
+
+| Variável | Onde pegar no painel do Supabase |
+| --- | --- |
+| `DATABASE_URL` | Botão **Connect** → aba *Connection String* → **Session pooler**. Troque `[YOUR-PASSWORD]` pela senha do banco (*Project Settings → Database*; se não lembrar, dá para redefinir lá) |
+| `SUPABASE_URL` | *Project Settings → API* → Project URL (`https://<id>.supabase.co`) |
+| `SUPABASE_PUBLISHABLE_KEY` | *Project Settings → API Keys* → chave **publishable** (a mesma que o site usa; é pública) |
+| `SITE_URL` | Endereço do site (`https://conexaopais.com`) |
+
+> Use o **Session pooler**, e não o *Direct connection*: a conexão direta do Supabase só funciona em redes com IPv6,
+> e a maioria das redes de casa e de faculdade usa IPv4.
+
+O `.env` tem a senha do banco: **nunca envie esse arquivo para o Git** (ele já está no `.gitignore`).
+
+Gere o segredo que assina os tokens JWT do app (ele é gravado no `.env`):
 
 ```bash
 npm run jwt:segredo
 ```
 
-Crie o banco com os dados iniciais (isso executa `database/schema.sql` e `database/seed.sql`):
+Confira se está tudo certo (só lê, não altera nada):
 
 ```bash
-npm run db:setup
+npm run db:conferir
 ```
 
-> Também dá para rodar os dois arquivos `.sql` no MySQL Workbench, nessa ordem.
-
-Se o `db:setup` falhar, a mensagem diz o motivo:
-
-- *"Não há MySQL respondendo em 127.0.0.1:3306"*: o MySQL está desligado. No Windows, abra **Serviços**
-  (`services.msc`) e inicie o serviço **MySQL80**; no XAMPP, clique em **Start** na linha do MySQL. Confira também
-  a porta (`DB_PORT`) no `.env`.
-- *"O MySQL recusou o usuário ou a senha"*: corrija `DB_USER` e `DB_PASSWORD` no `.env`.
-- *"Arquivo api/.env não encontrado"*: copie o `.env.example` para `.env`.
+Deve aparecer *"✔ Banco do site conectado"* e *"✔ Supabase Auth respondendo"*. Se algo falhar, a mensagem diz o
+motivo (senha do banco, endereço do pooler, chave do Supabase).
 
 Suba a API (ela reinicia sozinha quando o código muda):
 
@@ -892,17 +969,16 @@ Suba a API (ela reinicia sozinha quando o código muda):
 npm run dev
 ```
 
-Se aparecer *"JWT_SECRET não está definido"*, rode `npm run jwt:segredo` e suba de novo.
+Teste no navegador: <http://localhost:3333/api/status> deve mostrar `{"api":"ok","banco":"ok"}`.
 
-Teste no navegador: <http://localhost:3333/api/status> deve mostrar `{"api":"ok","banco":"ok"}`. Para rodar os
-testes automatizados (com o MySQL ligado):
+Testes automatizados (usam um banco em memória, não precisam do `.env` e não mexem nos dados do site):
 
 ```bash
 npm test
 ```
 
-> **Atualizando de uma versão anterior** (`git pull`): rode `npm install` de novo em `api/` e em `mobile/` (entraram
-> `jsonwebtoken` e `expo-secure-store`) e `npm run jwt:segredo` uma vez.
+> **Atualizando da versão com MySQL** (`git pull` ou troca de branch): rode `npm install` de novo em `api/` (saíram
+> `mysql2` e `bcryptjs`, entrou `pg`) e preencha as variáveis novas do `.env`. O MySQL não é mais usado.
 
 ### 8.2 App
 
@@ -934,11 +1010,11 @@ Checklist das entregas obrigatórias do PDF:
 | --- | --- | :---: |
 | Link do repositório atualizado | este repositório | ✅ |
 | Código-fonte completo | `mobile/` e `api/` | ✅ |
-| API e scripts necessários | `api/` (`npm run db:setup`, `jwt:segredo`, `dev`, `test`) | ✅ |
+| API e scripts necessários | `api/` (`npm run jwt:segredo`, `db:conferir`, `dev`, `test`) | ✅ |
 | README atualizado | este arquivo | ✅ |
-| Script SQL / estrutura do banco | `database/schema.sql`, `database/seed.sql`, `docs/banco-de-dados.md` | ✅ |
+| Script SQL / estrutura do banco | `database/supabase/migrations/` (banco do site), `docs/banco-de-dados.md` | ✅ |
 | APK final | gerado pelo EAS (seção 4.3); link a incluir aqui | ⏳ |
-| Material da apresentação | `docs/apresentacao.md` | ✅ |
+| Material da apresentação | `docs/apresentacao.md` e `docs/apresentacao.pdf` | ✅ |
 
 Antes de entregar: o APK precisa ser gerado a partir da mesma versão que está no repositório (faça o build depois do
 último commit e push).

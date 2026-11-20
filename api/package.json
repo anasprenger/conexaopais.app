@@ -1,25 +1,28 @@
 {
   "name": "conexao-pais-api",
   "version": "1.0.0",
-  "description": "API REST do app Conexão Pais (Node.js + Express + MySQL)",
+  "description": "API REST do app Conexão Pais (Node.js + Express + PostgreSQL do Supabase, o mesmo banco do site)",
   "main": "src/server.js",
   "private": true,
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "test": "node --test --test-reporter=spec",
-    "db:setup": "node scripts/setup-db.js",
-    "jwt:segredo": "node scripts/gerar-segredo.js"
+    "jwt:segredo": "node scripts/gerar-segredo.js",
+    "db:conferir": "node scripts/conferir-banco.js"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
-    "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^18.0.9",
     "express": "^5.3.0",
     "jsonwebtoken": "^9.0.3",
-    "mysql2": "^3.24.6"
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
+    "@electric-sql/pglite-socket": "^0.2.19"
   }
 }

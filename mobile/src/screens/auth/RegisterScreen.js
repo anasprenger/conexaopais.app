@@ -52,8 +52,10 @@ export default function RegisterScreen({ navigation }) {
     // POST /api/usuarios — a senha é salva no banco apenas como hash
     setEnviando(true);
     try {
-      await signUp(form);
-      navigation.popTo('Login', { registered: form.tipo, email: form.email.trim() });
+      // A conta é criada no Supabase (a mesma conta vale no site). Se o projeto pedir confirmação,
+      // o e-mail chega com um link e o login só funciona depois de confirmar.
+      const { confirmarEmail } = await signUp(form);
+      navigation.popTo('Login', { registered: form.tipo, email: form.email.trim(), confirmarEmail });
     } catch (erro) {
       // erros de validação da API voltam por campo (ex.: e-mail já cadastrado)
       const { nome, senha, ...outros } = erro.campos;
