@@ -14,7 +14,7 @@ banco do site", logo abaixo).
 | **1** | Problema, proposta, projeto Expo, telas, navegação e repositório | ✅ Entregue |
 | **2** | Modelagem, MySQL, API Express, integração com `fetch()` | ✅ Entregue |
 | **3** | JWT, Bearer Token, middleware, níveis no back-end, rotas protegidas e logout | ✅ Concluída |
-| **4** | Testes, correções, README final, APK e apresentação | 🔧 Em andamento: falta gerar o APK e testar no celular (seção 4) |
+| **4** | Testes, correções, README final, APK e apresentação | 🔧 APK gerado ([baixar](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9)); falta testar no celular (seção 4) |
 | **+** | Integração com o banco do site (Supabase), autorizada pelo professor | ✅ Branch `integracao-supabase` |
 
 ---
@@ -724,7 +724,7 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
 | Administração | *Novos profissionais*: lista e filtros (a analisar, aprovados, recusados) | Admin | ✅ |
 | Conexão | Endereço errado não é salvo; endereço certo é salvo e vale ao reabrir; voltar ao padrão | Todos | ✅ |
 
-**No celular:** ⏳ falta repetir o roteiro no APK instalado (seção 4.3), com a API rodando no notebook.
+**No celular:** ⏳ falta repetir o roteiro no [APK instalado](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9), com a API rodando no notebook (seção 4.4).
 
 ### 4.2 O que mudou nesta etapa
 
@@ -742,6 +742,9 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
 | ![Conexão com a API](docs/telas/conexao-api.png) |
 
 ### 4.3 Como gerar o APK
+
+**APK da versão final:** [baixar no Expo](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9) (abra o link no celular Android ou leia o QR Code da
+página). Gerado com `npm run build:apk` a partir da versão atual do repositório.
 
 O APK é compilado nos servidores da Expo (EAS Build, gratuito). Precisa de uma conta em
 [expo.dev](https://expo.dev/signup).
@@ -1013,7 +1016,7 @@ Checklist das entregas obrigatórias do PDF:
 | API e scripts necessários | `api/` (`npm run jwt:segredo`, `db:conferir`, `dev`, `test`) | ✅ |
 | README atualizado | este arquivo | ✅ |
 | Script SQL / estrutura do banco | `database/supabase/migrations/` (banco do site), `docs/banco-de-dados.md` | ✅ |
-| APK final | gerado pelo EAS (seção 4.3); link a incluir aqui | ⏳ |
+| APK final | [baixar no Expo](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9) (EAS Build, perfil `preview`; seção 4.3) | ✅ |
 | Material da apresentação | `docs/apresentacao.md` e `docs/apresentacao.pdf` | ✅ |
 
 Antes de entregar: o APK precisa ser gerado a partir da mesma versão que está no repositório (faça o build depois do
