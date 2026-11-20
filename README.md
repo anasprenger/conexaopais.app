@@ -14,7 +14,7 @@ banco do site", logo abaixo).
 | **1** | Problema, proposta, projeto Expo, telas, navegação e repositório | ✅ Entregue |
 | **2** | Modelagem, MySQL, API Express, integração com `fetch()` | ✅ Entregue |
 | **3** | JWT, Bearer Token, middleware, níveis no back-end, rotas protegidas e logout | ✅ Concluída |
-| **4** | Testes, correções, README final, APK e apresentação | 🔧 APK gerado ([baixar](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9)); falta testar no celular (seção 4) |
+| **4** | Testes, correções, README final, APK e apresentação | 🔧 APK gerado ([baixar](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/fc657781-6d4f-4db7-8096-564304ab2395)); falta testar no celular (seção 4) |
 | **+** | Integração com o banco do site (Supabase), autorizada pelo professor | ✅ Branch `integracao-supabase` |
 
 ---
@@ -725,7 +725,7 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
 | Administração | *Novos profissionais*: lista e filtros (a analisar, aprovados, recusados) | Admin | ✅ |
 | Conexão | Endereço errado não é salvo; endereço certo é salvo e vale ao reabrir; voltar ao padrão | Todos | ✅ |
 
-**No celular:** ⏳ falta repetir o roteiro no [APK instalado](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9), com a API rodando no notebook (seção 4.4).
+**No celular:** ⏳ falta repetir o roteiro no [APK instalado](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/fc657781-6d4f-4db7-8096-564304ab2395), com a API rodando no notebook (seção 4.4).
 
 ### 4.2 O que mudou nesta etapa
 
@@ -745,6 +745,11 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
     aparecem em *Minha conta*, junto com os artigos.
   - **Minha conta:** além dos artigos, a administração vê as edições da revista com o botão **Editar**.
   - **Senha:** o botão de mostrar e ocultar a senha já existia no app, no login e no cadastro.
+  - **Leitura da revista dentro do app:** nas edições publicadas pelo site (que têm só o PDF), *Começar a leitura*
+    abria o PDF no navegador. Agora o PDF abre no modo de leitura do app, como no site: uma página por vez, ocupando
+    a tela, com toque à direita para avançar, à esquerda para voltar e barra de progresso. O PDF é desenhado pelo
+    pdf.js (a mesma biblioteca do site) numa WebView (`react-native-webview`), no componente
+    [`LeitorPdf`](mobile/src/components/LeitorPdf.js). *Baixar PDF* continua abrindo o arquivo.
   - O **painel de interações** é só do site. A migration dele foi copiada para `database/supabase/migrations/`, para a
     estrutura do banco continuar igual à do site.
 
@@ -754,7 +759,7 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
 
 ### 4.3 Como gerar o APK
 
-**APK da versão final:** [baixar no Expo](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9) (abra o link no celular Android ou leia o QR Code da
+**APK da versão final:** [baixar no Expo](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/fc657781-6d4f-4db7-8096-564304ab2395) (abra o link no celular Android ou leia o QR Code da
 página). Gerado com `npm run build:apk` a partir da versão atual do repositório.
 
 O APK é compilado nos servidores da Expo (EAS Build, gratuito). Precisa de uma conta em
@@ -875,6 +880,7 @@ no site.
 | --- | --- |
 | App | React Native 0.88 + Expo SDK 58 (JavaScript) |
 | Navegação | React Navigation 7 (`native-stack` e `bottom-tabs`) |
+| Leitura da revista (PDF) | `react-native-webview` + pdf.js (o mesmo leitor de PDF do site) |
 | Comunicação | `fetch()` com JSON e Bearer Token (camada `src/services`) e `expo-constants` para achar o IP da API |
 | Sessão no aparelho | `expo-secure-store` (token e endereço da API, criptografados) |
 | Build do APK | EAS Build (`eas.json`) e `expo-build-properties` (HTTP liberado para a API local) |
@@ -1027,7 +1033,7 @@ Checklist das entregas obrigatórias do PDF:
 | API e scripts necessários | `api/` (`npm run jwt:segredo`, `db:conferir`, `dev`, `test`) | ✅ |
 | README atualizado | este arquivo | ✅ |
 | Script SQL / estrutura do banco | `database/supabase/migrations/` (banco do site), `docs/banco-de-dados.md` | ✅ |
-| APK final | [baixar no Expo](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/84a69c79-d244-4a7e-8428-f12636c69de9) (EAS Build, perfil `preview`; seção 4.3) | ✅ |
+| APK final | [baixar no Expo](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/fc657781-6d4f-4db7-8096-564304ab2395) (EAS Build, perfil `preview`; seção 4.3) | ✅ |
 | Material da apresentação | `docs/apresentacao.md` e `docs/apresentacao.pdf` | ✅ |
 
 Antes de entregar: o APK precisa ser gerado a partir da mesma versão que está no repositório (faça o build depois do

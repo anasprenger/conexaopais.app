@@ -38,10 +38,13 @@ Aplicação Mobile com JWT", com 4 entregas. O projeto é avaliado pelo reposit�
 - Ajustes do site de 18/11 (commit 37583ba do site, branch `migracao-supabase`) levados ao app: revista com título do
   campo título e sinopse só embaixo; colunas sem comentários, com curtir e salvar por publicação
   (`POST /colunas/:slug/posts/:postSlug/interacoes`); "Editar" das edições da revista em Minha conta (admin). O
-  painel de interações fica só no site; a migration `20261118230000_painel_interacoes.sql` foi copiada. O código do
+  painel de interações fica só no site; "Começar a leitura" das edições do site abre o PDF dentro do app
+  (`components/LeitorPdf.js`: pdf.js do cdnjs numa WebView, o app baixa o PDF e entrega em base64), e não mais no
+  navegador. `react-native-webview` é pacote nativo novo: o APK precisa ser gerado de novo depois disso. A migration `20261118230000_painel_interacoes.sql` foi copiada. O código do
   site mais recente está na branch `migracao-supabase` do repositório `anasprenger/conexaopais` (a `main` é antiga).
-- **APK gerado** (EAS Build, conta Expo `anasprenger`, 20/11): link no README (seções 4.3 e 9).
-- **Falta (com a Ana):** commit do `projectId` que o EAS gravou no `mobile/app.json`; instalar o APK e repetir o
+- **APK gerado** (EAS Build, conta Expo `anasprenger`, 20/11), de novo depois do PR #3 (ajustes do site): link no
+  README (seções 4.3 e 9).
+- **Falta (com a Ana):** instalar o APK e repetir o
   roteiro do README 4.1 no celular com a API ligada ao banco real; conferir se o projeto exige confirmação de e-mail
   no cadastro; marcar a Entrega 4 como concluída. Os arquivos de build da Expo podem expirar: guardar o `.apk` também
   num Release do GitHub.
