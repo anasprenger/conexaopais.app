@@ -31,9 +31,15 @@ Aplicação Mobile com JWT", com 4 entregas. O projeto é avaliado pelo reposit�
 
 ## Situação
 - Entregas 1 a 3 ✅; Entrega 4 quase pronta. Integração com o Supabase mesclada na branch principal (PR #2, 20/11).
-  47 testes em `api/tests` (`npm test`), com **PGlite** (Postgres em memória) + `database/teste/supabase-simulado.sql`
+  48 testes em `api/tests` (`npm test`), com **PGlite** (Postgres em memória) + `database/teste/supabase-simulado.sql`
   + migrations do site + `database/teste/dados-teste.sql`. Os testes não usam o banco real nem o `.env`.
-- `api/.env` da Ana já está preenchido no notebook (fora do Git).
+- `api/.env` da Ana já está preenchido no notebook (fora do Git). O app já abriu no iPhone dela pelo Expo Go com a
+  API ligada ao banco real (o problema era o Wi-Fi: a casa tem duas redes).
+- Ajustes do site de 18/11 (commit 37583ba do site, branch `migracao-supabase`) levados ao app: revista com título do
+  campo título e sinopse só embaixo; colunas sem comentários, com curtir e salvar por publicação
+  (`POST /colunas/:slug/posts/:postSlug/interacoes`); "Editar" das edições da revista em Minha conta (admin). O
+  painel de interações fica só no site; a migration `20261118230000_painel_interacoes.sql` foi copiada. O código do
+  site mais recente está na branch `migracao-supabase` do repositório `anasprenger/conexaopais` (a `main` é antiga).
 - **APK gerado** (EAS Build, conta Expo `anasprenger`, 20/11): link no README (seções 4.3 e 9).
 - **Falta (com a Ana):** commit do `projectId` que o EAS gravou no `mobile/app.json`; instalar o APK e repetir o
   roteiro do README 4.1 no celular com a API ligada ao banco real; conferir se o projeto exige confirmação de e-mail
