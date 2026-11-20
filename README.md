@@ -745,6 +745,11 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
     aparecem em *Minha conta*, junto com os artigos.
   - **Minha conta:** além dos artigos, a administração vê as edições da revista com o botão **Editar**.
   - **Senha:** o botão de mostrar e ocultar a senha já existia no app, no login e no cadastro.
+  - **Leitura da revista dentro do app:** nas edições publicadas pelo site (que têm só o PDF), *Começar a leitura*
+    abria o PDF no navegador. Agora o PDF abre no modo de leitura do app, como no site: uma página por vez, ocupando
+    a tela, com toque à direita para avançar, à esquerda para voltar e barra de progresso. O PDF é desenhado pelo
+    pdf.js (a mesma biblioteca do site) numa WebView (`react-native-webview`), no componente
+    [`LeitorPdf`](mobile/src/components/LeitorPdf.js). *Baixar PDF* continua abrindo o arquivo.
   - O **painel de interações** é só do site. A migration dele foi copiada para `database/supabase/migrations/`, para a
     estrutura do banco continuar igual à do site.
 
@@ -875,6 +880,7 @@ no site.
 | --- | --- |
 | App | React Native 0.88 + Expo SDK 58 (JavaScript) |
 | Navegação | React Navigation 7 (`native-stack` e `bottom-tabs`) |
+| Leitura da revista (PDF) | `react-native-webview` + pdf.js (o mesmo leitor de PDF do site) |
 | Comunicação | `fetch()` com JSON e Bearer Token (camada `src/services`) e `expo-constants` para achar o IP da API |
 | Sessão no aparelho | `expo-secure-store` (token e endereço da API, criptografados) |
 | Build do APK | EAS Build (`eas.json`) e `expo-build-properties` (HTTP liberado para a API local) |

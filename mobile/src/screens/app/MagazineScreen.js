@@ -1,5 +1,5 @@
 import { useLayoutEffect } from 'react';
-import { Linking, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import AsyncState from '../../components/AsyncState';
 import Button from '../../components/Button';
 import EmptyState from '../../components/EmptyState';
@@ -35,7 +35,8 @@ export function separarSinopse(sinopse) {
 }
 
 // Edição com páginas de texto (as de exemplo do site) abre no modo de leitura do app.
-// Edição publicada pelo site só tem o PDF: "Começar a leitura" abre o PDF.
+// Edição publicada pelo site só tem o PDF: "Começar a leitura" abre o PDF no modo de leitura do app, página por
+// página (no navegador do computador, versão web do Expo, o PDF abre numa aba).
 export function temPaginas(revista) {
   return !revista.editavel && revista.conteudo.length > 0;
 }
@@ -68,7 +69,7 @@ export default function MagazineScreen({ navigation, route }) {
   const leituraNoApp = temPaginas(revista);
 
   function comecarLeitura() {
-    if (leituraNoApp) navigation.navigate('MagazineReader', { slug: revista.slug });
+    if (leituraNoApp || (revista.pdf && Platform.OS !== 'web')) navigation.navigate('MagazineReader', { slug: revista.slug });
     else if (revista.pdf) Linking.openURL(revista.pdf);
   }
 
