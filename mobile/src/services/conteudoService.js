@@ -17,6 +17,14 @@ export async function buscarColuna(slug) {
   return colunaDaApi(await api(`/colunas/${encodeURIComponent(slug)}`));
 }
 
+// Curtir ou salvar uma publicação da coluna (colunas não têm comentários, como no site)
+export function alternarInteracaoColuna(colunaSlug, postSlug, tipo) {
+  return api(`/colunas/${encodeURIComponent(colunaSlug)}/posts/${encodeURIComponent(postSlug)}/interacoes`, {
+    method: 'POST',
+    body: { tipo },
+  });
+}
+
 export async function listarRevistas() {
   return (await api('/revistas')).map(revistaDaApi);
 }

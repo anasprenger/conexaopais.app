@@ -1,4 +1,5 @@
 const interacaoModel = require('../models/interacaoModel');
+const colunaModel = require('../models/colunaModel');
 const usuarioModel = require('../models/usuarioModel');
 const supabaseAuth = require('../services/supabaseAuth');
 const HttpError = require('../utils/HttpError');
@@ -52,7 +53,14 @@ async function buscar(req, res) {
 async function listarInteracoes(req, res) {
   const id = idDaRota(req.params.id, 'Usuário');
   if (!(await usuarioModel.buscarPorId(id))) throw new HttpError(404, 'Usuário não encontrado.');
-  res.json(await interacaoModel.listarPorUsuario(id));
+  const [interacoes, postsDeColuna] = await Promise.all([interacaoModel.listarPorUsuario(id), colunaModel.postsPorSlug()]);
+  // Curtidas e salvos de colunas ficam no slug da publicação: junta a coluna e o título para o app mostrar
+  res.json(
+    interacoes.map((item) => {
+      const coluna = postsDeColuna.get(item.publicacaoSlug);
+      return coluna ? { ...item, coluna: { slug: coluna.slug, nome: coluna.nome }, titulo: coluna.post } : item;
+    })
+  );
 }
 
 // PATCH /api/usuarios/:id/verificacao — decisão da administração sobre um cadastro profissional

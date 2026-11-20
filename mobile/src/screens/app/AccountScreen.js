@@ -16,6 +16,7 @@ import { useConfirm } from '../../contexts/ConfirmContext';
 import { useContent } from '../../contexts/ContentContext';
 import { useApi } from '../../hooks/useApi';
 import TextField from '../../components/TextField';
+import { listarRevistas } from '../../services/conteudoService';
 import { excluirConta, listarContasProfissionais } from '../../services/usuariosService';
 import { colors, fonts, radius, shadow, spacing, type } from '../../theme';
 
@@ -82,7 +83,7 @@ function LinksInstitucionais({ navigation }) {
 function ContaLogada({ navigation }) {
   const { user, isAdmin, canPublish, refreshUser, signOut } = useAuth();
   const { artigos, getArtigo, deleteArtigo } = useContent();
-  const { savedIds } = useCommunity();
+  const { savedIds, salvosDeColunas } = useCommunity();
   const confirm = useConfirm();
   const [erroExclusao, setErroExclusao] = useState('');
 
@@ -90,6 +91,8 @@ function ContaLogada({ navigation }) {
   const salvos = savedIds()
     .map((id) => getArtigo(id))
     .filter(Boolean);
+  const colunasSalvas = salvosDeColunas();
+  const totalSalvos = salvos.length + colunasSalvas.length;
   // Publicações do banco (as mesmas do site): admin gerencia todas; o profissional, apenas as próprias.
   // Os artigos de exemplo do site ficam fora desta lista (a administração pode escondê-los na tela do artigo).
   const publicacoes = artigos.filter((artigo) => !artigo.exemplo && (isAdmin || artigo.autorId === user.id));
@@ -98,6 +101,11 @@ function ContaLogada({ navigation }) {
     recarregarAoFocar: true,
   });
   const pendentes = contasPendentes?.length ?? 0;
+  // Edições da revista publicadas pelo site: a administração edita título e sinopse (como "Editar" no site)
+  const { data: revistas } = useApi(() => (isAdmin ? listarRevistas() : Promise.resolve([])), [isAdmin], {
+    recarregarAoFocar: true,
+  });
+  const revistasEditaveis = (revistas ?? []).filter((revista) => revista.editavel);
 
   // Ao abrir a tela, busca de novo os dados da conta (ex.: cadastro profissional aprovado)
   useFocusEffect(
@@ -194,7 +202,7 @@ function ContaLogada({ navigation }) {
             style={styles.newPost}
           />
           {erroExclusao ? <Notice tone="danger" title={erroExclusao} /> : null}
-          {publicacoes.length === 0 && <Text style={type.muted}>Você ainda não publicou nada por aqui.</Text>}
+          {publicacoes.length === 0 && revistasEditaveis.length === 0 && <Text style={type.muted}>Você ainda não publicou nada por aqui.</Text>}
           {publicacoes.map((artigo) => (
             <ArticleCard
               key={artigo.id}
@@ -214,12 +222,33 @@ function ContaLogada({ navigation }) {
               }
             />
           ))}
+          {revistasEditaveis.map((revista) => (
+            <View key={revista.slug} style={styles.magazineRow}>
+              <Pressable
+                style={styles.magazineInfo}
+                onPress={() => navigation.navigate('Magazine', { slug: revista.slug })}
+                accessibilityRole="button"
+              >
+                <Text style={type.eyebrow}>Revista · Edição {String(revista.edicao).padStart(2, '0')}</Text>
+                <Text style={styles.rowText} numberOfLines={2}>
+                  {revista.titulo}
+                </Text>
+              </Pressable>
+              <Button
+                title="Editar"
+                icon="create-outline"
+                variant="outline"
+                small
+                onPress={() => navigation.navigate('MagazineEdit', { slug: revista.slug })}
+              />
+            </View>
+          ))}
         </>
       )}
 
-      <SectionHeader title={`Conteúdos salvos (${salvos.length})`} />
-      {salvos.length === 0 ? (
-        <Text style={type.muted}>Você ainda não salvou conteúdos. Use o botão Salvar nos artigos.</Text>
+      <SectionHeader title={`Conteúdos salvos (${totalSalvos})`} />
+      {totalSalvos === 0 ? (
+        <Text style={type.muted}>Você ainda não salvou conteúdos. Use o botão Salvar nos artigos e nas colunas.</Text>
       ) : (
         salvos.map((artigo) => (
           <Pressable
@@ -236,13 +265,27 @@ function ContaLogada({ navigation }) {
           </Pressable>
         ))
       )}
+      {colunasSalvas.map((item) => (
+        <Pressable
+          key={item.publicacaoSlug}
+          style={styles.row}
+          onPress={() => navigation.navigate('Column', { slug: item.coluna.slug })}
+          accessibilityRole="button"
+        >
+          <Ionicons name="bookmark" size={20} color={colors.accent} />
+          <Text style={styles.rowText} numberOfLines={2}>
+            {item.titulo} (coluna {item.coluna.nome})
+          </Text>
+          <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
+        </Pressable>
+      ))}
 
       <LinksInstitucionais navigation={navigation} />
 
       <Button title="Sair" icon="log-out-outline" variant="danger" onPress={sair} style={styles.logout} />
 
       <ExcluirMinhaConta user={user} signOut={signOut} />
-      <Text style={[type.small, styles.version]}>Versão 1.0.0 · Entrega 3</Text>
+      <Text style={[type.small, styles.version]}>Versão 1.0.0 · Entrega 4</Text>
     </Screen>
   );
 }
@@ -386,6 +429,20 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.text,
+  },
+  magazineRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    borderRadius: radius.lg,
+    backgroundColor: colors.card,
+    ...shadow,
+  },
+  magazineInfo: {
+    flex: 1,
+    gap: 4,
   },
   newPost: {
     marginBottom: spacing.md,

@@ -78,4 +78,13 @@ async function buscarPorSlug(slug) {
   return coluna ? { ...resumo(coluna), posts: coluna.posts } : null;
 }
 
-module.exports = { listar, buscarPorSlug };
+// Publicações de coluna pelo slug: usado para mostrar curtidas e salvos de colunas em "Minha conta"
+async function postsPorSlug() {
+  const mapa = new Map();
+  for (const coluna of await todas()) {
+    for (const post of coluna.posts) mapa.set(post.slug, { slug: coluna.slug, nome: coluna.nome, post: post.titulo });
+  }
+  return mapa;
+}
+
+module.exports = { listar, buscarPorSlug, postsPorSlug };

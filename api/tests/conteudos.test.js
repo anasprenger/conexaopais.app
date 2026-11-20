@@ -1,7 +1,7 @@
 // Conteúdos públicos iguais aos do site: colunas, revista, profissionais e categorias (npm test)
 const assert = require('node:assert/strict');
 const { after, before, describe, test } = require('node:test');
-const { CONTAS, iniciarApi } = require('./apoio');
+const { CONTAS, entrar, iniciarApi } = require('./apoio');
 
 describe('Conteúdos iguais aos do site', () => {
   let api;
@@ -54,15 +54,40 @@ describe('Conteúdos iguais aos do site', () => {
     assert.equal((await api.req('GET', '/colunas/entre-geracoes')).status, 404);
   });
 
+  test('colunas: curtir e salvar cada publicação (sem comentários), pelo slug da publicação', async () => {
+    const { posts } = (await api.req('GET', '/colunas/consultorio-aberto')).dados;
+    const caminho = `/colunas/consultorio-aberto/posts/${posts[0].slug}/interacoes`;
+    assert.equal((await api.req('POST', caminho, { body: { tipo: 'curtida' } })).status, 401);
+
+    const familia = await entrar(api.req, CONTAS.familia.email);
+    const salvo = await api.req('POST', caminho, { token: familia.token, body: { tipo: 'salvo' } });
+    assert.equal(salvo.status, 200);
+    assert.equal(salvo.dados.ativo, true);
+    assert.equal(salvo.dados.publicacaoSlug, posts[0].slug);
+    const minhas = await api.req('GET', `/usuarios/${familia.usuario.id}/interacoes`, { token: familia.token });
+    const daColuna = minhas.dados.find((item) => item.publicacaoSlug === posts[0].slug && item.tipo === 'salvo');
+    assert.equal(daColuna.coluna.slug, 'consultorio-aberto');
+    assert.equal(daColuna.titulo, posts[0].titulo);
+
+    const errado = '/colunas/consultorio-aberto/posts/nao-existe/interacoes';
+    assert.equal((await api.req('POST', errado, { token: familia.token, body: { tipo: 'curtida' } })).status, 404);
+    assert.equal((await api.req('POST', caminho, { token: familia.token, body: { tipo: 'comentario' } })).status, 400);
+  });
+
   test('revista: edições do site e as publicadas no banco (com o PDF)', async () => {
     await api.query(
       `INSERT INTO public.publicacoes (tipo, slug, titulo, resumo, pdf_url, autor_id)
-       VALUES ('revista', 'revista-do-banco', 'Edição nova', 'Resumo da edição', 'https://exemplo.com/edicao.pdf', $1)`,
-      [CONTAS.admin.id]
+       VALUES ('revista', 'revista-do-banco', 'Edição nova', $2, 'https://exemplo.com/edicao.pdf', $1)`,
+      [CONTAS.admin.id, 'Resumo da edição.\n- Tema um - Tema dois\n- Tema três']
     );
     const lista = await api.req('GET', '/revistas');
     assert.deepEqual(lista.dados.map((revista) => revista.edicao), [4, 3, 2, 1]);
     assert.equal(lista.dados[0].slug, 'revista-do-banco');
+    // como no site: o título vem do campo título e a sinopse não se repete (texto corrido + tópicos)
+    assert.equal(lista.dados[0].subtitulo, 'Edição nova');
+    assert.equal(lista.dados[0].descricao, 'Resumo da edição.');
+    assert.deepEqual(lista.dados[0].destaques, ['Tema um', 'Tema dois', 'Tema três']);
+    assert.match(lista.dados[0].sinopse, /^Resumo da edição\.\n- Tema um/);
 
     const nova = await api.req('GET', '/revistas/revista-do-banco');
     assert.equal(nova.dados.pdfUrl, 'https://exemplo.com/edicao.pdf');
