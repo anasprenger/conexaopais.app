@@ -142,7 +142,9 @@ describe('Administração de usuários, exclusão de conta e edição da revista
     const editar = await api.req('PUT', '/revistas/edicao-de-teste', { token: admin.token, body: corpo });
     assert.equal(editar.status, 200);
     assert.equal(editar.dados.titulo, corpo.titulo);
-    assert.equal(editar.dados.descricao, corpo.sinopse);
+    assert.equal(editar.dados.sinopse, corpo.sinopse); // texto completo, para editar de novo
+    assert.equal(editar.dados.descricao, 'Sinopse nova');
+    assert.deepEqual(editar.dados.destaques, ['Tópico um', 'Tópico dois']);
     assert.equal(editar.dados.slug, 'edicao-de-teste');
 
     const lista = await api.req('GET', '/revistas');

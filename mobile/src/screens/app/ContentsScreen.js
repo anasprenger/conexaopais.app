@@ -52,8 +52,8 @@ export default function ContentsScreen({ navigation, route }) {
   });
 
   // GET /api/colunas e GET /api/revistas
-  const colunasApi = useApi(() => listarColunas(), []);
-  const revistasApi = useApi(() => listarRevistas(), []);
+  const colunasApi = useApi(() => listarColunas(), [], { recarregarAoFocar: true });
+  const revistasApi = useApi(() => listarRevistas(), [], { recarregarAoFocar: true });
   const colunas = colunasApi.data ?? [];
   const [atual, ...anteriores] = revistasApi.data ?? [];
 
