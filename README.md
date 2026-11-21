@@ -747,7 +747,9 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
   - **Senha:** o botão de mostrar e ocultar a senha já existia no app, no login e no cadastro.
   - **Leitura da revista dentro do app:** nas edições publicadas pelo site (que têm só o PDF), *Começar a leitura*
     abria o PDF no navegador. Agora o PDF abre no modo de leitura do app, como no site: uma página por vez, ocupando
-    a tela, com toque à direita para avançar, à esquerda para voltar e barra de progresso. O PDF é desenhado pelo
+    a tela, com toque à direita (ou arrastar para a esquerda) para avançar, à esquerda para voltar e barra de
+    progresso. Os toques são tratados dentro da própria WebView, porque áreas de toque do app por cima dela não
+    funcionavam no iPhone. O PDF é desenhado pelo
     pdf.js (a mesma biblioteca do site) numa WebView (`react-native-webview`), no componente
     [`LeitorPdf`](mobile/src/components/LeitorPdf.js). *Baixar PDF* continua abrindo o arquivo.
   - O **painel de interações** é só do site. A migration dele foi copiada para `database/supabase/migrations/`, para a
