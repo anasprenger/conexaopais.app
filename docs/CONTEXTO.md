@@ -42,7 +42,7 @@ Aplicação Mobile com JWT", com 4 entregas. O projeto é avaliado pelo reposit�
   (`components/LeitorPdf.js`: pdf.js do cdnjs numa WebView, o app baixa o PDF e entrega em base64), e não mais no
   navegador. `react-native-webview` é pacote nativo novo: o APK precisa ser gerado de novo depois disso. A migration `20261118230000_painel_interacoes.sql` foi copiada. O código do
   site mais recente está na branch `migracao-supabase` do repositório `anasprenger/conexaopais` (a `main` é antiga).
-- **APK gerado** (EAS Build, conta Expo `anasprenger`, 20/11), de novo depois do PR #3 (ajustes do site): link no
+- **APK gerado** (EAS Build, conta Expo `anasprenger`, 20/11), de novo depois do PR #4 (leitor de PDF): link no
   README (seções 4.3 e 9).
 - **Falta (com a Ana):** instalar o APK e repetir o
   roteiro do README 4.1 no celular com a API ligada ao banco real; conferir se o projeto exige confirmação de e-mail

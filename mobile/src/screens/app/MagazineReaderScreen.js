@@ -111,9 +111,19 @@ export default function MagazineReaderScreen({ navigation, route }) {
               )}
             </View>
           ) : (
-            <LeitorPdf url={revista.pdf} pagina={pagina + 1} aoCarregar={setTotalPdf} aoFalhar={setErroPdf} />
+            // Aqui os toques ficam com o próprio leitor (por cima de uma WebView, áreas de toque do app não
+            // funcionam bem no iPhone): ele vira as páginas e avisa a página atual
+            <LeitorPdf
+              url={revista.pdf}
+              aoMudarPagina={(numero, quantidade) => {
+                setPagina(numero - 1);
+                setTotalPdf(quantidade);
+              }}
+              aoTocarNoMeio={() => (controles ? setControles(false) : mostrarControlesPorUmTempo())}
+              aoPassarDoFim={mostrarControlesPorUmTempo}
+              aoFalhar={setErroPdf}
+            />
           )}
-          {!erroPdf && zonasDeToque()}
         </View>
       )}
 
@@ -139,7 +149,7 @@ export default function MagazineReaderScreen({ navigation, route }) {
     </SafeAreaView>
   );
 
-  // Áreas de toque: esquerda, meio e direita (por cima da página, inclusive do PDF)
+  // Áreas de toque das páginas de texto: esquerda, meio e direita
   function zonasDeToque() {
     return (
       <View style={styles.zones} pointerEvents="box-none">
