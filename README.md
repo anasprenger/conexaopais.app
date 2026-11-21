@@ -819,9 +819,9 @@ use o roteador do celular (o notebook se conecta no Wi-Fi do celular).
 
 ### 4.5 Apresentação
 
-O roteiro da apresentação, com a demonstração passo a passo e as explicações de JWT, hash, Bearer Token e
-middleware, está em [`docs/apresentacao.md`](docs/apresentacao.md). Os slides (15, na mesma ordem do roteiro) estão em
-[`docs/apresentacao.pdf`](docs/apresentacao.pdf).
+Os slides da apresentação (16) estão em [`docs/apresentacao.pdf`](docs/apresentacao.pdf), na ordem dos itens de
+*Apresentação e defesa* do PDF: problema, solução, cadastro e login, JWT, middleware e permissões, níveis, CRUD, banco
+de dados, o que o app ganhou junto com o site, repositório e testes e o APK final.
 
 ---
 
@@ -923,7 +923,6 @@ conexaopais.app/
 │       ├── models/           # consultas SQL nas tabelas do site
 │       └── utils/            # token.js (gera e confere o JWT), validação e texto
 ├── docs/
-│   ├── apresentacao.md       # roteiro da apresentação e defesa
 │   ├── apresentacao.pdf      # slides da apresentação
 │   ├── banco-de-dados.md     # dicionário de dados (todos os campos)
 │   └── telas/                # imagens das telas usadas neste README
@@ -1038,7 +1037,7 @@ Checklist das entregas obrigatórias do PDF:
 | README atualizado | este arquivo | ✅ |
 | Script SQL / estrutura do banco | `database/supabase/migrations/` (banco do site), `docs/banco-de-dados.md` | ✅ |
 | APK final | [baixar no Expo](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/33bcad44-4696-4db9-8cfb-97e9a5ead982) (EAS Build, perfil `preview`; seção 4.3) | ✅ |
-| Material da apresentação | `docs/apresentacao.md` e `docs/apresentacao.pdf` | ✅ |
+| Material da apresentação | `docs/apresentacao.pdf` (slides) | ✅ |
 
 Antes de entregar: o APK precisa ser gerado a partir da mesma versão que está no repositório (faça o build depois do
 último commit e push).

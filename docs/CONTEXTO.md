@@ -44,6 +44,9 @@ Aplicação Mobile com JWT", com 4 entregas. O projeto é avaliado pelo reposit�
   site mais recente está na branch `migracao-supabase` do repositório `anasprenger/conexaopais` (a `main` é antiga).
 - **APK gerado** (EAS Build, conta Expo `anasprenger`, 20/11), de novo depois do PR #5 (leitor de PDF corrigido no iPhone): link no
   README (seções 4.3 e 9).
+- Slides (`docs/apresentacao.pdf`, 16) atualizados em 21/11: slide 13 novo (o que o app ganhou junto com o site),
+  48 testes no slide 14 e numeração nova. Não há fonte editável dos slides no repositório (cada slide original é uma
+  imagem). O roteiro de fala (`docs/apresentacao.md`) foi tirado do GitHub a pedido da Ana.
 - Roteiro do README 4.1 testado pela Ana no iPhone (Expo Go) com a API ligada ao banco real (21/11).
 - **Falta (com a Ana, para a apresentação):** instalar o APK num Android emprestado; guardar o `.apk` num Release do
   GitHub (tag `v1.0`), porque os arquivos de build da Expo podem expirar.
