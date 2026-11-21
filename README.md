@@ -14,7 +14,7 @@ banco do site", logo abaixo).
 | **1** | Problema, proposta, projeto Expo, telas, navegação e repositório | ✅ Entregue |
 | **2** | Modelagem, MySQL, API Express, integração com `fetch()` | ✅ Entregue |
 | **3** | JWT, Bearer Token, middleware, níveis no back-end, rotas protegidas e logout | ✅ Concluída |
-| **4** | Testes, correções, README final, APK e apresentação | 🔧 APK gerado ([baixar](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/33bcad44-4696-4db9-8cfb-97e9a5ead982)); falta testar no celular (seção 4) |
+| **4** | Testes, correções, README final, APK e apresentação | ✅ Concluída ([baixar o APK](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/33bcad44-4696-4db9-8cfb-97e9a5ead982)) |
 | **+** | Integração com o banco do site (Supabase), autorizada pelo professor | ✅ Branch `integracao-supabase` |
 
 ---
@@ -703,9 +703,9 @@ API ligada ao banco real.
 **API (automáticos):** `cd api && npm test` roda 48 testes contra a API, com um banco igual ao do site (detalhes na
 seção 3.7). Resultado atual: **48 de 48 passando**.
 
-**App (roteiro por nível):** cada cenário abaixo foi executado no app ligado à API real (versão com MySQL; ⏳ repetir
-com o banco do site depois de configurar o `api/.env`), com o navegador controlado
-pelo Playwright (versão web do Expo) e checagem de erros de página, de console e de respostas da API.
+**App (roteiro por nível):** cada cenário abaixo foi executado primeiro no navegador, com o Playwright (versão web
+do Expo), checando erros de página, de console e de respostas da API. Depois, foi repetido no celular, com a API
+ligada ao banco do site.
 
 | Área | Cenário | Nível | Resultado |
 | --- | --- | --- | :---: |
@@ -725,7 +725,9 @@ pelo Playwright (versão web do Expo) e checagem de erros de página, de console
 | Administração | *Novos profissionais*: lista e filtros (a analisar, aprovados, recusados) | Admin | ✅ |
 | Conexão | Endereço errado não é salvo; endereço certo é salvo e vale ao reabrir; voltar ao padrão | Todos | ✅ |
 
-**No celular:** ⏳ falta repetir o roteiro no [APK instalado](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/33bcad44-4696-4db9-8cfb-97e9a5ead982), com a API rodando no notebook (seção 4.4).
+**No celular:** ✅ roteiro repetido num iPhone (pelo Expo Go), com a API rodando no notebook e ligada ao banco do
+site, incluindo a leitura da revista em PDF dentro do app. O [APK final](https://expo.dev/accounts/anasprenger/projects/conexao-pais/builds/33bcad44-4696-4db9-8cfb-97e9a5ead982) foi gerado da mesma versão do
+repositório.
 
 ### 4.2 O que mudou nesta etapa
 

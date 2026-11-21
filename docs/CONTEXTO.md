@@ -30,7 +30,7 @@ Aplicação Mobile com JWT", com 4 entregas. O projeto é avaliado pelo reposit�
 - A senha das contas de teste do site **não** fica no repositório (público). O modo demonstração preenche só o e-mail.
 
 ## Situação
-- Entregas 1 a 3 ✅; Entrega 4 quase pronta. Integração com o Supabase mesclada na branch principal (PR #2, 20/11).
+- **Entregas 1 a 4 ✅** (Entrega 4 concluída em 21/11). Integração com o Supabase mesclada na branch principal (PR #2, 20/11).
   48 testes em `api/tests` (`npm test`), com **PGlite** (Postgres em memória) + `database/teste/supabase-simulado.sql`
   + migrations do site + `database/teste/dados-teste.sql`. Os testes não usam o banco real nem o `.env`.
 - `api/.env` da Ana já está preenchido no notebook (fora do Git). O app já abriu no iPhone dela pelo Expo Go com a
@@ -44,10 +44,9 @@ Aplicação Mobile com JWT", com 4 entregas. O projeto é avaliado pelo reposit�
   site mais recente está na branch `migracao-supabase` do repositório `anasprenger/conexaopais` (a `main` é antiga).
 - **APK gerado** (EAS Build, conta Expo `anasprenger`, 20/11), de novo depois do PR #5 (leitor de PDF corrigido no iPhone): link no
   README (seções 4.3 e 9).
-- **Falta (com a Ana):** instalar o APK e repetir o
-  roteiro do README 4.1 no celular com a API ligada ao banco real; conferir se o projeto exige confirmação de e-mail
-  no cadastro; marcar a Entrega 4 como concluída. Os arquivos de build da Expo podem expirar: guardar o `.apk` também
-  num Release do GitHub.
+- Roteiro do README 4.1 testado pela Ana no iPhone (Expo Go) com a API ligada ao banco real (21/11).
+- **Falta (com a Ana, para a apresentação):** instalar o APK num Android emprestado; guardar o `.apk` num Release do
+  GitHub (tag `v1.0`), porque os arquivos de build da Expo podem expirar.
 - Branch padrão do GitHub continua `claude/conexao-pais-app-entrega-1-dkbo5f` (renomear para `main` é opcional).
 
 ## Estrutura
